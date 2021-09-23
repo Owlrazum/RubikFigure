@@ -13,6 +13,7 @@ namespace GeneralTemplate
         private void Start()
         {
             sceneCount = SceneManager.sceneCountInBuildSettings;
+            print(sceneCount);
         }
 
         public void LoadSavedScene(int sceneIndexToTest = -1)
@@ -32,6 +33,7 @@ namespace GeneralTemplate
             {
                 areAllLevelsPassed = true;
             }
+            print(nextSceneIndex);
             if (!areAllLevelsPassed)
             {
                 if (sceneIndexToTest >= 0)
@@ -51,6 +53,10 @@ namespace GeneralTemplate
         {
             int currentSceneIndex = SceneManager.GetActiveScene().buildIndex;
             int result = Random.Range(1, sceneCount - 1);
+            if (sceneCount - 1 <= 1)
+            {
+                result = 0;
+            }
             if (result >= currentSceneIndex)
             {
                 result++;

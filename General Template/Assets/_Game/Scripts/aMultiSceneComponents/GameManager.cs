@@ -17,6 +17,10 @@ namespace GeneralTemplate
             {
                 Singleton = this;
             }
+            else
+            {
+                Destroy(multiSceneParent);
+            }
         }
 
         [SerializeField]
@@ -28,9 +32,21 @@ namespace GeneralTemplate
             DontDestroyOnLoad(multiSceneParent);
         }
 
+        [Header("MultiSceneComponentsReferences")]
+        [Space]
+        [SerializeField]
         private CamerasController camerasController;
+
+        [SerializeField]
         private UIController userInterface;
+
+        [SerializeField]
         private ScenesController scenesController;
+
+        [Header("Debugging")]
+        [Space]
+        [SerializeField]
+        private LevelDebugging levelDebugging;
 
         private List<Enemy> enemies;
         public void AssignEnemiesInstances(Transform enemiesParent)
@@ -82,7 +98,10 @@ namespace GeneralTemplate
 
             DOTween.KillAll();
 
-            player.ProcessGameEnd(result);
+            if (player != null)
+            {
+                player.ProcessGameEnd(result);
+            }
 
             //result = GameResult.Defeat;
 
@@ -101,6 +120,7 @@ namespace GeneralTemplate
         public void ProcessNextLevelButtonDown()
         {
             scenesController.FinishLoadingScene();
+            levelDebugging.gameObject.SetActive(true);
         }
 
         private void StartVibration()
