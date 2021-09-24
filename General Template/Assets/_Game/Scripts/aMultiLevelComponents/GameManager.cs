@@ -155,6 +155,6 @@ namespace GeneralTemplate
         {
             Vibration.Vibrate(200);
         }
+        
     }
-
 }
