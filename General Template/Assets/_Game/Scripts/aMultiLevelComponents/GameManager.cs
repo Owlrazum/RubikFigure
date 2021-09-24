@@ -4,8 +4,6 @@ using UnityEngine.SceneManagement;
 
 using DG.Tweening;
 
-using GeneralTemplate;
-
 namespace GeneralTemplate
 {
     public class GameManager : MonoBehaviour
@@ -19,20 +17,26 @@ namespace GeneralTemplate
             }
             else
             {
-                Destroy(multiSceneParent);
+                Destroy(multiLevelsParent);
             }
         }
 
         [SerializeField]
-        private GameObject multiSceneParent;
+        private LevelType levelType;
+        
+        [SerializeField]
+        private GameObject multiLevelsParent;
 
         private void Start()
         {
             Vibration.Init();
-            DontDestroyOnLoad(multiSceneParent);
+            if (levelType == LevelType.Scene)
+            {
+                DontDestroyOnLoad(multiLevelsParent);
+            }
         }
 
-        [Header("MultiSceneComponentsReferences")]
+        [Header("MultiLevelsComponentsReferences")]
         [Space]
         [SerializeField]
         private CamerasController camerasController;
@@ -42,6 +46,9 @@ namespace GeneralTemplate
 
         [SerializeField]
         private ScenesController scenesController;
+
+        [SerializeField]
+        private PrefabLevelsController prefabLevelsController;
 
         [Header("Debugging")]
         [Space]
@@ -105,21 +112,42 @@ namespace GeneralTemplate
 
             //result = GameResult.Defeat;
 
+
+            StartVibration();
             if (result == GameResult.Win)
             {
-                StartVibration();
-                scenesController.StartLoadingNextScene();
+                if (levelType == LevelType.Scene)
+                {
+                    scenesController.StartLoadingNextScene();
+                }
+                else
+                {
+                    prefabLevelsController.StartLoadingNextPrefab();
+                }
             }
             else
             {
-                StartVibration();
-                scenesController.StartReloadingCurrentScene(multiSceneParent);
+                if (levelType == LevelType.Scene)
+                {
+                    scenesController.StartReloadingCurrentScene(multiLevelsParent);
+                }
+                else
+                {
+                    prefabLevelsController.StartReloadingCurrentPrefab();
+                }
             }
         }
 
         public void ProcessNextLevelButtonDown()
         {
-            scenesController.FinishLoadingScene();
+            if (levelType == LevelType.Scene)
+            {
+                scenesController.FinishLoadingScene();
+            }
+            else
+            {
+                prefabLevelsController.FinishLoadingLevel();
+            }
             levelDebugging.gameObject.SetActive(true);
         }
 

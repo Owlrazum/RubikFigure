@@ -5,4 +5,10 @@ namespace GeneralTemplate
         Win,
         Defeat
     }
+
+    public enum LevelType
+    {
+        Prefab,
+        Scene
+    }
 }
