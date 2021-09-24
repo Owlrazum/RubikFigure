@@ -50,6 +50,9 @@ namespace GeneralTemplate
         [SerializeField]
         private PrefabLevelsController prefabLevelsController;
 
+        [SerializeField]
+        private AudioSource audioSource; 
+
         [Header("Debugging")]
         [Space]
         [SerializeField]
@@ -99,6 +102,11 @@ namespace GeneralTemplate
 
         #endregion
 
+        public void PlaySound(AudioClip clip)
+        {
+            audioSource.PlayOneShot(clip);
+        }
+
         public void EndGame(GameResult result)
         {
             userInterface.ProcessGameEnd(result);
@@ -137,6 +145,8 @@ namespace GeneralTemplate
                 }
             }
         }
+
+
 
         public void ProcessNextLevelButtonDown()
         {
