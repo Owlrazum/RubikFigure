@@ -101,7 +101,6 @@ namespace GeneralTemplate
         private void Update()
         {
             Move(directionOfMove);
-            transform.position -= fallTrans;
         }
     }
 
