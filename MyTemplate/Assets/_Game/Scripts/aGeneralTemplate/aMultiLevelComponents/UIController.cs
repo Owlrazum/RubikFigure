@@ -13,6 +13,9 @@ namespace GeneralTemplate
         [SerializeField]
         private Canvas startGameCanvas;
 
+        [SerializeField]
+        private Canvas joystickCanvas;
+
         [Header("EndGameCanvas")]
         [Space]
         [SerializeField]

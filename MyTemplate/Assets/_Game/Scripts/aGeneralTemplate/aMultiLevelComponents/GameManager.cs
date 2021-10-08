@@ -36,14 +36,8 @@ namespace GeneralTemplate
             }
         }
 
-        [Header("MultiLevelsComponentsReferences")]
+        [Header("GeneralTemplateComponents")]
         [Space]
-        [SerializeField]
-        private CamerasController camerasController;
-
-        [SerializeField]
-        private UIController userInterface;
-
         [SerializeField]
         private ScenesController scenesController;
 
@@ -51,26 +45,24 @@ namespace GeneralTemplate
         private PrefabLevelsController prefabLevelsController;
 
         [SerializeField]
-        private PlayerInput playerInput;
+        private UIController userInterface;
+
+        [SerializeField]
+        private VirtualCamerasController camerasController;
 
         [SerializeField]
         private ParticlesController particlesController;
 
         [SerializeField]
-        private AudioSource audioSource; 
+        private AudioSource audioSource;
 
-        [Header("Debugging")]
-        [Space]
-        [SerializeField]
-        private LevelDebugging levelDebugging;
+        //[Header("Debugging")]
+        //[Space]
+        //[SerializeField]
+        //private LevelDebugging levelDebugging;
 
-        private List<Enemy> enemies;
-        public void AssignEnemiesInstances(Transform enemiesParent)
-        {
-            var enemiesArray = enemiesParent.
-                GetComponentsInChildren<Enemy>(enemiesParent);
-            enemies = new List<Enemy>(enemiesArray);
-        }
+
+        // ========= Level Data HandOver =========
 
         private Player player;
         public void AssignPlayerInstance(Player playerArg)
@@ -78,9 +70,41 @@ namespace GeneralTemplate
             player = playerArg;
         }
 
-        public void AssignVirtualCamerasParent(Transform parent)
+        private List<Amorph> amorphs;
+        public void AssignAmorphsParent(Transform amorphsParent)
         {
-            camerasController.AssignCameras(parent);
+            var array = amorphsParent.GetComponentsInChildren<Amorph>();
+            amorphs = new List<Amorph>(array);
+        }
+
+        // -------- Uncomment what you need --------
+
+        //private List<Enemy> enemies;
+        //public void AssignEnemiesInstances(Transform enemiesParent)
+        //{
+        //    var array = enemiesParent.GetComponentsInChildren<Enemy>();
+        //    enemies = new List<Enemy>(array);
+        //}
+
+
+        //public void AssignVirtualCamerasParent(Transform parent)
+        //{
+        //    camerasController.AssignCameras(parent);
+        //}
+
+        // ========= End Levels HandOver =========
+
+        // ========= Custom Code =========
+
+
+        public void StartGame()
+        {
+            float angleDelta = 2 * Mathf.PI / amorphs.Count * Mathf.Rad2Deg;
+            for (int i = 0; i < amorphs.Count; i++)
+            {
+                float startingAngle = i * angleDelta;
+                amorphs[i].StartRotatingAroundPlayer(player.transform, startingAngle);
+            }
         }
 
         public void UpdatePlayerMovement(float inputX, float inputZ)
@@ -88,6 +112,15 @@ namespace GeneralTemplate
             player.UpdateMovementInput(inputX, inputZ);
         }
 
+        public void RotateAmorphs()
+        {
+            foreach (Amorph a in amorphs)
+            {
+                a.UpdateRotateAround();
+            }
+        }
+
+        // ========= End Customs =========
 
         #region SettingsAlternations
 
@@ -163,8 +196,6 @@ namespace GeneralTemplate
             }
         }
 
-
-
         public void ProcessNextLevelButtonDown()
         {
             if (levelType == LevelType.Scene)
@@ -175,7 +206,6 @@ namespace GeneralTemplate
             {
                 prefabLevelsController.FinishLoadingLevel();
             }
-            levelDebugging.gameObject.SetActive(true);
         }
 
         private void StartVibration()

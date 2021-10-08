@@ -16,6 +16,11 @@ public static class General
         GameManager.Singleton.AlternateSound();
     }
 
+    public static void StartGame()
+    {
+        GameManager.Singleton.StartGame();
+    }
+
     public static void EndLevel(GameResult result)
     {
         GameManager.Singleton.EndGame(result);

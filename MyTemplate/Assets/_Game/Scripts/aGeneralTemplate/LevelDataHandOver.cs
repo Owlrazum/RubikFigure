@@ -10,25 +10,37 @@ namespace GeneralTemplate
         private Player player;
 
         [SerializeField]
-        private Transform virtualCamerasParent;
+        private Transform amorphsParent;
 
-        [SerializeField]
-        private Transform enemiesParent;
+        // -------- Uncomment what you need --------
+
+        //[SerializeField]
+        //private Transform virtualCamerasParent;
+
+        //[SerializeField]
+        //private Transform enemiesParent;
 
 
         private void Start()
         {
             GameManager.Singleton.AssignPlayerInstance(player);
 
-            if (enemiesParent != null)
+            if (amorphsParent != null)
             {
-                GameManager.Singleton.AssignEnemiesInstances(enemiesParent);
+                GameManager.Singleton.AssignAmorphsParent(amorphsParent);
             }
 
-            if (virtualCamerasParent != null)
-            {
-                GameManager.Singleton.AssignVirtualCamerasParent(virtualCamerasParent);
-            }
+            //if (enemiesParent != null)
+            //{
+            //    GameManager.Singleton.AssignEnemiesInstances(enemiesParent);
+            //}
+
+            //if (virtualCamerasParent != null)
+            //{
+            //    GameManager.Singleton.AssignVirtualCamerasParent(virtualCamerasParent);
+            //}
+
+            GameManager.Singleton.StartGame();
         }
     }
 }

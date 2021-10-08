@@ -13,7 +13,6 @@ namespace GeneralTemplate
         private void Start()
         {
             sceneCount = SceneManager.sceneCountInBuildSettings;
-            print(sceneCount);
         }
 
         public void LoadSavedScene(int sceneIndexToTest = -1)

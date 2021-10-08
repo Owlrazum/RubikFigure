@@ -24,6 +24,11 @@
 
 //        private void InitializeAmplitude()
 //        {
+
+//            DO NOT DELETE BEFORE READING!!!  
+
+//            amplitude.init accepts specific id, should be created and pasted manually
+
 //            Amplitude amplitude = Amplitude.Instance;
 //            amplitude.setServerUrl("https://api2.amplitude.com");
 //            amplitude.logging = true;

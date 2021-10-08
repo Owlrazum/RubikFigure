@@ -5,7 +5,7 @@ using Cinemachine;
 
 namespace GeneralTemplate
 {
-    public class CamerasController : MonoBehaviour
+    public class VirtualCamerasController : MonoBehaviour
     {
         private Transform virtualCamerasParent;
 
