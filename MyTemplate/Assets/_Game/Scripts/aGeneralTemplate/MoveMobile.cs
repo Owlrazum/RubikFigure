@@ -12,11 +12,37 @@ namespace GeneralTemplate
         [SerializeField, Tooltip("Useful for not default orientations of camera")]
         private Vector3 rotationOffset;
 
+
+        [Header("SlopedGround")]
+        [Space]
+
+        [SerializeField]
+        [Tooltip("Turn on for global one direction slope for the movement. Look slopeOffset")]
+        private bool isSloped = false;
+
+        [SerializeField]
+        [Tooltip("Does not work perfectly, should be adjusted a little bit")]
+        private float slopeOffset = 0;
+
+        [SerializeField]
+        [Tooltip("forward vector of transform should not be sloped." +
+            "It will show direction at which climb up or climb down " +
+            "will happen")]
+        private Transform slopeTransform;
+
+        private Vector3 directionOfSlope;
+
         private void Awake()
         {
             initialForward = transform.forward;
             directionOfMove = transform.forward;
             rotationDirection = directionOfMove;
+
+            if (isSloped)
+            {
+                directionOfSlope = slopeTransform.forward;
+            }
+
             shouldMove = true;
         }
 
@@ -34,7 +60,7 @@ namespace GeneralTemplate
         float speedOfMove;
         public void UpdateMoveDirection(float moveX, float moveZ) // , bool isLocalSpace
         {
-            directionOfMove = Quaternion.Euler(0, 0, 0) * (new Vector3(moveX, 0, moveZ)).normalized;
+            directionOfMove = new Vector3(moveX, 0, moveZ).normalized;
             directionOfMove = Quaternion.Euler(rotationOffset) * directionOfMove;
             speedOfMove = new Vector3(moveX, 0, moveZ).magnitude;
         }
@@ -60,8 +86,25 @@ namespace GeneralTemplate
             {
                 return;
             }
+            if (isSloped)
+            {
+                Vector3 heightDeltaVector = Vector3.Project(directionOfMove, directionOfSlope);
+                float signOfHeightFactor = CustomMath.GetDotProdSign(directionOfMove, directionOfSlope);
+                float scaleOfHeightFactor = heightDeltaVector.magnitude;
+
+                float sinPart = Mathf.Sin(slopeOffset * Mathf.Deg2Rad);
+                float cosPart = Mathf.Cos(slopeOffset * Mathf.Deg2Rad);
+
+                directionOfMove *= cosPart; // scale without heighFactor;
+
+                float heightFactor = signOfHeightFactor * scaleOfHeightFactor * sinPart;
+
+                directionOfMove.y = heightFactor;
+                directionOfMove.Normalize();
+            }
             Vector3 movement = directionOfMove * moveSpeed * speedOfMove * Time.deltaTime;
-            transform.Translate(movement, Space.World);
+            Vector3 endPosition = transform.position + movement;
+            transform.position = endPosition;
             if (isRotating == false)
             {
                 if (rotationDirection != directionOfMove)
