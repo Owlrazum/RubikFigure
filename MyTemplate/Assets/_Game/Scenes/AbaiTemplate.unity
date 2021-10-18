@@ -466,7 +466,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   numberOfRows: 5
-  numberOfColumns: 5
+  numberOfColumns: 20
   triangleSize: 1
   widthBetween: 1
   gapBetweenRowsTri: 0.2
@@ -476,7 +476,7 @@ MonoBehaviour:
   gapBetweenColumns: 1
   hexagonSize: 1
   gapSize: 0.2
-  tilePrefab: {fileID: 5474858716305287829, guid: 265155043618841ab86cc9665ff4f1c9, type: 3}
+  tilePrefab: {fileID: 8991057488532832352, guid: a3106c198e43442cb8a06cdbe05db948, type: 3}
   parentForTiles: {fileID: 1685692191}
 --- !u!4 &729903354
 Transform:
@@ -546,14 +546,6 @@ PrefabInstance:
     - target: {fileID: 8991057488532832355, guid: a3106c198e43442cb8a06cdbe05db948, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8991057488532832381, guid: a3106c198e43442cb8a06cdbe05db948, type: 3}
-      propertyPath: isSloped
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8991057488532832381, guid: a3106c198e43442cb8a06cdbe05db948, type: 3}
-      propertyPath: slopeOffset
-      value: 45
       objectReference: {fileID: 0}
     - target: {fileID: 8991057488532832381, guid: a3106c198e43442cb8a06cdbe05db948, type: 3}
       propertyPath: slopeTransform

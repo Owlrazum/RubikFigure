@@ -192,22 +192,22 @@ namespace Generators
             // radius of inner circleOfHexagon can help understand
 
             float cos30 = Mathf.Cos(Mathf.PI / 6);
-            float cos45 = Mathf.Cos(Mathf.PI / 4);
 
-            float horizGapSize = gapSize / 2;  // cos 60
             float vertGapSize = cos30 * gapSize;
 
             float innerRadius = cos30 * hexagonSize;
-            float horizHexDisp = cos45 * innerRadius; // projection on X axis
-            Vector3 horizDisplacement = (horizHexDisp + horizGapSize + horizHexDisp) * Vector3.right;
+            float columnDistance = innerRadius + gapSize + innerRadius;
+            float horizHexDisp = columnDistance / 2; // projection on X axis
+            Vector3 horizDisplacement = horizHexDisp * Vector3.right;
 
-            Vector3 rowDisplacement = (hexagonSize + vertGapSize + hexagonSize) * Vector3.forward;
 
-            float vertHexDisp = cos45 * innerRadius; // projection on Z axis
+            float vertHexDisp = cos30 * innerRadius; // projection on Z axis
             float heightBetweenAdjacentHexagons = vertHexDisp + vertGapSize + vertHexDisp;
 
             Vector3 upDisplacement = heightBetweenAdjacentHexagons * Vector3.forward;
             Vector3 downDisplacement = -upDisplacement;
+
+            Vector3 rowDisplacement = upDisplacement * 2;
 
             Vector3 initTilePos =
                 -horizDisplacement * numberOfColumns / 2 +
@@ -217,6 +217,9 @@ namespace Generators
             Vector3 tilePos = initTilePos;
 
             Quaternion tileRot = Quaternion.identity;
+
+            // produces interesting result with hexagon mesh
+            //Quaternion tileRot = Quaternion.Euler(0, 90, 0); 
 
             bool shouldUp = true;
 
