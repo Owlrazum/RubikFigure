@@ -34,6 +34,24 @@ namespace GeneralTemplate
             {
                 DontDestroyOnLoad(multiLevelsParent);
             }
+
+
+        }
+
+        private void InitializeSettings()
+        {
+            bool isSound = PlayerPrefs.GetInt("Sound") > 1;
+            bool isHaptic = PlayerPrefs.GetInt("Haptic") > 1;
+
+            if (!isSound)
+            {
+                userInterface.ProcessSoundButtonDown();
+            }
+
+            if (isHaptic)
+            {
+                userInterface.ProcessHapticButtonDown();
+            }
         }
 
         [Header("GeneralTemplateComponents")]
@@ -95,6 +113,8 @@ namespace GeneralTemplate
         // ========= End Levels HandOver =========
 
         // ========= Custom Code =========
+
+        // TODO Add save to the settings;
 
 
         public void StartGame()

@@ -18,13 +18,9 @@ namespace CustomMechanics
             "Resulting vector should point to blue axis,\n" +
             "Bumping will happen to red axis." +
             "OnTriggerEnter should be modified to work")]
-        private string notesForUsage = "Should have exactly two children.\n" +
-            "They are used for computing direction of border.\n" +
-            "Resulting vector should point to blue axis,\n" +
-            "Bumping will happen to red axis." +
-            "OnTriggerEnter should be modified to work";
+        private string notesForUsage;
 
-        private void Start()
+        private void Awake()
         {
             if (transform.childCount != 2)
             {
@@ -33,6 +29,14 @@ namespace CustomMechanics
             Vector3 start = transform.GetChild(0).position;
             Vector3 end = transform.GetChild(1).position;
             Initialize(end - start);
+        }
+
+        private void Start()
+        {
+            if (notesForUsage != "See Tooltip")
+            {
+                notesForUsage = "See Tooltip";
+            }
         }
 
         private void Initialize(Vector3 directionArg)
