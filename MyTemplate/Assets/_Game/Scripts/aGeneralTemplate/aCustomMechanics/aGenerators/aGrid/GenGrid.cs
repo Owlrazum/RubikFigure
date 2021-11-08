@@ -150,8 +150,8 @@ namespace Generators
             Vector3 verticalDisplacement = scalarDeltaZ * Vector3.forward;
 
             Vector3 initTilePos =
-                -horizDisplacement * numberOfColumns / 2 +
-                -verticalDisplacement * numberOfRows / 2;
+                -(numberOfColumns / 2) * horizDisplacement +
+                -(numberOfRows / 2) * verticalDisplacement;
 
             Vector3 rowStartTilePos = initTilePos;
             Vector3 tilePos = initTilePos;
@@ -210,8 +210,8 @@ namespace Generators
             Vector3 rowDisplacement = upDisplacement * 2;
 
             Vector3 initTilePos =
-                -horizDisplacement * numberOfColumns / 2 +
-                -rowDisplacement * numberOfRows / 2;
+                 -(numberOfColumns / 2) * horizDisplacement +
+                -(numberOfRows / 2) * rowDisplacement;
 
             Vector3 rowStartTilePos = initTilePos;
             Vector3 tilePos = initTilePos;

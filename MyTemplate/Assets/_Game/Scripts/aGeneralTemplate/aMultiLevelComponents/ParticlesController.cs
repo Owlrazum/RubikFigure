@@ -25,7 +25,6 @@ public class ParticlesController : MonoBehaviour
             p.Stop();
         }
         p.transform.position = position;
-        p.gameObject.SetActive(true);
         p.Play();
         particles.Enqueue(p);
     }

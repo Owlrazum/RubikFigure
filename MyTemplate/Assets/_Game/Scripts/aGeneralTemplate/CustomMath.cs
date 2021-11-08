@@ -16,4 +16,14 @@ public static class CustomMath
     {
         return Mathf.Sign(Vector3.Dot(first, second));
     }
+
+    public static Vector3 RadianToVector2(float radian)
+    {
+        return new Vector3(Mathf.Cos(radian), 0, Mathf.Sin(radian));
+    }
+
+    public static Vector3 DegreeToVector2(float degree)
+    {
+        return RadianToVector2(degree * Mathf.Deg2Rad);
+    }
 }

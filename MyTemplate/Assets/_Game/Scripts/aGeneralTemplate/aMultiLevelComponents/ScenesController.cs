@@ -5,6 +5,9 @@ namespace GeneralTemplate
 {
     public class ScenesController : MonoBehaviour
     {
+        [SerializeField]
+        private bool shouldLoadSavedLevel = true;
+
         private int sceneCount;
         private bool areAllLevelsPassed;
 
@@ -14,9 +17,13 @@ namespace GeneralTemplate
         {
             sceneCount = SceneManager.sceneCountInBuildSettings;
         }
-
+        
         public void LoadSavedScene(int sceneIndexToTest = -1)
         {
+            if (!shouldLoadSavedLevel)
+            {
+                return;
+            }
             int lastLevel = SaveSystem.GetInt("LastLevel");
             if (sceneIndexToTest >= 0)
             {
@@ -89,6 +96,11 @@ namespace GeneralTemplate
         public void FinishLoadingScene()
         {
             loadingScene.allowSceneActivation = true;
+        }
+
+        public int GetCurrentLevelIndex()
+        {
+            return SceneManager.GetActiveScene().buildIndex;
         }
     }
 }

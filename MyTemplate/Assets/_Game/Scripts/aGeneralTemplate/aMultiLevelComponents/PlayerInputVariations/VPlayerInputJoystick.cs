@@ -4,7 +4,11 @@ using UnityEngine;
 
 namespace GeneralTemplate
 {
-    public class PlayerInput : MonoBehaviour
+    /// <summary>
+    /// If needed, use contents of this class in player input controller.
+    /// Non intended to use as it is.
+    /// </summary>
+    public class VPlayerInputJoystick : MonoBehaviour
     {
         [SerializeField]
         private FixedJoystick joystick;

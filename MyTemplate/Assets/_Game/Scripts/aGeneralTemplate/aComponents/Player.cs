@@ -21,8 +21,17 @@ namespace GeneralTemplate
             animationComponent.State = AnimationState.Idle;
         }
 
+        // Process win or defeat. Not implemented.
         public void ProcessGameEnd(GameResult result)
         {
+            switch (result)
+            {
+                case GameResult.Win:
+                    break;
+                case GameResult.Defeat:
+                    break;
+            }
+
             throw new NotImplementedException();
         }
 

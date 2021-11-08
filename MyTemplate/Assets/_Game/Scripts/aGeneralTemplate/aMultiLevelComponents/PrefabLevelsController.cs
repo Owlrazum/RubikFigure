@@ -5,6 +5,15 @@ namespace GeneralTemplate
 {
     public class PrefabLevelsController : MonoBehaviour
     {
+        [SerializeField]
+        private List<GameObject> levels;
+
+        [SerializeField]
+        private Transform levelsParent;
+
+        [SerializeField]
+        private bool shouldLoadSavedLevel = true;
+
         private int levelCount;
         private bool areAllLevelsPassed;
         private int currentLevelIndex;
@@ -12,29 +21,31 @@ namespace GeneralTemplate
         private GameObject loadingLevel;
         private GameObject currentLevel;
 
-        [SerializeField]
-        private List<GameObject> levels;
-
-        [SerializeField]
-        private Transform levelsParent;
-
         private void Start()
         {
             levelCount = levels.Count;
             currentLevelIndex = 0;
-            if (levelsParent.transform.childCount != 1)
-            {
-                Debug.LogError("Current implementation supports only one child of levelsParent at startApp");
-            }
-            currentLevel = levelsParent.transform.GetChild(0).gameObject;
         }
 
-        public void LoadSavedScene(int sceneIndexToTest = -1)
+        public int GetCurrentLevelIndex()
         {
-            int lastLevelIndex = SaveSystem.GetInt("LastLevel");
-            if (sceneIndexToTest >= 0)
+            return currentLevelIndex;
+        }
+
+        public void LoadSavedLevel(int levelIndexToTest = -1)
+        {
+            if (!shouldLoadSavedLevel)
             {
-                lastLevelIndex = sceneIndexToTest;
+                return;
+            }
+            if (levelsParent.childCount > 0)
+            {
+                return;
+            }
+            int lastLevelIndex = SaveSystem.GetInt("LastLevel");
+            if (levelIndexToTest >= 0)
+            {
+                lastLevelIndex = levelIndexToTest - 1;
             }
             currentLevel = Instantiate(levels[lastLevelIndex], levelsParent);
             currentLevelIndex = lastLevelIndex;
@@ -48,7 +59,6 @@ namespace GeneralTemplate
             if (nextLevelIndex >= levelCount)
             {
                 areAllLevelsPassed = true;
-                print("ch2");
             }
             if (!areAllLevelsPassed)
             {
@@ -79,7 +89,6 @@ namespace GeneralTemplate
             if (levelCount - 1 <= 1)
             {
                 result = 0;
-                print("ch");
             }
             if (result >= currentLevelIndex)
             {

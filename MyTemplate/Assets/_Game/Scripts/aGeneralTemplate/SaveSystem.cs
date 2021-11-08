@@ -2,6 +2,9 @@ using UnityEngine;
 
 namespace GeneralTemplate
 {
+    /// <summary>
+    /// Needs rethinking or redesign. Maybe.
+    /// </summary>
     public static class SaveSystem
     {
         public static void SetBool(string key, bool value)
