@@ -39,7 +39,6 @@ namespace GeneralTemplate
             {
                 areAllLevelsPassed = true;
             }
-            print(nextSceneIndex);
             if (!areAllLevelsPassed)
             {
                 if (sceneIndexToTest >= 0)

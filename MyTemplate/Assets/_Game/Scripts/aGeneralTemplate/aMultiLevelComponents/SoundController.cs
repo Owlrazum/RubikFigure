@@ -80,11 +80,13 @@ namespace GeneralTemplate
         public void PlaySoundTurnOn()
         {
             turnOnSound.Play();
+            print("SoundTurnOn");
         }
 
         public void PlayWinSound()
         {
             winSound.Play();
+            print("WinSOund");
         }
     }
 }

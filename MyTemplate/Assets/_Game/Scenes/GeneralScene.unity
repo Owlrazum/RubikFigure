@@ -161,14 +161,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   levelType: 0
   multiLevelsParent: {fileID: 597305859762357410}
-  camerasController: {fileID: 597305859518499529}
-  userInterface: {fileID: 597305859207631170}
   scenesController: {fileID: 1917262222}
   prefabLevelsController: {fileID: 2070235709}
-  playerInput: {fileID: 12}
+  playerInputController: {fileID: 0}
+  userInterface: {fileID: 597305859207631170}
+  camerasController: {fileID: 597305859518499529}
   particlesController: {fileID: 13}
-  audioSource: {fileID: 597305859219642518}
-  levelDebugging: {fileID: 0}
+  soundController: {fileID: 0}
+  vibrationController: {fileID: 0}
+  customMessage: Is it custom baby?
 --- !u!4 &953208829 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2980905147466415108, guid: bf9dff94e650047719d65c4fa9de39c3, type: 3}
@@ -5101,7 +5102,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 0
+  m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 45, y: 0, z: 0}
 --- !u!114 &1687258586
 MonoBehaviour:
@@ -5164,6 +5165,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0256cb1063996491e8fbc7369bf176d5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  shouldLoadSavedLevel: 1
 --- !u!4 &1917262223
 Transform:
   m_ObjectHideFlags: 0
@@ -5245,6 +5247,7 @@ MonoBehaviour:
   - {fileID: 4826797799721595914, guid: 509a46666e7374280aeac9d1543fae02, type: 3}
   - {fileID: 4826797799721595914, guid: fdf239a99423e471a8a3b8a95670ae76, type: 3}
   levelsParent: {fileID: 1969210530}
+  shouldLoadSavedLevel: 1
 --- !u!1 &2137138262
 GameObject:
   m_ObjectHideFlags: 0
@@ -5309,7 +5312,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 3
+  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2138677391
 GameObject:
@@ -5402,7 +5405,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 1
+  m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 45, y: 130, z: 90}
 --- !u!4 &21482284695088045
 Transform:
@@ -7097,7 +7100,7 @@ Transform:
   - {fileID: 2663362000394348335}
   - {fileID: 597305859219642517}
   m_Father: {fileID: 0}
-  m_RootOrder: 2
+  m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!222 &597305859763029425
 CanvasRenderer:

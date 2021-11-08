@@ -9,7 +9,10 @@ namespace GeneralTemplate
     /// Base functionality of UIController.
     /// There are children of this class, in UIControllerVariations folder.
     /// Derive and override necessary methods if the game is a usual hyperCash.
-    /// Write your own class in case the game is unusual or not a hyperCash. 
+    /// Write your own class in case the game is unusual or not a hyperCash.
+    /// TODO: make classes for each canvas, so serialized field reassigning
+    /// will be minimised. Or just make prefab variants.
+    /// 
     /// </summary>
     public class UIControllerBase : MonoBehaviour
     {
@@ -38,10 +41,10 @@ namespace GeneralTemplate
         private Image soundOffImage;
 
         [SerializeField]
-        private Image hapticOnImage;
+        private Image vibrateOnImage;
 
         [SerializeField]
-        private Image hapticOffImage;
+        private Image vibrateOffImage;
         #endregion 
 
         #region BuildDebugging
@@ -58,7 +61,7 @@ namespace GeneralTemplate
 
         private void Start()
         {
-            shouldPresentHapticOn = true;
+            shouldPresentVibrationOn = true;
             shouldPresentSoundOn = true;
 
             logAmount = 0;
@@ -161,34 +164,34 @@ namespace GeneralTemplate
         // =========   EndSound   =========
 
 
-        // =========   Haptic   =========
+        // =========   Vibration   =========
 
-        private bool shouldPresentHapticOn;
-        public void ProcessHapticButtonDown()
+        private bool shouldPresentVibrationOn;
+        public void ProcessVibrationButtonDown()
         {
             GameManager.Singleton.AlternateHaptic();
-            shouldPresentHapticOn = !shouldPresentHapticOn;
-            UpdateHapticUI();
+            shouldPresentVibrationOn = !shouldPresentVibrationOn;
+            UpdateVibrationUI();
         }
 
-        private void UpdateHapticUI()
+        private void UpdateVibrationUI()
         {
-            if (shouldPresentHapticOn)
+            if (shouldPresentVibrationOn)
             {
-                hapticOnImage.gameObject.SetActive(true);
-                hapticOffImage.gameObject.SetActive(false);
+                vibrateOnImage.gameObject.SetActive(true);
+                vibrateOffImage.gameObject.SetActive(false);
             }
             else
             {
-                hapticOnImage.gameObject.SetActive(false);
-                hapticOffImage.gameObject.SetActive(true);
+                vibrateOnImage.gameObject.SetActive(false);
+                vibrateOffImage.gameObject.SetActive(true);
             }
         }
 
-        public void SetHapticPresentation(bool shouldPresentHapticOnArg)
+        public void SetVibrationPresentation(bool shouldPresentHapticOnArg)
         {
-            shouldPresentHapticOn = shouldPresentHapticOnArg;
-            UpdateHapticUI();
+            shouldPresentVibrationOn = shouldPresentHapticOnArg;
+            UpdateVibrationUI();
         }
 
         // =========   EndHaptic   =========

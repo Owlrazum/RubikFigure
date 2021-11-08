@@ -21,8 +21,6 @@ namespace GeneralTemplate
 
         public void StartRotatingAroundPlayer(Transform playerTransform, float startingAngleDegrees = 0)
         {
-            print("roation");
-
             isRotatingAround = true;
             player = playerTransform;
             currentAngle = startingAngleDegrees;

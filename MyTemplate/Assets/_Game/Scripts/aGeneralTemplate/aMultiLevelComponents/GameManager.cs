@@ -3,8 +3,10 @@ using UnityEngine;
 
 namespace GeneralTemplate
 {
-    // TODO Decide EndGame method
     // TODO Decide whether ParticlesController should use ObjectPool;
+    // TODO Custom Mechanics, remove from project and make packages. Or do not.
+
+    // TODO Update scenes L1 L2, add prefabs (eg LevelDataHandover)
 
     // Perhaps there is more to be taken from the saw.
 
@@ -60,7 +62,7 @@ namespace GeneralTemplate
             userInterface.SetSoundPresentation(hasSound);
 
             vibrationController.IsAllowedToVibrate = isHaptic;
-            userInterface.SetHapticPresentation(isHaptic);
+            userInterface.SetVibrationPresentation(isHaptic);
         }
 
         [Header("GeneralTemplateComponents")]
@@ -123,7 +125,10 @@ namespace GeneralTemplate
             hasSound = !hasSound;
             PlayerPrefs.SetInt("Sound", hasSound ? 0 : 1);
             soundController.ShouldProduceSound = hasSound;
-            soundController.PlaySoundTurnOn();
+            if (hasSound)
+            {
+                soundController.PlaySoundTurnOn();
+            }
         }
 
         #endregion

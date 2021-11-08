@@ -942,6 +942,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Confettiplane
       objectReference: {fileID: 0}
+    - target: {fileID: 8963573073410734937, guid: 3db9d9172044b48b1b40b8b6a3e94e6f, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 3db9d9172044b48b1b40b8b6a3e94e6f, type: 3}
 --- !u!4 &1246994269 stripped
@@ -949,6 +953,17 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 8991057488532832355, guid: a3106c198e43442cb8a06cdbe05db948, type: 3}
   m_PrefabInstance: {fileID: 773234992}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1265066132 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2573423534126765479, guid: ba0c99a0df5d84fa6bbf40cf409a7ae1, type: 3}
+  m_PrefabInstance: {fileID: 2558708999929570473}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 45977bbae16431c46a013576a1aea384, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1334143160
 GameObject:
   m_ObjectHideFlags: 0
@@ -1968,10 +1983,10 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 2558708998616562983, guid: ba0c99a0df5d84fa6bbf40cf409a7ae1, type: 3}
-      propertyPath: shouldLoadSavedLevel
-      value: 0
-      objectReference: {fileID: 0}
+    - target: {fileID: 2558708999929570469, guid: ba0c99a0df5d84fa6bbf40cf409a7ae1, type: 3}
+      propertyPath: joystick
+      value: 
+      objectReference: {fileID: 1265066132}
     - target: {fileID: 3154862543575490570, guid: ba0c99a0df5d84fa6bbf40cf409a7ae1, type: 3}
       propertyPath: m_RootOrder
       value: 0
@@ -2019,10 +2034,6 @@ PrefabInstance:
     - target: {fileID: 3154862543575490571, guid: ba0c99a0df5d84fa6bbf40cf409a7ae1, type: 3}
       propertyPath: m_Name
       value: MutliLevelsParent
-      objectReference: {fileID: 0}
-    - target: {fileID: 4424288688792669499, guid: ba0c99a0df5d84fa6bbf40cf409a7ae1, type: 3}
-      propertyPath: shouldLoadSavedLevel
-      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: ba0c99a0df5d84fa6bbf40cf409a7ae1, type: 3}
