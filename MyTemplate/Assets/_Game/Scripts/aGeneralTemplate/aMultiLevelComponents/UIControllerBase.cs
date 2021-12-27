@@ -96,7 +96,7 @@ namespace GeneralTemplate
         public virtual void ProcessNextLevelButtonDown()
         {
             endLevelCanvas.gameObject.SetActive(false);
-            GameManager.Singleton.ProcessNextLevelButtonDown();
+            //GameManager.Singleton.ProcessNextLevelButtonDown();
         }
 
         // May be used to process scenarios where either win or defeat can happen.

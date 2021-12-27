@@ -19,7 +19,7 @@ namespace GeneralTemplate
             GameManager.Singleton.UpdatePlayerMovement(joystick.Horizontal, joystick.Vertical);
             if (Input.GetKeyDown(KeyCode.E))
             {
-                GameManager.Singleton.EndCurrentLevel();
+                //GameManager.Singleton.EndCurrentLevel();
             }
         }
 
