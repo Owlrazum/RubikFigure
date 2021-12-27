@@ -36,8 +36,6 @@ namespace GeneralTemplate
         // Generally, you should not modify General Code section.
 
         // ========= General Code =========
-        #region SerializedFields, UnityEvent methods, Singleton
-
         public static GameManager Singleton;
         private void Awake()
         {
@@ -124,8 +122,6 @@ namespace GeneralTemplate
         //    userInterface.DebugLogBuild(log);
         //}
 
-        #endregion
-
         #region SettingsAlternations
 
         private bool isHaptic;
@@ -151,77 +147,6 @@ namespace GeneralTemplate
 
         #endregion
 
-        #region LevelEndLogic
-        public void EndCurrentLevel()
-        {
-            userInterface.ProcessLevelEnd();
-
-            vibrationController.Vibrate();
-            soundController.PlayWinSound();
-
-            if (levelType == LevelType.Scene)
-            {
-                scenesController.StartLoadingNextScene();
-            }
-            else
-            {
-                prefabLevelsController.StartLoadingNextPrefab();
-            }
-        }
-
-        public void ProcessNextLevelButtonDown()
-        {
-            if (levelType == LevelType.Scene)
-            {
-                SaveSystem.SetInt
-                    ("LastLevel", scenesController.GetCurrentLevelIndex());
-                scenesController.FinishLoadingScene();
-            }
-            else
-            {
-                SaveSystem.SetInt
-                    ("LastLevel", prefabLevelsController.GetCurrentLevelIndex());
-                prefabLevelsController.FinishLoadingLevel();
-            }
-        }
-        #endregion
-
-        #region OnApplicationQuit & Focus
-        /// <summary>
-        /// Did not work one time,
-        /// therefore LastLevel PlayerPref is writed on each level
-        /// </summary>
-        private void OnApplicationFocus(bool focus)
-        {
-            if (!focus)
-            {
-                if (levelType == LevelType.Scene)
-                {
-                    SaveSystem.SetInt
-                        ("LastLevel", scenesController.GetCurrentLevelIndex());
-                }
-                else if (levelType == LevelType.Prefab)
-                {
-                    SaveSystem.SetInt
-                        ("LastLevel", prefabLevelsController.GetCurrentLevelIndex());
-                }
-            }
-        }
-
-        private void OnApplicationQuit()
-        {
-            if (levelType == LevelType.Scene)
-            {
-                SaveSystem.SetInt
-                    ("LastLevel", prefabLevelsController.GetCurrentLevelIndex());
-            }
-            else if (levelType == LevelType.Prefab)
-            {
-                SaveSystem.SetInt
-                    ("LastLevel", scenesController.GetCurrentLevelIndex());
-            }
-        }
-        #endregion
         // ========= End Generals =========
 
 
@@ -279,7 +204,9 @@ namespace GeneralTemplate
                 a.UpdateRotateAround();
             }
         }
+        #endregion
 
+        #region Impressions
         public void PlaySound()
         {
             soundController.StartPlayingSoundFromSource1();
@@ -289,66 +216,6 @@ namespace GeneralTemplate
         {
             particlesController.PlayParticles(position);
         }
-        #endregion
-
-        // ========= End Customs =========
-
-
-        // Commented methods that may or may not used.
-
-        // List of methods:
-        // public void EndGame(GameResult result);
-        // public void AssignEnemiesInstances(Transform enemiesParent);
-        // public void AssignVirtualCamerasParent(Transform camerasParent);
-        #region TemplatesForMethods
-
-        //private List<Enemy> enemies;
-        //public void AssignEnemiesInstances(Transform enemiesParent)
-        //{
-        //    var array = enemiesParent.GetComponentsInChildren<Enemy>();
-        //    enemies = new List<Enemy>(array);
-        //}
-
-        //public void AssignVirtualCamerasParent(Transform camerasParent)
-        //{
-        //    camerasController.AssignCameras(parent);
-        //}
-
-        //public void EndGame(GameResult result)
-        //{
-        //    userInterface.ProcessGameEnd(result);
-
-        //    if (player != null)
-        //    {
-        //        player.ProcessGameEnd(result);
-        //    }
-
-        //    vibrationController.Vibrate();
-        //    soundController.PlayWinSound();
-
-        //    if (result == GameResult.Win)
-        //    {
-        //        if (levelType == LevelType.Scene)
-        //        {
-        //            scenesController.StartLoadingNextScene();
-        //        }
-        //        else
-        //        {
-        //            prefabLevelsController.StartLoadingNextPrefab();
-        //        }
-        //    }
-        //    else
-        //    {
-        //        if (levelType == LevelType.Scene)
-        //        {
-        //            scenesController.StartReloadingCurrentScene(multiLevelsParent);
-        //        }
-        //        else
-        //        {
-        //            prefabLevelsController.StartReloadingCurrentPrefab();
-        //        }
-        //    }
-        //}
         #endregion
     }
 }
