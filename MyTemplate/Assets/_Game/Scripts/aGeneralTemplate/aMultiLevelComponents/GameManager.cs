@@ -8,9 +8,27 @@ namespace GeneralTemplate
 
     // TODO Update scenes L1 L2, add prefabs (eg LevelDataHandover)
 
+    // TODO Make a virtual class for fading animations.
+
+    // TODO Generalize vibrationController.
+
     // Perhaps there is more to be taken from the saw.
 
     // Tip: There is a confetti plane in the main camera.
+
+
+    // TODO Take from GameManager of chainsaw
+
+    // TODO Export package with the clients and ordering phase.
+
+    // TODO make a patterns text somewhere, DoRotateSequence after each stage.
+
+
+    // BIG General TODO: Separate gameplay logic from GameManager. Make Hiearchy of Singletons,
+    // where GameManager is accesible only from gameplay managers. Each Manager should have its
+    // Singleton. Gameplay dependent systems should be accesisble from gameplay managers,
+    // but not from GameManager.
+
 
     public class GameManager : MonoBehaviour
     {
@@ -80,7 +98,7 @@ namespace GeneralTemplate
         private UIControllerBase userInterface;
 
         [SerializeField]
-        private VirtualCamerasController camerasController;
+        private CameraController camerasController;
 
         [SerializeField]
         private ParticlesController particlesController;

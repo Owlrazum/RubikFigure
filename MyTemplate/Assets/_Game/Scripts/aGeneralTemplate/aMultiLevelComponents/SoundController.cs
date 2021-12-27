@@ -7,6 +7,8 @@ namespace GeneralTemplate
     /// <summary>
     /// There should be multiple AudioSources as children of the this transform.
     /// If needed, for each AudioSource there can be mutliple AudioClips.
+    ///
+    /// Start and stop looping sound worked good in chainsaw.
     /// </summary>
     public class SoundController : MonoBehaviour
     {

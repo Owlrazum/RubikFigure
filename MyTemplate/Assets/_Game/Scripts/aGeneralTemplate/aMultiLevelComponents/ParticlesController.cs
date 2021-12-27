@@ -28,4 +28,10 @@ public class ParticlesController : MonoBehaviour
         p.Play();
         particles.Enqueue(p);
     }
+
+    // A pattern from chainsaw:
+    // Change particle type,
+    // StartPlaying,
+    // Update Position,
+    // Stop Playing.
 }

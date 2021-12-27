@@ -120,6 +120,8 @@ namespace GeneralTemplate
             }
         }
 
+
+        // TODO Needs update. targetRotation is used improperly;
         private void RotateTo(Vector3 from, Vector3 to, bool isGradual = false)
         {
             Quaternion targetRotation = Quaternion.LookRotation(to, Vector3.up);

@@ -109,3 +109,49 @@ namespace GeneralTemplate
         }
     }
 }
+
+// More simple version down here.
+
+/*
+ * [SerializeField]
+        private List<GameObject> levels;
+
+        [SerializeField]
+        private Transform levelsParent;
+
+        private int currentLevelIndex;
+
+        private GameObject currentLevel;
+
+        public string GetLevelName(int index)
+        {
+            return levels[index % levels.Count].name;
+        }
+
+        public void LoadLevel(int index)
+        {
+            if (currentLevel != null)
+            {
+                currentLevel.SetActive(false);
+                Destroy(currentLevel);
+            }
+            currentLevel = Instantiate(levels[index % levels.Count], levelsParent);
+            currentLevelIndex = index;
+        }
+
+        public void UnloadCurrentLevel()
+        {
+            if (currentLevel == null)
+            {
+                Debug.LogError("NoCurrentLevel to Unloads!");
+                return;
+            }
+
+            Destroy(currentLevel);
+        }
+
+        public int GetCurrentLevelIndex()
+        {
+            return currentLevelIndex;
+        }
+ */
