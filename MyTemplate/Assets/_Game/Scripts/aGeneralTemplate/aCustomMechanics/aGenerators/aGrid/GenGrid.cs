@@ -52,11 +52,6 @@ namespace Generators
         [SerializeField]
         private Transform parentForTiles;
 
-        private void Start()
-        {
-            GenerateHexagonalGrid(transform.position);
-        }
-
         public void GenerateTriangularGrid(Vector3 gridPos)
         {
             List<List<Tile>> tiles = new List<List<Tile>>();
@@ -142,6 +137,7 @@ namespace Generators
 
         public void GenerateSquareGrid(Vector3 gridPos)
         {
+            print("Generating");
             List<List<Tile>> tiles = new List<List<Tile>>();
 
             float scalarDeltaX = squareSize + gapBetweenColumns;
@@ -149,9 +145,17 @@ namespace Generators
             Vector3 horizDisplacement = scalarDeltaX * Vector3.right;
             Vector3 verticalDisplacement = scalarDeltaZ * Vector3.forward;
 
+            Vector3 initialHorizDisp = scalarDeltaX / 2 * -Vector3.right;
+            Vector3 initialVertDisp  = scalarDeltaZ / 2 * -Vector3.forward;
+            if (numberOfRows % 2 == 1)
+            {
+                initialHorizDisp = -horizDisplacement;
+                initialVertDisp  = -verticalDisplacement;
+            }
+
             Vector3 initTilePos =
-                -(numberOfColumns / 2) * horizDisplacement +
-                -(numberOfRows / 2) * verticalDisplacement;
+                -(numberOfColumns / 2 - 1) * horizDisplacement + initialHorizDisp +
+            -(numberOfRows / 2 - 1) * verticalDisplacement + initialVertDisp;
 
             Vector3 rowStartTilePos = initTilePos;
             Vector3 tilePos = initTilePos;
@@ -184,7 +188,7 @@ namespace Generators
         /// 
         /// </summary>
         /// <param name="gridPos"></param>
-        /// <link="https://www.redblobgames.com/grids/hexagons/#coordinates></link>
+        /// <link="https://www.redblobgames.com/grids/hexagons/#coordinates"></link>
         public void GenerateHexagonalGrid(Vector3 gridPos)
         {
             List<List<Tile>> tiles = new List<List<Tile>>();
