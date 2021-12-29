@@ -14,8 +14,8 @@ public static class CustomAlgorithms
             int j = Random.Range(0, i + 1);
 
             T value = list[j];
-            list[j] = list[n];
-            list[n] = value;
+            list[j] = list[i];
+            list[i] = value;
         }
     }
 }
