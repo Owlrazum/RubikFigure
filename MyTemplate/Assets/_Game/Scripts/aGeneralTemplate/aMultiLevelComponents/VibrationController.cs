@@ -12,7 +12,7 @@ public class VibrationController : MonoBehaviour
     [Space]
     [SerializeField]
     [Tooltip("In milliseconds")]
-    private int vibrationTime = 50;
+    private const int vibrationTime = 50;
 
     [Header("Custom Vibrations")]
     [Space]
@@ -20,7 +20,7 @@ public class VibrationController : MonoBehaviour
     private string differentiateFields;
 
     [Serializable]
-    private struct VibrationData
+    public struct VibrationData
     {
         public int vibrationTime;
         public int pauseTime;
@@ -73,7 +73,7 @@ public class VibrationController : MonoBehaviour
         }
     }
 
-    public void Vibrate()
+    public void Vibrate(int vibrationTimeArg = vibrationTime)
     {
         if (!IsAllowedToVibrate)
         {
@@ -82,8 +82,23 @@ public class VibrationController : MonoBehaviour
         Vibration.Vibrate(vibrationTime);
     }
 
-    private long[] firstVibrationPattern;
-    private long[] secondVibrationPattern;
+    public void StopVibration()
+    {
+        if (isVibrating)
+        { 
+            Vibration.Cancel();
+            OnNextFrameFalseIsVibrating();
+        }
+    }
+
+    private IEnumerator OnNextFrameFalseIsVibrating()
+    {
+        yield return null;
+        isVibrating = false;
+    }
+
+    private VibrationPattern firstVibrationPattern;
+    private VibrationPattern secondVibrationPattern;
 
     private void Awake()
     {
@@ -95,33 +110,19 @@ public class VibrationController : MonoBehaviour
 
     private void InitializeFirstVibrationPattern()
     {
-        firstVibrationPattern = new long[1 + firstVibrationPatternData.Count * 2];
-        firstVibrationPattern[0] = firstStartDelay;
-
-        int index = 1;
-        for (int i = 0; i < firstVibrationPatternData.Count; i++)
-        {
-            firstVibrationPattern[index++] = firstVibrationPatternData[i].vibrationTime;
-            firstVibrationPattern[index++] = firstVibrationPatternData[i].pauseTime;
-        }
+        firstVibrationPattern = new VibrationPattern
+            (firstStartDelay, firstVibrationPatternData, shouldRepeatFirstPattern);
     }
 
     private void InitializeSecondVibrationPattern()
     {
-        secondVibrationPattern = new long[1 + secondVibrationPatternData.Count * 2];
-        secondVibrationPattern[0] = secondStartDelay;
-
-        int index = 1;
-        for (int i = 0; i < secondVibrationPatternData.Count; i++)
-        {
-            secondVibrationPattern[index++] = secondVibrationPatternData[i].vibrationTime;
-            secondVibrationPattern[index++] = secondVibrationPatternData[i].pauseTime;
-        }
+        secondVibrationPattern = new VibrationPattern
+            (secondStartDelay, secondVibrationPatternData, shouldRepeatSecondPattern);
     }
 
     private bool isVibrating;
 
-    public void OnFirstVibration()
+    public void OnFirstPattern()
     {
         if (!IsAllowedToVibrate)
         {
@@ -131,32 +132,11 @@ public class VibrationController : MonoBehaviour
         if (!isVibrating)
         {
             isVibrating = true;
-            Vibration.Vibrate(firstVibrationPattern, shouldRepeatFirstPattern ? 0 : -1);
+            firstVibrationPattern.StartPlaying();
         }
     }
 
-    public void OnCuttingVibration()
-    {
-        if (!IsAllowedToVibrate)
-        {
-            return;
-        }
-
-        if (isVibrating)
-        {
-            StartCoroutine(OnNextFrameFalseIsVibrating());
-            Vibration.Cancel();
-        }
-    }
-
-
-    private IEnumerator OnNextFrameFalseIsVibrating()
-    {
-        yield return null;
-        isVibrating = false;
-    }
-
-    public void StartFailVibration()
+    public void OnSecondPattern()
     {
         if (!IsAllowedToVibrate)
         {
@@ -166,21 +146,7 @@ public class VibrationController : MonoBehaviour
         if (!isVibrating)
         {
             isVibrating = true;
-            Vibration.Vibrate(secondVibrationPattern, shouldRepeatSecondPattern ? 0 : -1);
-        }
-    }
-
-    public void StopFailVibration()
-    {
-        if (!IsAllowedToVibrate)
-        {
-            return;
-        }
-
-        if (isVibrating)
-        {
-            StartCoroutine(OnNextFrameFalseIsVibrating());
-            Vibration.Cancel();
+            secondVibrationPattern.StartPlaying();
         }
     }
 }

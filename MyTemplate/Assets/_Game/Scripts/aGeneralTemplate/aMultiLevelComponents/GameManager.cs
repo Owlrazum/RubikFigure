@@ -16,19 +16,11 @@ namespace GeneralTemplate
 
     // Tip: There is a confetti plane in the main camera.
 
-
-    // TODO Take from GameManager of chainsaw
-
     // TODO Export package with the clients and ordering phase.
 
     // TODO make a patterns text somewhere, DoRotateSequence after each stage.
 
-
-    // BIG General TODO: Separate gameplay logic from GameManager. Make Hiearchy of Singletons,
-    // where GameManager is accesible only from gameplay managers. Each Manager should have its
-    // Singleton. Gameplay dependent systems should be accesisble from gameplay managers,
-    // but not from GameManager.
-
+    // TODO Implement an EventContainer instead of layered architecture, because events are more fitted to our case.
 
     public class GameManager : MonoBehaviour
     {
