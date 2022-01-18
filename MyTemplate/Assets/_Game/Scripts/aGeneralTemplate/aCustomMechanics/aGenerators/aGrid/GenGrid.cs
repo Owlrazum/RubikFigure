@@ -8,7 +8,7 @@ namespace Generators
 {
     public class GenGrid : MonoBehaviour
     {
-        [Header("GridParameters")]
+        [Header("TwoDimensionalGridSize")]
         [Space]
         [SerializeField]
         private int numberOfRows;
@@ -45,12 +45,25 @@ namespace Generators
         [SerializeField]
         private float gapSize = 0.2f;
 
+        [Header("CircularParameters")]
+        [Space]
+        [SerializeField]
+        private int numberOfTilesInOuterCirc = 5;
+
+        [SerializeField]
+        private float totalRadius = 1;
+
+        [SerializeField]
+        private float numberOfLayersCirc = 1;
+
         [Header("Tile")]
         [Space]
         [SerializeField]
         private GameObject tilePrefab;
         [SerializeField]
         private Transform parentForTiles;
+
+        #region Two Dimensional Grid
 
         public void GenerateTriangularGrid(Vector3 gridPos)
         {
@@ -135,7 +148,7 @@ namespace Generators
             }
         }
 
-        public void GenerateSquareGrid(Vector3 gridPos)
+        public List<List<Tile>> GenerateSquareGrid(Vector3 gridPos)
         {
             print("Generating");
             List<List<Tile>> tiles = new List<List<Tile>>();
@@ -182,6 +195,8 @@ namespace Generators
                 tilePos += verticalDisplacement;
                 rowStartTilePos = tilePos;
             }
+
+            return tiles;
         }
 
         /// <summary>
@@ -253,5 +268,60 @@ namespace Generators
                 shouldUp = true;
             }
         }
+        #endregion
+
+        public List<List<Tile>> GenerateCircularGrid(Vector3 gridPos)
+        {
+            List<List<Tile>> tiles = new List<List<Tile>>();
+            float radiusDelta = totalRadius / numberOfLayersCirc;
+            float angleDeltaOuter = 2 * Mathf.PI / numberOfTilesInOuterCirc;
+            float arcLengthOuter = totalRadius * angleDeltaOuter;
+
+            float layerRadius = totalRadius;
+            
+            for (int layer = 0; layer < numberOfLayersCirc; layer++)
+            {
+                float currentAngle = Mathf.PI / 2;
+                tiles.Add(new List<Tile>());
+
+                float layerPerimeter = layerRadius * 2 * Mathf.PI;
+                float arcLengthInLayer = layerPerimeter / arcLengthOuter;
+                int numberOfTilesInLayer = Mathf.RoundToInt(arcLengthInLayer);
+                float angleDelta = 2 * Mathf.PI / numberOfTilesInLayer;
+
+                for (int index = 0; index < numberOfTilesInLayer; index++)
+                {
+                    float zPos = Mathf.Sin(currentAngle) * layerRadius;
+                    float xPos = Mathf.Cos(currentAngle) * layerRadius;
+                    Vector3 tilePos = new Vector3(xPos, 0, zPos);
+                    Quaternion tileRot = Quaternion.identity;
+
+                    GameObject tileObj =
+                            Instantiate(tilePrefab, tilePos + gridPos, tileRot, parentForTiles);
+
+                    Tile tile = tileObj.GetComponent<Tile>();
+                    if (tile != null)
+                    {
+                        tiles[layer].Add(tile);
+                        tile.AssignIndex(index);
+                    }
+
+                    currentAngle += angleDelta;
+                }
+
+                layerRadius -= radiusDelta;
+            }
+            
+            return tiles;
+        }
     }
 }
+
+
+// float frac = arcLengthInLayer - Mathf.Floor(arcLengthInLayer);
+            // if (frac > 0.5f)
+            // {
+            //     frac = 1 - frac;
+            //     frac = -frac;
+            // }
+            // arcLengthInLayer += frac / whole;
