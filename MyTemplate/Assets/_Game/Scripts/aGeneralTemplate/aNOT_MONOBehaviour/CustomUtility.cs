@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class CustomUtility : MonoBehaviour
+public class CustomUtility
 {
     /// <summary>
     /// Uses box colliders to fit object to the place
