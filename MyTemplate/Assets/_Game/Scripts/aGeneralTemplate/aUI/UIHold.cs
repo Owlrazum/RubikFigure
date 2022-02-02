@@ -3,8 +3,14 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class UIHold : MonoBehaviour
+/// <summary>
+/// Reminds joystick, except it does not move anything, just fills up the inner space of the circle.
+/// A small adjustment may be needed.
+/// </summary>
+public class UIHold : UIBaseFadingCanvas
 {
+    [Header("UIHold")]
+    [Space]
     [SerializeField]
     private Image innerCirlce;
 
@@ -20,21 +26,6 @@ public class UIHold : MonoBehaviour
     [SerializeField]
     private float speedOfFill;
 
-    [SerializeField]
-    private float speedOfFade;
-
-
-    private enum FadeState
-    {
-        Appearing,
-        Shown,
-        Disappearing,
-        Hided
-    }
-
-    private FadeState fadeState;
-    private float fadeValue;
-
     private float initialUnitformScale;
     private float currentUniformScale;
 
@@ -46,8 +37,6 @@ public class UIHold : MonoBehaviour
         initialUnitformScale = innerCirlce.rectTransform.localScale.x;
         initialUnitformScale = 1;
         currentUniformScale = 1;
-        fadeValue = 0;
-        //customPointer.Initialize(this);
     }
     public void Reset()
     {
@@ -55,71 +44,7 @@ public class UIHold : MonoBehaviour
         AssignScale(initialUnitformScale);
         isReady = false;
         isTouching = false;
-        fadeValue = 0;
     }
-
-    public void ShowItself()
-    {
-        if (!gameObject.activeSelf)
-        {
-            gameObject.SetActive(true);
-        }
-        StartCoroutine(AppearAnimation());
-    }
-
-    public void HideItself()
-    {
-        StartCoroutine(DisappearAnimation());
-    }
-
-    private IEnumerator AppearAnimation()
-    {
-        fadeState = FadeState.Appearing;
-        while (true)
-        {
-            if (fadeState != FadeState.Appearing)
-            {
-                yield break;
-            }
-            fadeValue += speedOfFade * Time.deltaTime;
-            if (fadeValue >= 1)
-            {
-                fadeState = FadeState.Shown;
-                fadeValue = 1;
-                AssignFade(fadeValue);
-                yield break;
-            }
-            AssignFade(fadeValue);
-            yield return null;
-        }
-    }
-
-    private IEnumerator DisappearAnimation()
-    {
-        fadeState = FadeState.Disappearing;
-        while (true)
-        {
-            if (fadeState != FadeState.Disappearing)
-            {
-                yield break;
-            }
-            fadeValue -= speedOfFade * Time.deltaTime;
-            if (fadeValue <= 0)
-            {
-                fadeState = FadeState.Hided;
-                fadeValue = 0;
-                AssignFade(fadeValue);
-                if (gameObject.activeSelf)
-                {
-                    gameObject.SetActive(false);
-                }
-                yield break;
-            }
-            AssignFade(fadeValue);
-            yield return null;
-        }
-    }
-
 
     public void OnPointerDown()
     {
@@ -138,7 +63,6 @@ public class UIHold : MonoBehaviour
             if (isReady)
             {
                 // Send Event;
-                //detailsTool.ProcessTouch();
             }
             else
             {
@@ -175,12 +99,5 @@ public class UIHold : MonoBehaviour
     {
         Vector3 newScale = scale * Vector3.one;
         innerCirlce.transform.localScale = newScale;
-    }
-
-    private void AssignFade(float value)
-    {
-        Color newColor = new Color(1, 1, 1, value);
-        innerCirlce.color = newColor;
-        outerCircle.color = newColor;
     }
 }

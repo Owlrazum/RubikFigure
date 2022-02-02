@@ -1,20 +1,19 @@
+using System;
+
 using UnityEngine;
 using UnityEngine.EventSystems;
 
 public class UICustomPointer : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
 {
-    private IPointerCallback callback;
-    public void AssignPointerCallback(IPointerCallback callbalkArg)
-    {
-        callback = callbalkArg;
-    }
+    protected Action callback;
+    
     public void OnPointerDown(PointerEventData eventData)
     {
-        callback.OnPointerDown();
+        callback?.Invoke();
     }
 
     public void OnPointerUp(PointerEventData eventData)
     {
-        callback.OnPointerUp();
+        callback?.Invoke();
     }
 }
