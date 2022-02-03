@@ -42,7 +42,7 @@ namespace GeneralTemplate
             {
                 return;
             }
-            int lastLevelIndex = SaveSystem.GetInt("LastLevel");
+            int lastLevelIndex = PlayerPrefs.GetInt("LastLevel");
             if (levelIndexToTest >= 0)
             {
                 lastLevelIndex = levelIndexToTest - 1;

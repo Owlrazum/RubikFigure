@@ -6,15 +6,11 @@ using TMPro;
 namespace GeneralTemplate
 {
     /// <summary>
-    /// Base functionality of UIController.
-    /// There are children of this class, in UIControllerVariations folder.
-    /// Derive and override necessary methods if the game is a usual hyperCash.
-    /// Write your own class in case the game is unusual or not a hyperCash.
-    /// TODO: make classes for each canvas, so serialized field reassigning
-    /// will be minimised. Or just make prefab variants.
-    /// 
+    /// UI Controller responsible for common functionality from the General Template. 
+    /// For custom behaviour create separate canvases, which are likely to inherit from
+    /// UIBaseFadingCanvas.
     /// </summary>
-    public class UIControllerBase : MonoBehaviour
+    public class UIGeneralController : MonoBehaviour
     {
         [SerializeField]
         private Canvas startGameCanvas;
@@ -59,7 +55,7 @@ namespace GeneralTemplate
         [SerializeField]
         private int logLimit;
 
-        private void Start()
+        private void Awake()
         {
             shouldPresentVibrationOn = true;
             shouldPresentSoundOn = true;
@@ -83,32 +79,6 @@ namespace GeneralTemplate
             logBuildText.text += " " + log;
         }
         #endregion
-
-        // ====== Overridables ======
-
-        public virtual void ProcessLevelEnd()
-        {
-            endLevelCanvas.gameObject.SetActive(true);
-
-            endLevelCanvasAnimator.Play("Appear");
-        }
-
-        public virtual void ProcessNextLevelButtonDown()
-        {
-            endLevelCanvas.gameObject.SetActive(false);
-            //GameManager.Singleton.ProcessNextLevelButtonDown();
-        }
-
-        // May be used to process scenarios where either win or defeat can happen.
-        public virtual void ProcessGameEnd(GameResult result)
-        {
-
-        }
-
-        // ====== End Section ======
-
-
-        // It is likely you would not need to modify this region
 
         #region CommonFunctionality
 
@@ -196,6 +166,5 @@ namespace GeneralTemplate
 
         // =========   EndHaptic   =========
         #endregion
-
     }
 }

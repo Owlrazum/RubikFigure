@@ -73,7 +73,30 @@ public class VibrationController : MonoBehaviour
         }
     }
 
-    public void Vibrate(int vibrationTimeArg = vibrationTime)
+    public void VibrateOnChangeHapticSetting()
+    {
+        if (!IsAllowedToVibrate)
+        {
+            return;
+        }
+
+        Vibration.Vibrate(vibrationTime);
+    }
+
+
+    private void Awake()
+    {
+        Vibration.Init();
+
+        InitializeFirstVibrationPattern();
+        InitializeSecondVibrationPattern();
+
+
+
+        // Events subscriptions below:
+    }
+
+    private void Vibrate(int vibrationTimeArg = vibrationTime)
     {
         if (!IsAllowedToVibrate)
         {
@@ -82,7 +105,7 @@ public class VibrationController : MonoBehaviour
         Vibration.Vibrate(vibrationTime);
     }
 
-    public void StopVibration()
+    private void StopVibration()
     {
         if (isVibrating)
         { 
@@ -100,14 +123,6 @@ public class VibrationController : MonoBehaviour
     private VibrationPattern firstVibrationPattern;
     private VibrationPattern secondVibrationPattern;
 
-    private void Awake()
-    {
-        Vibration.Init();
-
-        InitializeFirstVibrationPattern();
-        InitializeSecondVibrationPattern();
-    }
-
     private void InitializeFirstVibrationPattern()
     {
         firstVibrationPattern = new VibrationPattern
@@ -122,7 +137,7 @@ public class VibrationController : MonoBehaviour
 
     private bool isVibrating;
 
-    public void OnFirstPattern()
+    private void OnFirstPattern()
     {
         if (!IsAllowedToVibrate)
         {
@@ -136,7 +151,7 @@ public class VibrationController : MonoBehaviour
         }
     }
 
-    public void OnSecondPattern()
+    private void OnSecondPattern()
     {
         if (!IsAllowedToVibrate)
         {

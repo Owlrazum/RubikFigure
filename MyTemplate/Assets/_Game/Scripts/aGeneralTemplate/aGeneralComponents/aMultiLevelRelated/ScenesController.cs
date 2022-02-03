@@ -24,7 +24,7 @@ namespace GeneralTemplate
             {
                 return;
             }
-            int lastLevel = SaveSystem.GetInt("LastLevel");
+            int lastLevel = PlayerPrefs.GetInt("LastLevel");
             if (sceneIndexToTest >= 0)
             {
                 lastLevel = sceneIndexToTest;

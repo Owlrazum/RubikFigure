@@ -1,62 +1,42 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.AI;
-using GeneralTemplate;
-using System;
 
-namespace GeneralTemplate
+[RequireComponent(typeof(CharacterController))]
+public class Player : AnimatedPlayerCharacter
 {
-    [RequireComponent(typeof(MoveMobile))]
-    [RequireComponent(typeof(AnimationComponent))]
-    public class Player : MonoBehaviour
+    [Header("Player")]
+    [Space]
+    [SerializeField]
+    private float moveSpeed;
+
+    [SerializeField]
+    private float angularSpeed;
+
+    private CharacterController characterController;
+
+    protected override void Awake()
     {
-        private MoveMobile movementComponent;
-        private AnimationComponent animationComponent;
+        base.Awake();
+        characterController = GetComponent<CharacterController>();
 
-        private void Start()
-        {
-            movementComponent = GetComponent<MoveMobile>();
-            animationComponent = GetComponent<AnimationComponent>();
-            animationComponent.State = AnimationState.Idle;
-        }
+        GeneralEventsContainer.JoystickCommanded += OnJoystickCommanded;
+    }
 
-        // Process win or defeat. Not implemented.
-        public void ProcessGameEnd(GameResult result)
-        {
-            switch (result)
-            {
-                case GameResult.Win:
-                    break;
-                case GameResult.Defeat:
-                    break;
-            }
+    public void OnJoystickCommanded(JoystickCommand joy)
+    {
+        Vector2 joystickInput = new Vector2(joy.Horiz, joy.Vert);
+        float cameraEulerY = QueriesContainer.QueryCurrentCameraYaw();
 
-            throw new NotImplementedException();
-        }
+        //SetAnimationState(AnimationState.Moving);
 
-        public void UpdateMovementInput(float inputX, float inputZ)
-        {
-            Vector3 inputVector = new Vector3(inputX, 0, inputZ);
-            Vector3 direction = inputVector.normalized;
+        Vector3 moveDirection = new Vector3(joystickInput.x, 0, joystickInput.y);
+        moveDirection = Quaternion.Euler(0, cameraEulerY, 0) * moveDirection;
+        
+        characterController.Move(moveSpeed * Time.deltaTime * moveDirection);
 
-            float speedOfMove = inputVector.magnitude;
-
-            //As second parameter speedOfMove can be used
-            movementComponent.UpdateMoveDirection(direction, 1);  
-            movementComponent.Move();
-
-            if (speedOfMove > 0)
-            {
-                animationComponent.State = AnimationState.Walking;
-            }
-            else
-            {
-                animationComponent.State = AnimationState.Idle;
-            }
-
-            GameManager.Singleton.RotateAmorphs();
-        }
+        float rotateStep = angularSpeed * Time.deltaTime;
+        Quaternion targetRotation = Quaternion.LookRotation(moveDirection, Vector3.up);
+        transform.rotation =
+              Quaternion.RotateTowards(transform.rotation, targetRotation, rotateStep);
     }
 }
 

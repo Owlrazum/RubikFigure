@@ -1,6 +1,7 @@
 using System;
+using GeneralTemplate;
 
-public class GeneralEventsContainer
+public static class GeneralEventsContainer
 {
     public static Action Initialization;
     public static void OnInitialization()
@@ -14,16 +15,17 @@ public class GeneralEventsContainer
         GameStart?.Invoke();
     }
 
-    
-
-    
-
     public static Action GameEnd;
     public static void OnGameEnd()
     {
         GameEnd?.Invoke();
     }
 
+    public static Action<LevelData> LevelLoaded;
+    public static void InvokeLevelLoaded(LevelData levelData)
+    {
+        LevelLoaded?.Invoke(levelData);
+    }
 
     #region InputCommands
     public static Action<InputCommand> InputCommanded;
@@ -39,15 +41,15 @@ public class GeneralEventsContainer
     }
 
     public static Action<JoystickCommand> JoystickCommanded;
-    public static void InvokeInputCommanded(JoystickCommand joystickCommand)
+    public static void InvokeJoystickCommanded(JoystickCommand joystickCommand)
     {
-        InputCommanded?.Invoke(joystickCommand);
+        JoystickCommanded?.Invoke(joystickCommand);
     }
 
     public static Action<DragCommand> DragCommanded;
-    public static void InvokeInputCommanded(DragCommand dragCommand)
+    public static void InvokeDragCommanded(DragCommand dragCommand)
     {
-        InputCommanded?.Invoke(dragCommand);
+        DragCommanded?.Invoke(dragCommand);
     }
     #endregion
     
