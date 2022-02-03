@@ -43,6 +43,18 @@ namespace GeneralTemplate
 
             currentCameraLocation = CameraLocation.Default;
             virtualCameras[GetVCamIndexOfCurrentCameraLocation()].Priority++;
+
+            QueriesContainer.CurrentCameraYaw += GetCameraYaw;
+        }
+
+        private void OnDisable()
+        {
+            QueriesContainer.CurrentCameraYaw -= GetCameraYaw;
+        }
+
+        private float GetCameraYaw()
+        {
+            return renderingCamera.transform.eulerAngles.y;
         }
 
         public void SwitchToCameraLocation(CameraLocation cameraLocation)
