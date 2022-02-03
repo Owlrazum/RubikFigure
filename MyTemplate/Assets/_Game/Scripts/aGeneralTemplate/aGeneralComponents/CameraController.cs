@@ -45,6 +45,8 @@ namespace GeneralTemplate
             virtualCameras[GetVCamIndexOfCurrentCameraLocation()].Priority++;
 
             QueriesContainer.CurrentCameraYaw += GetCameraYaw;
+
+            virtualCameras[1].Priority = 1;
         }
 
         private void OnDisable()

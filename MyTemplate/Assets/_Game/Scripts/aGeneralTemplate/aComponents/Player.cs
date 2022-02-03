@@ -23,13 +23,17 @@ public class Player : AnimatedPlayerCharacter
 
     public void OnJoystickCommanded(JoystickCommand joy)
     {
-        Vector2 joystickInput = new Vector2(joy.Horiz, joy.Vert);
+        if (!joy.IsValid)
+        {
+            SetAnimationState(AnimationState.Idle);
+            return;
+        }
         float cameraEulerY = QueriesContainer.QueryCurrentCameraYaw();
 
-        //SetAnimationState(AnimationState.Moving);
+        SetAnimationState(AnimationState.Running);
 
-        Vector3 moveDirection = new Vector3(joystickInput.x, 0, joystickInput.y);
-        moveDirection = Quaternion.Euler(0, cameraEulerY, 0) * moveDirection;
+        Vector3 moveDirection = new Vector3(joy.Horiz, 0, joy.Vert);
+        //moveDirection = Quaternion.Euler(0, cameraEulerY, 0) * moveDirection;
         
         characterController.Move(moveSpeed * Time.deltaTime * moveDirection);
 

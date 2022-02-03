@@ -12,17 +12,6 @@ namespace GeneralTemplate
     /// </summary>
     public class UIGeneralController : MonoBehaviour
     {
-        [SerializeField]
-        private Canvas startGameCanvas;
-
-        [Header("EndLevelCanvas")]
-        [Space]
-        [SerializeField]
-        protected Canvas endLevelCanvas;
-
-        [SerializeField]
-        protected Animator endLevelCanvasAnimator;
-
         // see CommonFunctionality comment
         #region CommonSerializedFields
         [Header("SettingsCanvas")]
