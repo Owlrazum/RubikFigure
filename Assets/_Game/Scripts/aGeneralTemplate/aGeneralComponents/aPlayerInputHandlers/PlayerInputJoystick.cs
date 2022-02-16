@@ -15,12 +15,12 @@ namespace GeneralTemplate
             if (joystick.Horizontal != 0 || joystick.Vertical != 0)
             {
                 JoystickCommand command = new JoystickCommand(joystick.Horizontal, joystick.Vertical);
-                GeneralEventsContainer.InvokeJoystickCommanded(command);
+                GeneralEventsContainer.JoystickCommanded?.Invoke(command);
             }
             else
             { 
                 JoystickCommand command = new JoystickCommand();
-                GeneralEventsContainer.InvokeJoystickCommanded(command);
+                GeneralEventsContainer.JoystickCommanded?.Invoke(command);
             }
         }
     }

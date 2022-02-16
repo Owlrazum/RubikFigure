@@ -36,7 +36,7 @@ namespace GeneralTemplate
                     return;
                 }
                 TouchCommand touch = new TouchCommand(Input.mousePosition);
-                GeneralEventsContainer.InvokeTouchCommanded(touch);
+                GeneralEventsContainer.TouchCommanded?.Invoke(touch);
             }
         }
 #endif
@@ -51,7 +51,7 @@ namespace GeneralTemplate
                     return;
                 }
                 TouchCommand touch = new TouchCommand(Input.GetTouch(0).position);
-                GeneralEventsContainer.InvokeTouchCommanded(touch);
+                GeneralEventsContainer.TouchCommanded?.Invoke(touch);
             }
         }
 #endif

@@ -23,7 +23,7 @@ namespace GeneralTemplate
 
         private void Start()
         {
-            GeneralEventsContainer.InvokeLevelLoaded(levelData);
+            GeneralEventsContainer.LevelLoaded?.Invoke(levelData);
         }
     }
 }
