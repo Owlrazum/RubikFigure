@@ -31,6 +31,28 @@ public static class CustomMath
 {
     public const float Epsilon = 1E-12F;
 
+    #region EasingFunctions
+    public static float EaseIn(float lerpParam)
+    {
+        return lerpParam * lerpParam;
+    }
+
+    public static float Flip(float t)
+    {
+        return 1 - t;
+    }
+
+    public static float EaseOut(float lerpParam)
+    {
+        return Flip(EaseIn(Flip(lerpParam)));
+    }
+
+    public static float EaseInOut(float lerpParam)
+    {
+        return Mathf.Lerp(EaseIn(lerpParam), EaseOut(lerpParam), lerpParam);
+    }
+    #endregion
+
     public static float GetPointLineDistance(Vector3 p0, Vector3 p1, Vector3 p2)
     {
         return Vector3.Cross((p0 - p1), (p0 - p2)).magnitude / (p2 - p1).magnitude;
