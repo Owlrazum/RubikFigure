@@ -2,6 +2,18 @@ using UnityEngine;
 
 public class CustomUtility
 {
+    /// <summary>
+    /// Get random integer within range that is not equal to the toExclude
+    /// </summary>
+    public static int RandomRangeWithExlusion(int start, int end, int toExclude)
+    {
+        int result = Random.Range(start, end - 1);
+        if (result >= toExclude)
+        {
+            result++;
+        }
+        return result;
+    }
 
     public (Transform toMove, Transform toScale) IncreaseScaleToContainPos
            (Transform toMove, Transform toScale, Vector3 worldPos)

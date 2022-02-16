@@ -13,91 +13,74 @@ namespace GeneralTemplate
 
         private AsyncOperation loadingScene;
 
-        private void Start()
+        private void Awake()
         {
             sceneCount = SceneManager.sceneCountInBuildSettings;
+
+            GeneralEventsContainer.LevelComplete += StartLoadingNextScene;
+            GeneralEventsContainer.ShouldLoadNextScene += FinishLoadingScene;
         }
-        
-        public void LoadSavedScene(int sceneIndexToTest = -1)
+
+        private void OnDestroy()
+        { 
+            GeneralEventsContainer.LevelComplete -= StartLoadingNextScene;
+            GeneralEventsContainer.ShouldLoadNextScene -= FinishLoadingScene;
+        }
+
+        private void LoadSavedScene()
         {
             if (!shouldLoadSavedLevel)
             {
                 return;
             }
-            int lastLevel = PlayerPrefs.GetInt("LastLevel");
-            if (sceneIndexToTest >= 0)
-            {
-                lastLevel = sceneIndexToTest;
-            }
+            int lastLevel = PlayerPrefs.GetInt("LastLevel", 0);
             SceneManager.LoadScene(lastLevel);
         }
 
-        public void StartLoadingNextScene(int sceneIndexToTest = -1)
+        private void StartLoadingNextScene()
         {
-            int nextSceneIndex = SceneManager.GetActiveScene().buildIndex + 1;
-            if (nextSceneIndex >= sceneCount)
-            {
-                areAllLevelsPassed = true;
-            }
             if (!areAllLevelsPassed)
-            {
-                if (sceneIndexToTest >= 0)
+            { 
+                int nextSceneIndex = SceneManager.GetActiveScene().buildIndex + 1;
+                if (nextSceneIndex >= sceneCount)
                 {
-                    nextSceneIndex = sceneIndexToTest;
+                    areAllLevelsPassed = true;
+                    StartLoadingRandomScene();
+                    return;
                 }
                 loadingScene = SceneManager.LoadSceneAsync(nextSceneIndex);
                 loadingScene.allowSceneActivation = false;
-                return;
             }
-            nextSceneIndex = GetRandomValidSceneIndex();
+            else
+            {
+                StartLoadingRandomScene();
+            }
+        }
+
+        private void StartLoadingRandomScene()
+        { 
+            int nextSceneIndex = GetRandomValidSceneIndex();
             loadingScene = SceneManager.LoadSceneAsync(nextSceneIndex);
             loadingScene.allowSceneActivation = false;
         }
 
         private int GetRandomValidSceneIndex()
         {
-            int currentSceneIndex = SceneManager.GetActiveScene().buildIndex;
-            int result = Random.Range(1, sceneCount - 1);
             if (sceneCount - 1 <= 1)
             {
-                result = 0;
+                return 0;
             }
-            if (result >= currentSceneIndex)
-            {
-                result++;
-            }
-            return result;
-        }
 
-        public void StartReloadingCurrentScene(GameObject multiSceneParent)
-        {
-            if (SceneManager.GetActiveScene().buildIndex == 0)
-            {
-                PrepareForReloadOfFirstScene(multiSceneParent);
-            }
             int currentSceneIndex = SceneManager.GetActiveScene().buildIndex;
-            loadingScene = SceneManager.LoadSceneAsync(currentSceneIndex);
-            loadingScene.allowSceneActivation = false;
-            return;
+            return CustomUtility.RandomRangeWithExlusion(0, sceneCount, currentSceneIndex);
         }
 
-        private void PrepareForReloadOfFirstScene(GameObject multiSceneParent)
-        {
-            SceneManager.MoveGameObjectToScene(
-                multiSceneParent,
-                SceneManager.GetActiveScene()
-            );
-        }
-
-        /// <summary>
-        /// Should be called only when GameEnd is processed
-        /// </summary>
-        public void FinishLoadingScene()
+        private void FinishLoadingScene()
         {
             loadingScene.allowSceneActivation = true;
         }
 
-        public int GetCurrentLevelIndex()
+        private int GetCurrentLevelIndex()
         {
             return SceneManager.GetActiveScene().buildIndex;
         }

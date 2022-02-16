@@ -8,6 +8,9 @@ public static class GeneralEventsContainer
     public static Action GameEnd;
 
     public static Action<LevelData> LevelLoaded;
+    
+    public static Action LevelComplete;
+    public static Action ShouldLoadNextScene;
 
     #region InputCommands
     public static Action<InputCommand> InputCommanded;
