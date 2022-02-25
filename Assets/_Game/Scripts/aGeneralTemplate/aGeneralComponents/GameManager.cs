@@ -13,7 +13,7 @@ namespace GeneralTemplate
 
     // TODO make a patterns text somewhere, DoRotateSequence after each stage.
 
-    // TODO Implement an EventContainer instead of layered architecture, because events are more fitted to our case.
+    // TODO: Add LevelsController
 
     /// <summary>
     /// General functionality in our projects. 
