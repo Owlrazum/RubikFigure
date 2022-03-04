@@ -12,6 +12,7 @@ public class Player : AnimatedPlayerCharacter
     private float angularSpeed;
 
     private CharacterController characterController;
+    private bool wasReactedToJoystickThisFrame;
 
     protected override void Awake()
     {
@@ -23,11 +24,8 @@ public class Player : AnimatedPlayerCharacter
 
     public void OnJoystickCommanded(JoystickCommand joy)
     {
-        if (!joy.IsValid)
-        {
-            SetAnimationState(AnimationState.Idle);
-            return;
-        }
+        wasReactedToJoystickThisFrame = true; 
+
         float cameraEulerY = QueriesContainer.QueryCurrentCameraYaw();
 
         SetAnimationState(AnimationState.Running);
@@ -41,6 +39,22 @@ public class Player : AnimatedPlayerCharacter
         Quaternion targetRotation = Quaternion.LookRotation(moveDirection, Vector3.up);
         transform.rotation =
               Quaternion.RotateTowards(transform.rotation, targetRotation, rotateStep);
+    }
+
+    private void Update()
+    {
+        if (!wasReactedToJoystickThisFrame)
+        {
+            if (animationState != AnimationState.Idle)
+            {
+                SetAnimationState(AnimationState.Idle);
+            }
+        }
+    }
+
+    private void LateUpdate()
+    {
+        wasReactedToJoystickThisFrame = false;
     }
 }
 

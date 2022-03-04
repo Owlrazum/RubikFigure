@@ -7,13 +7,7 @@ namespace GeneralTemplate
 
     // TODO Update scenes L1 L2, add prefabs (eg LevelDataHandover)
 
-    // TODO Make a virtual class for fading animations.
-
     // Tip: There is a confetti plane in the main camera.
-
-    // TODO make a patterns text somewhere, DoRotateSequence after each stage.
-
-    // TODO: Add LevelsController
 
     /// <summary>
     /// General functionality in our projects. 

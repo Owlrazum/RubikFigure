@@ -1,13 +1,10 @@
 using System.Collections;
 using UnityEngine;
 
-/// <summary>
-/// A layerMask for visual modification needs to be specified
-/// </summary>
-public class FieldOfFiewVisual : MonoBehaviour
+public class FieldOfViewVisual : MonoBehaviour
 {
     private MeshFilter meshFilter;
-    private MeshRenderer meshRenderer;
+    private MeshRenderer meshRenderer; 
 
     [Header("Field Parameters")]
     [Space]
@@ -19,20 +16,12 @@ public class FieldOfFiewVisual : MonoBehaviour
     [SerializeField]
     private float viewDistance;
 
-    [SerializeField]
-    private LayerMask raysCollisionMask;
-
     private float totalAngle;
-
-    private bool isActive = true;
-    private bool isCleared = false;
 
     private Vector3[] baseVertices;
     private int[] baseIndices;
 
-    private Mesh baseMesh;
     private Mesh changingMesh;
-
     private Vector3[] changingVertices;
 
     private void Awake()
@@ -42,35 +31,30 @@ public class FieldOfFiewVisual : MonoBehaviour
         meshFilter = GetComponent<MeshFilter>();
         meshRenderer = GetComponent<MeshRenderer>();
 
-        GeneralEventsContainer.Initialization += OnInitialization;
+        GeneralEventsContainer.LevelLoaded += OnLevelPreparation;
+
+        //OnLevelPreparation(null);
     }
 
-    private void OnDisable()
-    {
-        GeneralEventsContainer.Initialization -= OnInitialization;
+    private void OnDestroy()
+    { 
+        GeneralEventsContainer.LevelLoaded -= OnLevelPreparation;
     }
 
-    private void OnInitialization()
-    {
+    private void OnLevelPreparation()
+    { 
         GenerateBaseMesh();
-        meshRenderer.enabled = false;
     }
 
-    #region Generation
     private void GenerateBaseMesh()
     {
         baseVertices = ComputeBaseVertices();
         baseIndices = ComputeBaseIndices();
 
-        baseMesh = new Mesh();
-
         changingMesh = new Mesh();
         changingMesh.MarkDynamic();
         changingVertices = new Vector3[baseVertices.Length];
         baseVertices.CopyTo(changingVertices, 0);
-
-        baseMesh.vertices = baseVertices;
-        baseMesh.triangles = baseIndices;
 
         changingMesh.vertices = changingVertices;
         changingMesh.triangles = baseIndices;
@@ -110,12 +94,13 @@ public class FieldOfFiewVisual : MonoBehaviour
         }
         return indices;
     }
-    #endregion
 
-    /// <summary>
-    /// Likely needs to be renamed depending on context
-    /// </summary>
-    private IEnumerator Animation()
+    public void StartCheckingCollisions()
+    {
+        StartCoroutine(CheckingCollisions());
+    }
+
+    private IEnumerator CheckingCollisions()
     {
         while (true)
         {
@@ -124,8 +109,7 @@ public class FieldOfFiewVisual : MonoBehaviour
                 Vector3 localDir = baseVertices[i].normalized;
                 Vector3 worldDir = transform.TransformDirection(localDir);
                 Ray ray = new Ray(transform.position, worldDir);
-                if (Physics.Raycast(ray, out RaycastHit rayHit, viewDistance, 
-                    raysCollisionMask,
+                if (Physics.Raycast(ray, out RaycastHit rayHit, viewDistance, LayerMask.GetMask("IllusionRaycast"), 
                     QueryTriggerInteraction.Collide))
                 {
                     Vector3 worldPos = rayHit.point;
@@ -142,3 +126,28 @@ public class FieldOfFiewVisual : MonoBehaviour
         }
     }
 }
+
+
+//private Vector3[] ComputeRoundedNormals()
+// {
+//     Vector3[] normals = new Vector3[segmentsCount + 2];
+//     int normalIndex = 0;
+//     normals[normalIndex++] = -Vector3.forward;
+//     Quaternion leftMostRot = Quaternion.Euler(-Vector3.forward * 90);
+//     Quaternion rightMostRot = Quaternion.Euler(Vector3.forward * 90);
+//     float lerpParam = 0;
+//     for (int i = 0; i < segmentsCount + 1; i++)
+//     {
+//         if (i != 0)
+//         { 
+//             lerpParam += 1.0f / segmentsCount;
+//         }
+//         Quaternion currentRot = Quaternion.Slerp(leftMostRot, rightMostRot, lerpParam);
+//         Vector3 normal = currentRot * Vector3.up;
+//         Debug.DrawRay(baseVertices[i + 1], normal * 100, Color.red, 100, false);
+
+//         normals[normalIndex++] = normal;
+//         print("lerpParam " + lerpParam);
+//     }
+//     return normals;
+// }

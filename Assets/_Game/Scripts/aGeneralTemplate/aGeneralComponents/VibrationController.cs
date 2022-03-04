@@ -56,6 +56,23 @@ public class VibrationController : MonoBehaviour
     [SerializeField]
     private bool shouldRepeatSecondPattern = true;
 
+    private void Awake()
+    {
+        Vibration.Init();
+
+        InitializeFirstVibrationPattern();
+        InitializeSecondVibrationPattern();
+
+        // Events subscriptions below:
+
+    }
+
+    private void OnDestroy()
+    {
+        // Events unsubscriptions below:
+
+    }
+
     private bool isAllowedToVibrate;
     public bool IsAllowedToVibrate
     {
@@ -68,7 +85,7 @@ public class VibrationController : MonoBehaviour
             isAllowedToVibrate = value;
             if (!isAllowedToVibrate)
             {
-                //StopCuttingVibration();
+                StopVibration();
             }
         }
     }
@@ -83,25 +100,13 @@ public class VibrationController : MonoBehaviour
         Vibration.Vibrate(vibrationTime);
     }
 
-
-    private void Awake()
-    {
-        Vibration.Init();
-
-        InitializeFirstVibrationPattern();
-        InitializeSecondVibrationPattern();
-
-
-
-        // Events subscriptions below:
-    }
-
-    private void Vibrate(int vibrationTimeArg = vibrationTime)
+    private void Vibrate()
     {
         if (!IsAllowedToVibrate)
         {
             return;
         }
+
         Vibration.Vibrate(vibrationTime);
     }
 
@@ -110,7 +115,7 @@ public class VibrationController : MonoBehaviour
         if (isVibrating)
         { 
             Vibration.Cancel();
-            OnNextFrameFalseIsVibrating();
+            StartCoroutine(OnNextFrameFalseIsVibrating());
         }
     }
 
@@ -118,6 +123,7 @@ public class VibrationController : MonoBehaviour
     {
         yield return null;
         isVibrating = false;
+        shouldRepeatAnyPattern = false;
     }
 
     private VibrationPattern firstVibrationPattern;
@@ -126,13 +132,13 @@ public class VibrationController : MonoBehaviour
     private void InitializeFirstVibrationPattern()
     {
         firstVibrationPattern = new VibrationPattern
-            (firstStartDelay, firstVibrationPatternData, shouldRepeatFirstPattern);
+            (firstStartDelay, firstVibrationPatternData);
     }
 
     private void InitializeSecondVibrationPattern()
     {
         secondVibrationPattern = new VibrationPattern
-            (secondStartDelay, secondVibrationPatternData, shouldRepeatSecondPattern);
+            (secondStartDelay, secondVibrationPatternData);
     }
 
     private bool isVibrating;
@@ -147,7 +153,14 @@ public class VibrationController : MonoBehaviour
         if (!isVibrating)
         {
             isVibrating = true;
-            firstVibrationPattern.StartPlaying();
+            if (shouldRepeatFirstPattern)
+            {
+                StartCoroutine(RepeatingPattern(firstVibrationPattern));
+            }
+            else
+            { 
+                firstVibrationPattern.PlayOnce();
+            }
         }
     }
 
@@ -161,7 +174,25 @@ public class VibrationController : MonoBehaviour
         if (!isVibrating)
         {
             isVibrating = true;
-            secondVibrationPattern.StartPlaying();
+            if (shouldRepeatSecondPattern)
+            {
+                StartCoroutine(RepeatingPattern(secondVibrationPattern));
+            }
+            else
+            { 
+                secondVibrationPattern.PlayOnce();
+            }
+        }
+    }
+
+    private bool shouldRepeatAnyPattern;
+    private IEnumerator RepeatingPattern(VibrationPattern pattern)
+    {
+        shouldRepeatAnyPattern = true;
+        while (shouldRepeatAnyPattern)
+        {
+            pattern.PlayOnce();
+            yield return new WaitForSeconds(pattern.GetTimeForOnePlay());
         }
     }
 }

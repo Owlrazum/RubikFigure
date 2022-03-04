@@ -10,16 +10,13 @@ namespace GeneralTemplate
         [SerializeField]
         private FixedJoystick joystick;
 
+        private bool shouldSendJoy;
+
         private void Update()
         {
             if (joystick.Horizontal != 0 || joystick.Vertical != 0)
             {
                 JoystickCommand command = new JoystickCommand(joystick.Horizontal, joystick.Vertical);
-                GeneralEventsContainer.JoystickCommanded?.Invoke(command);
-            }
-            else
-            { 
-                JoystickCommand command = new JoystickCommand();
                 GeneralEventsContainer.JoystickCommanded?.Invoke(command);
             }
         }

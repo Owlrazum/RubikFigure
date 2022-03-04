@@ -1,29 +1,38 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
-namespace GeneralTemplate
+/// <summary>
+/// Everything you need to know about level may go here.
+/// </summary>
+[System.Serializable]
+public class LevelData
 {
-    /// <summary>
-    /// Everything you need to know about level may go here.
-    /// </summary>
-    [System.Serializable]
-    public class LevelData
+    public LevelData()
     {
-        public LevelData()
-        { 
 
-        }
+    }
+}
+
+/// <summary>
+/// It is expected that this script will present in every level to signify that a level was loaded.
+/// </summary>
+public class LevelDataHandOver : MonoBehaviour
+{
+    [SerializeField]
+    private LevelData levelData;
+
+    private void Awake()
+    { 
+        QueriesContainer.LevelData += GetLevelData;
+        GeneralEventsContainer.LevelLoaded?.Invoke();
     }
 
-    public class LevelDataHandOver : MonoBehaviour
+    private void OnDestroy()
     {
-        [SerializeField]
-        private LevelData levelData;
+        QueriesContainer.LevelData -= GetLevelData;
+    }
 
-        private void Start()
-        {
-            GeneralEventsContainer.LevelLoaded?.Invoke(levelData);
-        }
+    private LevelData GetLevelData()
+    {
+        return levelData;
     }
 }

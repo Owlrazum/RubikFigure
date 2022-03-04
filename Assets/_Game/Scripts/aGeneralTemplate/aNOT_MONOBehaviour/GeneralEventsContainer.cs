@@ -7,10 +7,13 @@ public static class GeneralEventsContainer
     public static Action GameStart;
     public static Action GameEnd;
 
-    public static Action<LevelData> LevelLoaded;
-    
-    public static Action LevelComplete;
-    public static Action ShouldLoadNextScene;
+    public static Action LevelLoaded;                        // LevelDataHandOver calls it.
+    public static Action<int> LevelStart;
+    public static Action<int> LevelComplete;
+
+    public static Action AllLevelsWerePassed;
+
+    public static Action ShouldLoadNextSceneLevel;
 
     #region InputCommands
     public static Action<InputCommand> InputCommanded;

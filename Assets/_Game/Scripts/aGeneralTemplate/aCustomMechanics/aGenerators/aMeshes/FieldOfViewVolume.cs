@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class FieldOfView : MonoBehaviour
+public class FieldOfViewVolume : MonoBehaviour
 {
     private MeshFilter meshFilter;
     private MeshCollider meshCollider;
@@ -8,20 +8,19 @@ public class FieldOfView : MonoBehaviour
     [SerializeField]
     private int segmentsCount;
     [SerializeField]
-    [Tooltip("In degrees")]
-    private float angle;
+    private float angleDeg;
     [SerializeField]
     private float viewDistance;
 
     private const float HEIGHT = 0.25f;
-    private float totalAngle;
+    private float totalAngleRad;
 
     private void Awake()
     {
         meshFilter = GetComponent<MeshFilter>();
         meshCollider = GetComponent<MeshCollider>();
 
-        totalAngle = angle * Mathf.Deg2Rad;
+        totalAngleRad = angleDeg * Mathf.Deg2Rad;
 
         GeneralEventsContainer.Initialization += OnInitialization;
     }
@@ -58,26 +57,26 @@ public class FieldOfView : MonoBehaviour
         //Bottom vertices
         int vertexIndex = 0;
         vertices[vertexIndex++] = new Vector3(0, 0, 0);
-        float currentAngle = Mathf.PI / 2 - totalAngle / 2;
-        float angleDelta = totalAngle / segmentsCount;
+        float currentAngleRad = Mathf.PI / 2 - totalAngleRad / 2;
+        float angleDeltaRad = totalAngleRad / segmentsCount;
         for (int i = 0; i < segmentsCount + 1; i++)
         {
-            Vector3 pos = new Vector3(Mathf.Cos(currentAngle), 0, Mathf.Sin(currentAngle));
+            Vector3 pos = new Vector3(Mathf.Cos(currentAngleRad), 0, Mathf.Sin(currentAngleRad));
             pos *= viewDistance;
             vertices[vertexIndex++] = pos;
-            currentAngle += angleDelta;
+            currentAngleRad += angleDeltaRad;
         }
 
         //Upper vertices
         vertices[vertexIndex++] = new Vector3(0, HEIGHT, 0);
-        currentAngle = Mathf.PI / 2 - totalAngle / 2;
+        currentAngleRad = Mathf.PI / 2 - totalAngleRad / 2;
         for (int i = 0; i < segmentsCount + 1; i++)
         {
-            Vector3 pos = new Vector3(Mathf.Cos(currentAngle), HEIGHT, Mathf.Sin(currentAngle));
+            Vector3 pos = new Vector3(Mathf.Cos(currentAngleRad), HEIGHT, Mathf.Sin(currentAngleRad));
             pos.x *= viewDistance;
             pos.z *= viewDistance;
             vertices[vertexIndex++] = pos;
-            currentAngle += angleDelta;
+            currentAngleRad += angleDeltaRad;
         }
 
         return vertices;

@@ -5,11 +5,6 @@ using Cinemachine;
 
 namespace GeneralTemplate
 {
-    public enum CameraLocation
-    {
-        Default,
-        Custom
-    }
     /// <summary>
     /// Should be parent of all CinemachineVirtualCameras;
     /// The index of virtual camera is equal to the sibling index,
@@ -20,38 +15,84 @@ namespace GeneralTemplate
         [SerializeField]
         private Camera renderingCamera;
 
-        private CinemachineVirtualCamera[] virtualCameras;
+        [Header("Shots")]
+        [Space]
+        [SerializeField]
+        private CinemachineVirtualCamera firstShotCamera;
 
-        private CameraLocation currentCameraLocation;
+        [SerializeField]
+        private CinemachineVirtualCamera secondShotCamera;
 
-        /// <summary>
-        /// returns currentCameraLocation's virtualCamera index;
-        /// </summary>
-        /// <returns></returns>
-        public int GetVCamIndexOfCurrentCameraLocation()
+        [SerializeField]
+        private CinemachineVirtualCamera thirdShotCamera;
+
+        [System.Serializable]
+        private enum CameraShotType
         {
-            return (int)currentCameraLocation;
+            None,
+            First,
+            Second,
+            Third
         }
+
+        private CameraShotType currentCameraShot;
+
+        private CinemachineBrain brain;
+
+        private CinemachineVirtualCamera currentVcam;
 
         private void Awake()
         {
-            virtualCameras = GetComponentsInChildren<CinemachineVirtualCamera>();
-            foreach (var camera in virtualCameras)
-            {
-                camera.Priority = 0;
-            }
+             brain = renderingCamera.GetComponent<CinemachineBrain>();
 
-            currentCameraLocation = CameraLocation.Default;
-            virtualCameras[GetVCamIndexOfCurrentCameraLocation()].Priority++;
+            firstShotCamera .Priority = 0;
+            secondShotCamera.Priority = 0;
+            thirdShotCamera .Priority = 0;
+
+            currentVcam = firstShotCamera;
+            renderingCamera.enabled = false;
+
+            GeneralEventsContainer.LevelStart += OnLevelStart;
 
             QueriesContainer.CurrentCameraYaw += GetCameraYaw;
-
-            virtualCameras[1].Priority = 1;
+            QueriesContainer.CameraScreenPointToRay += GetCameraScreenPointToRay;
         }
 
-        private void OnDisable()
+        private void OnDestroy()
+        { 
+            GeneralEventsContainer.LevelStart -= OnLevelStart;
+
+            QueriesContainer.CurrentCameraYaw += GetCameraYaw;
+            QueriesContainer.CameraScreenPointToRay += GetCameraScreenPointToRay;
+        }
+
+        private void OnLevelStart(int notUsed)
         {
-            QueriesContainer.CurrentCameraYaw -= GetCameraYaw;
+            ActivateCameraShot(CameraShotType.First);
+            renderingCamera.enabled = true;
+        }
+
+        private void ActivateCameraShot(CameraShotType cameraShot)
+        {
+            if (currentCameraShot == cameraShot)
+            {
+                Debug.LogWarning("CameraController: The call for activation of camera shot is logically invalid.");
+                return;
+            }
+            currentVcam.Priority = 0;
+            switch (cameraShot)
+            { 
+                case CameraShotType.First:
+                currentVcam = firstShotCamera;
+                    break;
+                case CameraShotType.Second:
+                currentVcam = secondShotCamera;
+                    break;
+                case CameraShotType.Third:
+                currentVcam = thirdShotCamera;
+                    break;
+            }
+            currentVcam.Priority = 1;
         }
 
         private float GetCameraYaw()
@@ -59,17 +100,7 @@ namespace GeneralTemplate
             return renderingCamera.transform.eulerAngles.y;
         }
 
-        public void SwitchToCameraLocation(CameraLocation cameraLocation)
-        {
-            if (currentCameraLocation != cameraLocation)
-            {
-                virtualCameras[GetVCamIndexOfCurrentCameraLocation()].Priority--;
-                currentCameraLocation = cameraLocation;
-                virtualCameras[GetVCamIndexOfCurrentCameraLocation()].Priority++;
-            }
-        }
-
-        public Ray GetScreenToWorldRay(Vector2 screenPos)
+         private Ray GetCameraScreenPointToRay(Vector3 screenPos)
         {
             return renderingCamera.ScreenPointToRay(screenPos);
         }

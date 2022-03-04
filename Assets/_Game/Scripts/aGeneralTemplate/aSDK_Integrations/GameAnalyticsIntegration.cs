@@ -1,33 +1,43 @@
-﻿//using UnityEngine;
+﻿// using UnityEngine;
 
-//using GameAnalyticsSDK;
+// using GameAnalyticsSDK;
 
+// namespace SDK_Integrations
+// {
+//     /// <summary>
+//     /// Script execution order should come after GameAnalytics's own script.
+//     /// </summary>
+//     public class GameAnalyticsIntegration : MonoBehaviour
+//     {
+//         private void Awake()
+//         {
+//             GameAnalytics.Initialize();
 
-//namespace SDK_Integrations
-//{
-//    /// <summary>
-//    /// Script execution order should come after GameAnalytics's own script.
-//    /// </summary>
-//    public class GameAnalyticsIntegration : MonoBehaviour
-//    {
-//        private void Awake()
-//        {
-//            GameAnalytics.Initialize();
-//        }
+//             GeneralEventsContainer.LevelStart += OnLevelStart;
+//             GeneralEventsContainer.LevelComplete += OnLevelComplete;
+            
+//             DontDestroyOnLoad(gameObject);
+//         }
 
-//        public void ProcessStartLevel(int currentLevelIndex)
-//        {
-//            int startLevelIndexAdjusted = currentLevelIndex + 1;
-//            GameAnalytics.NewProgressionEvent
-//                (GAProgressionStatus.Start, "Level " + startLevelIndexAdjusted);
-//        }
+//         private void OnDestroy()
+//         {
+//             GeneralEventsContainer.LevelStart -= OnLevelStart;
+//             GeneralEventsContainer.LevelComplete -= OnLevelComplete;
+//         }
 
-//        public void ProcessLevelComplete(int completedLevelIndex)
-//        {
-//            int completedLevelIndexAdjusted = completedLevelIndex + 1;
-//            GameAnalytics.NewProgressionEvent
-//                (GAProgressionStatus.Complete, "Level " + completedLevelIndexAdjusted);
-//        }
-//    }
-//}
+//         private void OnLevelStart(int currentLevelIndex)
+//         {
+//             int startLevelIndexAdjusted = currentLevelIndex + 1;
+//             GameAnalytics.NewProgressionEvent
+//                 (GAProgressionStatus.Start, "Level " + startLevelIndexAdjusted);
+//         }
+
+//         private void OnLevelComplete(int completedLevelIndex)
+//         {
+//             int completedLevelIndexAdjusted = completedLevelIndex + 1;
+//             GameAnalytics.NewProgressionEvent
+//                 (GAProgressionStatus.Complete, "Level " + completedLevelIndexAdjusted);
+//         }
+//     }
+// }
 

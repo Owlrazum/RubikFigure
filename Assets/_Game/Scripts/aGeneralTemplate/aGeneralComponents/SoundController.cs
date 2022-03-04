@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace GeneralTemplate
@@ -19,15 +17,6 @@ namespace GeneralTemplate
          */
 
         [SerializeField]
-        private AudioSource source1;
-
-        [SerializeField]
-        private AudioClip clipForS1_1;
-
-        [SerializeField]
-        private AudioClip clipForS1_2; // ...
-
-        [SerializeField]
         private AudioSource turnOnSound;
 
         [SerializeField]
@@ -35,10 +24,17 @@ namespace GeneralTemplate
 
         private void Awake()
         {
-            if (source1 != null)
-            {
-                source1.clip = clipForS1_1;
-            }
+            GeneralEventsContainer.LevelComplete += OnLevelComplete;
+        }
+
+        private void OnDestroy()
+        { 
+            GeneralEventsContainer.LevelComplete -= OnLevelComplete;
+        }
+
+        private void OnLevelComplete(int notUsed)
+        {
+            winSound.Play();
         }
 
         private bool shouldProduceSound;
@@ -65,30 +61,6 @@ namespace GeneralTemplate
         public void PlaySoundTurnOn()
         {
             turnOnSound.Play();
-            print("SoundTurnOn");
-        }
-
-        private void StartPlayingSoundFromSource1()
-        {
-            source1.Play();
-        }
-
-        private void PlaySecondClipFromSource1()
-        {
-            source1.Stop();
-            source1.PlayOneShot(clipForS1_2);
-            source1.PlayDelayed(clipForS1_2.length);
-        }
-
-        private void StopSoundFromSource1()
-        {
-            source1.Stop();
-        }
-
-        private void PlayWinSound()
-        {
-            winSound.Play();
-            print("WinSOund");
         }
     }
 }
