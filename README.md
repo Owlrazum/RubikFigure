@@ -9,3 +9,8 @@
 Сомнения...
 Последовательность мыслей.
 Идея.
+
+# 4 Марта 2022
+Hello World of shader graph!!! You greatly helped me to build interesting scan material.
+
+Благодарю, увидимся после мид проекта или TimeWalker-a.
