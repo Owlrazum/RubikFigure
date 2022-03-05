@@ -54,6 +54,8 @@ namespace GeneralTemplate
         private void Start()
         {
             InitializeSettings();
+
+            GeneralEventsContainer.GameStart?.Invoke();
         }
 
         private void InitializeSettings()
