@@ -12,14 +12,14 @@ public class TutorialController : MonoBehaviour
 
         GeneralEventsContainer.LevelComplete += OnLevelComplete;
 
-        QueriesContainer.ShouldShowTutorial += GetShouldShowTutorial;
+        GeneralQueriesContainer.ShouldShowTutorial += GetShouldShowTutorial;
     }
 
     private void OnDestroy()
     { 
         GeneralEventsContainer.LevelComplete -= OnLevelComplete;
 
-        QueriesContainer.ShouldShowTutorial -= GetShouldShowTutorial;
+        GeneralQueriesContainer.ShouldShowTutorial -= GetShouldShowTutorial;
     }
 
     private void OnLevelComplete(int notUsed)

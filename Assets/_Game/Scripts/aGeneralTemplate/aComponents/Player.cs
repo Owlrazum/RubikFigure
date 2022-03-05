@@ -26,7 +26,7 @@ public class Player : AnimatedPlayerCharacter
     {
         wasReactedToJoystickThisFrame = true; 
 
-        float cameraEulerY = QueriesContainer.QueryCurrentCameraYaw();
+        float cameraEulerY = GeneralQueriesContainer.QueryCurrentCameraYaw();
 
         SetAnimationState(AnimationState.Running);
 

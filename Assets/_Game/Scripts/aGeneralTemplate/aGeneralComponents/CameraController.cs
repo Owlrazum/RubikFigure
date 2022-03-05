@@ -54,16 +54,16 @@ namespace GeneralTemplate
 
             GeneralEventsContainer.LevelStart += OnLevelStart;
 
-            QueriesContainer.CurrentCameraYaw += GetCameraYaw;
-            QueriesContainer.CameraScreenPointToRay += GetCameraScreenPointToRay;
+            GeneralQueriesContainer.CurrentCameraYaw += GetCameraYaw;
+            GeneralQueriesContainer.CameraScreenPointToRay += GetCameraScreenPointToRay;
         }
 
         private void OnDestroy()
         { 
             GeneralEventsContainer.LevelStart -= OnLevelStart;
 
-            QueriesContainer.CurrentCameraYaw += GetCameraYaw;
-            QueriesContainer.CameraScreenPointToRay += GetCameraScreenPointToRay;
+            GeneralQueriesContainer.CurrentCameraYaw += GetCameraYaw;
+            GeneralQueriesContainer.CameraScreenPointToRay += GetCameraScreenPointToRay;
         }
 
         private void OnLevelStart(int notUsed)

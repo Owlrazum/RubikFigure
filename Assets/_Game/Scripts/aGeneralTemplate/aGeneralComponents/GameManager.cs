@@ -9,6 +9,9 @@ namespace GeneralTemplate
 
     // Tip: There is a confetti plane in the main camera.
 
+
+    // Think about adding a scriptable object to the project.
+
     /// <summary>
     /// General functionality in our projects. 
     /// It is likely that no modifications will be needed.

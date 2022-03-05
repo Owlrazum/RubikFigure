@@ -22,13 +22,13 @@ public class LevelDataHandOver : MonoBehaviour
 
     private void Awake()
     { 
-        QueriesContainer.LevelData += GetLevelData;
+        GeneralQueriesContainer.LevelData += GetLevelData;
         GeneralEventsContainer.LevelLoaded?.Invoke();
     }
 
     private void OnDestroy()
     {
-        QueriesContainer.LevelData -= GetLevelData;
+        GeneralQueriesContainer.LevelData -= GetLevelData;
     }
 
     private LevelData GetLevelData()

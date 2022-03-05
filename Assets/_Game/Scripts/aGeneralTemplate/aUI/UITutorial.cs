@@ -32,7 +32,7 @@ public class UITutorial : UIBaseFadingCanvas
 
     private void OnBeforePlayerCameraShotActive()
     {
-        if (QueriesContainer.QueryShouldShowTutorial())
+        if (GeneralQueriesContainer.QueryShouldShowTutorial())
         {
             StartCoroutine(ShowTutorialCoroutine());
         }

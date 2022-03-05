@@ -42,7 +42,7 @@ namespace GeneralTemplate
 
         private void StartLoadingNextScene(int useless)
         {
-            if (!QueriesContainer.QueryAreAllLevelsPassed())
+            if (!GeneralQueriesContainer.QueryAreAllLevelsPassed())
             { 
                 int nextSceneIndex = SceneManager.GetActiveScene().buildIndex + 1;
                 if (nextSceneIndex >= sceneCount)

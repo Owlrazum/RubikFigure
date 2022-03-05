@@ -2,8 +2,22 @@ using System;
 
 using UnityEngine;
 
-public static class QueriesContainer
+public static class GeneralQueriesContainer
 {
+    public static Func<int> ScenesCount;
+    public static int QueryScenesCount()
+    { 
+#if UNITY_EDITOR
+        if (ScenesCount.GetInvocationList().Length != 1)
+        {
+            throw new NotSupportedException("There should be only one subscription");
+        }
+#endif        
+
+        return ScenesCount.Invoke();
+    }
+
+
     public static Func<bool> AreAllLevelsPassed;
     public static bool QueryAreAllLevelsPassed()
     { 
