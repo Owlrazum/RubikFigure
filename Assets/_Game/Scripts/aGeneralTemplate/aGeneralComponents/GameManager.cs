@@ -17,6 +17,7 @@ namespace GeneralTemplate
     /// It is likely that no modifications will be needed.
     /// It is also desirable for it to be the only Singleton Monobehaviour.
     /// </summary>
+    [DefaultExecutionOrder(-20)] // WOW!
     public class GameManager : MonoBehaviour
     {
         public static GameManager Singleton;
