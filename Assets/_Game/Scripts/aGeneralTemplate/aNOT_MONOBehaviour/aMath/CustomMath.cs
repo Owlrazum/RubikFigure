@@ -20,13 +20,6 @@ public struct CubicBeizerVector3Params
     }
 }
 
-public enum Axis
-{
-    X,
-    Y,
-    Z
-}
-
 public static class CustomMath
 {
     public const float Epsilon = 1E-12F;
@@ -52,6 +45,20 @@ public static class CustomMath
         return Mathf.Lerp(EaseIn(lerpParam), EaseOut(lerpParam), lerpParam);
     }
     #endregion
+
+    public static Vector3 ProjectVector(Vector3 toProject, Vector3 onto)
+    {
+        Vector3 direction = onto.normalized;
+        return Vector3.Dot(toProject, direction) * direction;
+    }
+
+    public static Vector3 ProjectPoint(Vector3 point, Vector3 lineStart, Vector3 lineEnd)
+    {
+        Vector3 onto = lineEnd - lineStart;
+        Vector3 toProject = point - lineStart;
+        Vector3 projection = ProjectVector(toProject, lineEnd - lineStart);
+        return projection + lineStart;
+    }
 
     public static float GetPointLineDistance(Vector3 p0, Vector3 p1, Vector3 p2)
     {
