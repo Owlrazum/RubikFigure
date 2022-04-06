@@ -82,7 +82,6 @@ public class FieldOfViewVisual : MonoBehaviour
     private int[] ComputeBaseIndices()
     {
         int[] indices = new int[segmentsCount * 3];
-        int vertexCount = segmentsCount + 2;
         int centerIndex = 0;
         int left = centerIndex + 1;
         int right = centerIndex + 2;
