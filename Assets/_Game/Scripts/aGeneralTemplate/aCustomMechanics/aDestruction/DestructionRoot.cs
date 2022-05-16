@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace CustomMechanics
+namespace CustomMechanics.Destruction
 {
     public class DestructionRoot : MonoBehaviour
     {

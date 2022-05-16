@@ -1,7 +1,7 @@
 using System.Collections;
 using UnityEngine;
 
-namespace CustomMechanics
+namespace CustomMechanics.Destruction
 {
     [RequireComponent(typeof(Rigidbody))]
     public class DestructionShattered : MonoBehaviour
