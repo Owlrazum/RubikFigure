@@ -1,0 +1,380 @@
+using Unity.Mathematics;
+using Unity.Jobs;
+using Unity.Collections;
+using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.Jobs;
+
+using MarchingCubes;
+
+public class MetaballMeshGenerator : MonoBehaviour
+{
+    private const int READ = 0;
+    private const int WRITE = 1;
+
+    [System.Serializable]
+    public class DistanceGridParams
+    {
+        public int2 GridResolution = math.int2(10, 10);
+        public float2 GridSize = math.float2(5, 5);
+        [Range(0, 1)]
+        public float Threshold = 0.5f;
+        public float MetaballRadius = 0.5f;
+        public float IntersectValue = 0.5f;
+        public float UsualValue = 0.75f;
+        public float MinimalValue = 0.1f;
+        public Transform MetaballsParent;
+    }
+
+    [SerializeField]
+    private DistanceGridParams _distanceGridParams;
+
+    [System.Serializable]
+    public class ScalarFieldParams
+    {
+        public int HeightLayersCount = 5;
+        public float StartHeight = 0;
+        [Range(0, 255)]
+        public byte IsoLevel = 100;
+    }
+
+    [SerializeField]
+    private ScalarFieldParams _scalarFieldParams;
+
+    [Header("Meshing")]
+    [Space]
+    [SerializeField]
+    private MetaballMeshes _metaballMeshes;
+
+    [Header("Debug")]
+    [Space]
+    [SerializeField]
+    private bool _shouldMoveMetaballs = false;
+
+    #region PersistentNativeData
+    private NativeArray<GridCell>[] _distanceFieldDoubleBuffer;
+
+    private NativeArray<GridCell> DistanceFieldRead
+    {
+        get { return _distanceFieldDoubleBuffer[READ]; }
+    }
+
+    private NativeArray<GridCell> DistanceFieldWrite
+    {
+        get { return _distanceFieldDoubleBuffer[WRITE]; }
+    }
+
+    private ScalarField<byte>[] _scalarFieldDoubleBuffer;
+
+    private ScalarField<byte> ScalarFieldRead
+    {
+        get { return _scalarFieldDoubleBuffer[READ]; }
+    }
+
+    private ScalarField<byte> ScalarFieldWrite
+    {
+        get { return _scalarFieldDoubleBuffer[WRITE]; }
+    }
+
+    private void GeneratePersistentData()
+    {
+        int cellsCount = _distanceGridParams.GridResolution.x * _distanceGridParams.GridResolution.y;
+        _distanceFieldDoubleBuffer = new NativeArray<GridCell>[2];
+
+        _distanceFieldDoubleBuffer[READ] = new NativeArray<GridCell>(cellsCount, Allocator.Persistent);
+        _distanceFieldDoubleBuffer[WRITE] = new NativeArray<GridCell>(cellsCount, Allocator.Persistent);
+
+        _scalarFieldDoubleBuffer = new ScalarField<byte>[2];
+
+        _scalarFieldDoubleBuffer[READ] = new ScalarField<byte>(
+            _distanceGridParams.GridResolution.x,
+            _scalarFieldParams.HeightLayersCount,
+            _distanceGridParams.GridResolution.y,
+            Allocator.Persistent
+        );
+
+        _scalarFieldDoubleBuffer[WRITE] = new ScalarField<byte>(
+            _distanceGridParams.GridResolution.x,
+            _scalarFieldParams.HeightLayersCount,
+            _distanceGridParams.GridResolution.y,
+            Allocator.Persistent
+        );
+    }
+
+    private void DisposePersistentData()
+    {
+        _distanceFieldDoubleBuffer[READ].Dispose();
+        _distanceFieldDoubleBuffer[WRITE].Dispose();
+        _scalarFieldDoubleBuffer[READ].Dispose();
+        _scalarFieldDoubleBuffer[WRITE].Dispose();
+    }
+
+    private void SwapGridCellsDoubleBuffer()
+    {
+        NativeArray<GridCell> tmp = _distanceFieldDoubleBuffer[0];
+        _distanceFieldDoubleBuffer[0] = _distanceFieldDoubleBuffer[1];
+        _distanceFieldDoubleBuffer[1] = tmp;
+    }
+
+    private void SwapScalarFieldDoubleBuffer()
+    {
+        // print("Swapped scalar field");
+        ScalarField<byte> tmp = _scalarFieldDoubleBuffer[0];
+        _scalarFieldDoubleBuffer[0] = _scalarFieldDoubleBuffer[1];
+        _scalarFieldDoubleBuffer[1] = tmp;
+    }
+    #endregion
+
+    #region TempNativeData
+    private NativeArray<float3> _metaballsPos;
+
+    private NativeArray<int>[] _vertexCountDoubleBuffer;
+    private NativeArray<VertexData>[] _verticesDoubleBuffer;
+    private NativeArray<ushort>[] _trianglesDoubleBuffer;
+
+    private void InitializeTempDataDoubleBuffers()
+    {
+        _vertexCountDoubleBuffer = new NativeArray<int>[2];
+        _verticesDoubleBuffer = new NativeArray<VertexData>[2];
+        _trianglesDoubleBuffer = new NativeArray<ushort>[2];
+
+        _vertexCountDoubleBuffer[READ] = new NativeArray<int>(1, Allocator.TempJob);
+        _verticesDoubleBuffer[READ] = new NativeArray<VertexData>(0, Allocator.TempJob);
+        _trianglesDoubleBuffer[READ] = new NativeArray<ushort>(0, Allocator.TempJob);
+    }
+
+    private void SwapMeshDoubleBuffers()
+    {
+        NativeArray<int> tmpVertexCount = _vertexCountDoubleBuffer[0];
+        _vertexCountDoubleBuffer[0] = _vertexCountDoubleBuffer[1];
+        _vertexCountDoubleBuffer[1] = tmpVertexCount;
+
+        NativeArray<VertexData> tmpVertices = _verticesDoubleBuffer[0];
+        _verticesDoubleBuffer[0] = _verticesDoubleBuffer[1];
+        _verticesDoubleBuffer[1] = tmpVertices;
+
+        NativeArray<ushort> tmpTriangles = _trianglesDoubleBuffer[0];
+        _trianglesDoubleBuffer[0] = _trianglesDoubleBuffer[1];
+        _trianglesDoubleBuffer[1] = tmpTriangles;
+    }
+    #endregion
+
+    #region Jobs
+    private JobHandle _distanceGridJobHandle;
+    private JobInitDistanceField _distanceGridJob;
+
+    private JobHandle _scalarFieldJobHandle;
+    private JobInitScalarField _scalarFieldJob;
+
+    private JobHandle _generateMeshJobHandle;
+    private JobGenerateMesh _generatetMeshJob;
+    #endregion
+
+    private DebugMoveMetaball[] _moveMetaballs;
+
+    private float _cellSize;
+    private bool _shouldDisposeTempData;
+
+    private void Awake()
+    {
+        if (!enabled)
+        {
+            return;
+        }
+        int distanceFieldLength =
+            _distanceGridParams.GridResolution.x *
+            _distanceGridParams.GridResolution.y;
+
+        _moveMetaballs = new DebugMoveMetaball[_distanceGridParams.MetaballsParent.childCount];
+        for (int i = 0; i < _distanceGridParams.MetaballsParent.childCount; i++)
+        {
+            _distanceGridParams.MetaballsParent.GetChild(i).TryGetComponent(out _moveMetaballs[i]);
+        }
+
+        _cellSize = _distanceGridParams.GridSize.x / _distanceGridParams.GridResolution.x;
+
+        GeneratePersistentData();
+        InitializeTempDataDoubleBuffers();
+    }
+
+    private void InitializeReadGridCellsBuffer()
+    {
+        CreateScalarFieldTempDataUpdate();
+
+        float3 startCellPos = math.float3(transform.position.x, 0, transform.position.z)
+            + math.float3(-1, 0, -1) * (_distanceGridParams.GridSize.x - _cellSize) / 2;
+        JobInitDistanceField distanceGridJob = new JobInitDistanceField()
+        {
+            GridResolution = _distanceGridParams.GridResolution,
+            StartCell = startCellPos,
+            CellDelta = _cellSize,
+            Threshold = _distanceGridParams.Threshold,
+            MetaRadius = _distanceGridParams.MetaballRadius,
+            IntersectValue = _distanceGridParams.IntersectValue,
+            UsualValue = _distanceGridParams.UsualValue,
+            MinimalValue = _distanceGridParams.MinimalValue,
+
+            GridCellsWrite = DistanceFieldWrite,    
+            Metaballs = _metaballsPos
+        };
+        JobHandle distanceGridHandle = distanceGridJob.ScheduleParallel(DistanceFieldWrite.Length, 64, default);
+        distanceGridHandle.Complete();
+        SwapGridCellsDoubleBuffer();
+        _metaballsPos.Dispose();
+    }
+
+    private void MoveMetaballsUpdate()
+    {
+        if (!_shouldMoveMetaballs)
+        {
+            return;
+        }
+        float timeOffset = 0.2f;
+        for (int i = 0; i < _moveMetaballs.Length; i++)
+        {
+            _moveMetaballs[i].Move(timeOffset + i * 0.2f);
+        }
+    }
+
+    private void CreateScalarFieldTempDataUpdate()
+    {
+        float3[] metaballsPos = new float3[_distanceGridParams.MetaballsParent.childCount];
+        for (int i = 0; i < _distanceGridParams.MetaballsParent.childCount; i++)
+        {
+            metaballsPos[i] = math.float3(
+                _distanceGridParams.MetaballsParent.GetChild(i).position.x,
+                0,
+                _distanceGridParams.MetaballsParent.GetChild(i).position.z
+            );
+        }
+
+        _metaballsPos = new NativeArray<float3>(metaballsPos, Allocator.TempJob);
+    }
+
+    private void ScheduleScalarFieldInitializersJobs()
+    {
+        MoveMetaballsUpdate();
+        CreateScalarFieldTempDataUpdate();
+
+        float3 startCellPos = math.float3(transform.position.x, 0, transform.position.z)
+            + math.float3(-1, 0, -1) * (_distanceGridParams.GridSize.x - _cellSize) / 2;
+        _distanceGridJob = new JobInitDistanceField()
+        {
+            GridResolution = _distanceGridParams.GridResolution,
+            StartCell = startCellPos,
+            CellDelta = _cellSize,
+            Threshold = _distanceGridParams.Threshold,
+            MetaRadius = _distanceGridParams.MetaballRadius,
+            IntersectValue = _distanceGridParams.IntersectValue,
+            UsualValue = _distanceGridParams.UsualValue,
+            MinimalValue = _distanceGridParams.MinimalValue,
+
+            GridCellsWrite = DistanceFieldWrite,
+            Metaballs = _metaballsPos
+        };
+        _distanceGridJobHandle = _distanceGridJob.ScheduleParallel(DistanceFieldWrite.Length, 64, default);
+
+        _scalarFieldJob = new JobInitScalarField()
+        {
+            InputDistanceField = DistanceFieldRead,
+            OutputScalarField = ScalarFieldWrite
+        };
+        _scalarFieldJobHandle = _scalarFieldJob.ScheduleParallel(ScalarFieldWrite.Length, 64, default);
+
+        _shouldDisposeTempData = true;
+    }
+
+    private void Update()
+    {
+        ScheduleScalarFieldInitializersJobs();
+
+        int maxLength = 15 * ScalarFieldRead.Length;
+
+        _vertexCountDoubleBuffer[WRITE] = new NativeArray<int>(1, Allocator.TempJob);
+        _verticesDoubleBuffer[WRITE] = new NativeArray<VertexData>(maxLength, Allocator.TempJob);
+        _trianglesDoubleBuffer[WRITE] = new NativeArray<ushort>(maxLength, Allocator.TempJob);
+
+        _generatetMeshJob = new JobGenerateMesh()
+        {
+            IsoLevel = _scalarFieldParams.IsoLevel,
+            CellSize = _cellSize,
+
+            InputScalarField = ScalarFieldRead,
+            InputDistanceField = DistanceFieldRead,
+
+            VertexCount = _vertexCountDoubleBuffer[WRITE],
+            OutputVertices = _verticesDoubleBuffer[WRITE],
+            OutputTriangles = _trianglesDoubleBuffer[WRITE]
+        };
+
+        _generateMeshJobHandle =
+        _generatetMeshJob.Schedule(_scalarFieldJobHandle);
+
+        JobHandle.ScheduleBatchedJobs();
+    }
+
+    private void LateUpdate()
+    {
+        _distanceGridJobHandle.Complete();
+        _scalarFieldJobHandle.Complete();
+        if (_shouldDisposeTempData)
+        {
+            _metaballsPos.Dispose();
+        }
+
+        _generateMeshJobHandle.Complete();
+
+        GenerateMeshImmediate();
+
+        SwapGridCellsDoubleBuffer();
+        SwapScalarFieldDoubleBuffer();
+        SwapMeshDoubleBuffers();
+    }
+
+    public void GenerateMeshImmediate()
+    {
+        Mesh mesh = new Mesh();
+        SubMeshDescriptor subMesh = new SubMeshDescriptor(0, 0);
+        int vertexCount = _vertexCountDoubleBuffer[WRITE][0] * 3;
+
+        mesh.SetVertexBufferParams(vertexCount, VertexData.VertexBufferMemoryLayout);
+        mesh.SetIndexBufferParams(vertexCount, IndexFormat.UInt16);
+
+        mesh.SetVertexBufferData(_verticesDoubleBuffer[WRITE], 0, 0, vertexCount);
+        mesh.SetIndexBufferData(_trianglesDoubleBuffer[WRITE], 0, 0, vertexCount);
+
+        mesh.subMeshCount = 1;
+        subMesh.indexCount = vertexCount;
+        mesh.SetSubMesh(0, subMesh);
+
+        mesh.RecalculateBounds();
+
+        _metaballMeshes.AssignMesh(mesh);
+
+         if (_shouldDisposeTempData)
+        {
+            _vertexCountDoubleBuffer[READ].Dispose();
+            _verticesDoubleBuffer[READ].Dispose();
+            _trianglesDoubleBuffer[READ].Dispose();
+            _shouldDisposeTempData = false;
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (!enabled)
+        {
+            return;
+        }
+
+        DisposePersistentData();
+        if (_shouldDisposeTempData)
+        {
+            _metaballsPos.Dispose();
+        }
+
+        _vertexCountDoubleBuffer[READ].Dispose();
+        _verticesDoubleBuffer[READ].Dispose();
+        _trianglesDoubleBuffer[READ].Dispose();
+    }
+}
