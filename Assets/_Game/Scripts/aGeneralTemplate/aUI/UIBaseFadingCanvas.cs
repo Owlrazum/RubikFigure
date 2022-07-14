@@ -42,7 +42,6 @@ public class UIBaseFadingCanvas : MonoBehaviour
     
     private GraphicRaycaster graphicRaycaster;
 
-
     protected Action CompletedShowItself;
     protected Action CompletedHideItself;
 

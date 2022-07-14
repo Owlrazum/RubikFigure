@@ -1,4 +1,5 @@
 using UnityEngine;
+using Unity.Mathematics;
 
 [System.Serializable]
 public struct CubicBeizerVector3Params
@@ -108,6 +109,103 @@ public static class CustomMath
     public static bool AreQuaternionsEqual(Quaternion q1, Quaternion q2)
     {
         return Mathf.Abs(Quaternion.Dot(q1.normalized, q2.normalized)) > 1 - Epsilon;
+    }
+
+    /// <summary>
+    /// Returns with
+    /// x - min
+    /// y - max
+    /// </summary>
+    public static float2 MinMaxComponentsRGB(float3 rgb)
+    {
+        float2 minMax = new float2(rgb.x, rgb.y);
+        float x = rgb.x;
+        float y = rgb.y;
+        float z = rgb.z;
+        if (x > y || x > z)
+        {
+            if (y < z)
+            {
+                minMax.x = y;
+                if (x > z)
+                {
+                    minMax.y = x;
+                }
+                else
+                {
+                    minMax.y = z;
+                }
+            }
+            else
+            {
+                minMax.x = z;
+                if (x > y)
+                {
+                    minMax.y = x;
+                }
+                else
+                {
+                    minMax.y = y;
+                }
+            }
+        }
+        else
+        { 
+            if (y > z)
+            {
+                minMax.y = y;
+            }
+            else
+            {
+                minMax.y = z;
+            }
+        }
+
+        return minMax;
+    }
+
+    public static float MaxComponentRGB(float3 rgb)
+    {
+        float x = rgb.x;
+        float y = rgb.y;
+        float z = rgb.z;
+        if (x < y || x < z)
+        {
+            if (y < z)
+            {
+                return z;
+            }
+            else
+            {
+                return y;
+            }
+        }
+        else
+        {
+            return x;
+        }
+    }
+
+    public static float MinComponentRGB(float3 rgb)
+    { 
+        float x = rgb.x;
+        float y = rgb.y;
+        float z = rgb.z;
+        if (x > y || x > z)
+        {
+            if (y > z)
+            {
+                return z;
+            }
+            else
+            {
+                return y;
+            }
+        }
+        else
+        {
+            return x;
+        }
     }
 
     /// <summary>
