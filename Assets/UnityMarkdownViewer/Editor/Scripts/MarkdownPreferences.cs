@@ -34,7 +34,7 @@ namespace MG.MDV
             {
                 mJIRA        = EditorPrefs.GetString( KeyJIRA, "" );
                 mStripHTML   = EditorPrefs.GetBool( KeyHTML, true );
-                mDarkSkin    = EditorPrefs.GetBool( KeyDarkSkin, EditorGUIUtility.isProSkin );
+                mDarkSkin    = EditorPrefs.GetBool( KeyDarkSkin, false );
                 mPrefsLoaded = true;
             }
         }
@@ -78,9 +78,7 @@ namespace MG.MDV
             {
                 EditorPrefs.SetString( KeyJIRA, mJIRA );
                 EditorPrefs.SetBool( KeyHTML, mStripHTML );
-                // ---
-                // EditorPrefs.SetBool(KeyDarkSkin, mDarkSkin);
-                // ---
+                EditorPrefs.SetBool(KeyDarkSkin, mDarkSkin);
             }
         }
     }
