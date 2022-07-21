@@ -10,9 +10,8 @@ public class Clustering : MonoBehaviour
     private Transform shardsRootParent;
 
     [SerializeField]
-    [Tooltip("Place boxColliders as if they were world axis aligned bounding boxes." +
-        "Then try to group shards depending whether they should be together")]
-    private string toolTip = "You can read a tooltip in tooltip of this tooltip";
+    private string toolTip = "Place boxColliders as if they were world axis aligned bounding boxes." +
+        "Then try to group shards depending whether they should be together";
 
     [SerializeField]
     [Tooltip("An aabb is used to test whether the point is inside")]
