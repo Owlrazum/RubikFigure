@@ -14,3 +14,8 @@
 Hello World of shader graph!!! You greatly helped me to build interesting scan material.
 
 Благодарю, увидимся после мид проекта или TimeWalker-a.
+
+# 22 Июля 2022
+
+Уже прошло 4 недели с начала этой заразы, с начала этой ереси. (Я про кашель)
+Доброкачественные улучшения репы.
