@@ -23,6 +23,9 @@ public class UIButton : MonoBehaviour, IPointerTouchHandler, IPointerEnterExitHa
     public RectTransform Rect { get { return _rect; } }
     public RectTransform InteractionRect { get { return _rect; } }
 
+    public bool ShouldInvokePointerEnterExitEvents { get { return true; } }
+    public bool ShouldInvokePointerTouchEvent { get { return true; } }
+
     private bool _enterState;
     public bool EnterState { get { return _enterState; } set { _enterState = value; } }
 

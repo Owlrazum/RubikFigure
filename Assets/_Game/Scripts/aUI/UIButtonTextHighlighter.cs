@@ -3,7 +3,7 @@ using UnityEngine;
 using TMPro;
 
 [RequireComponent(typeof(TextMeshProUGUI))]
-public class UITextHighlighter : MonoBehaviour
+public class UIButtonTextHighlighter : MonoBehaviour
 {
     [SerializeField]
     private Color _defaultColor = Color.black;

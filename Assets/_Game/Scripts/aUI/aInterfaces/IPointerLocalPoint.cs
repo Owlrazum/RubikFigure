@@ -6,7 +6,7 @@ namespace Orazum.UI
     {
         public bool ShouldUpdateLocalPoint { get; }
         public RectTransform Rect { get; }
-        public void UpdateLocalPoint(in Vector2Int localPointArg);
+        public void UpdateWithLocalPointFromPointer(in Vector2Int localPointArg);
         public int InstanceID { get; }
     }
 }
