@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1eeb9d24981c04b148a37e9cbb558e9f, type: 3}
+  m_Name: WheelGenParams
+  m_EditorClassIdentifier: 
+  _height: 1
+  _outerRadius: 3
+  _innerRadius: 1
+  _sideCount: 6
+  _segmentCountInOneSide: 3
+  _meshesMaterial: {fileID: 2100000, guid: 9ec895edcc1674d60bcd88cd46b29f91, type: 2}
