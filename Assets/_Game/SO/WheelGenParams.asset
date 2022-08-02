@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: WheelGenParams
   m_EditorClassIdentifier: 
   _height: 1
-  _outerRadius: 3
-  _innerRadius: 1
+  _outerRadius: 4
+  _innerRadius: 0.4
   _sideCount: 6
   _segmentCountInOneSide: 3
-  _meshesMaterial: {fileID: 2100000, guid: 9ec895edcc1674d60bcd88cd46b29f91, type: 2}
+  _meshesMaterial: {fileID: 2100000, guid: a0e7b8218640c4ce8a7b698683b844f9, type: 2}

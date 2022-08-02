@@ -13,6 +13,9 @@ public class WheelGenerator : MonoBehaviour
     [SerializeField]
     private WheelGenParamsSO _wheelGenParams;
 
+    [SerializeField]
+    private UIButton _shuffleButton;
+
     private WheelGenJob _wheelMeshGenJob;
     private JobHandle _wheelMeshGenJobHandle;
 
@@ -22,11 +25,13 @@ public class WheelGenerator : MonoBehaviour
     private NativeArray<VertexData> _vertices;
     private NativeArray<short> _indices;
 
+    private NativeArray<float3> _circleRaysNativeArray;
+
     private int _segmentCount;
     private MeshUpdateFlags _meshUpdateFlags;
 
     private Wheel _wheel;
-
+    private MeshFilter[] _wheelSegmentMeshFilters;
 
     private bool _needsDispose;
 
@@ -44,6 +49,8 @@ public class WheelGenerator : MonoBehaviour
         _vertices = new NativeArray<VertexData>(VERTEX_COUNT_ONE_SEGMENT * _segmentCount, allocator);
         _indices = new NativeArray<short>(INDEX_COUNT_ONE_SEGMENT * _segmentCount, allocator);
 
+        _circleRaysNativeArray = new NativeArray<float3>(_wheelGenParams.SideCount, allocator);
+
         _needsDispose = true;
 
         _wheelMeshGenJob = new WheelGenJob()
@@ -58,12 +65,14 @@ public class WheelGenerator : MonoBehaviour
             OutputIndexCounts = _indexCounts,
             OutputVertices = _vertices,
             OutputIndices = _indices,
+
+            OutputCircleRays = _circleRaysNativeArray
         };
         _wheelMeshGenJobHandle = _wheelMeshGenJob.Schedule();
 
         JobHandle.ScheduleBatchedJobs();
 
-        MeshFilter[] segmentMeshFilters = new MeshFilter[_segmentCount];
+        _wheelSegmentMeshFilters = new MeshFilter[_segmentCount];
 
         GameObject wheelGb = new GameObject("Wheel", typeof(Wheel));
         for (int i = 0; i < _segmentCount; i++)
@@ -71,17 +80,27 @@ public class WheelGenerator : MonoBehaviour
             GameObject wheelSegmentGb = new GameObject("WheelSegment", typeof(MeshFilter), typeof(MeshRenderer));
             wheelSegmentGb.transform.parent = wheelGb.transform;
 
-            segmentMeshFilters[i] = wheelSegmentGb.GetComponent<MeshFilter>();
+            _wheelSegmentMeshFilters[i] = wheelSegmentGb.GetComponent<MeshFilter>();
             wheelSegmentGb.GetComponent<MeshRenderer>().sharedMaterial = _wheelGenParams.MeshesMaterial;
         }
 
         _wheel = wheelGb.GetComponent<Wheel>();
-        _wheel.Initialize(segmentMeshFilters);
     }
 
     private void Start()
     {
         _wheelMeshGenJobHandle.Complete();
+
+        // Debug.Log(
+        //     "BBL " + _wheelMeshGenJob.BBL + "\n" +
+        //     "BBR " + _wheelMeshGenJob.BBR + "\n" +
+        //     "BTL " + _wheelMeshGenJob.BTL + "\n" +
+        //     "BTR " + _wheelMeshGenJob.BTR + "\n" +
+        //     "FBL " + _wheelMeshGenJob.FBL + "\n" +
+        //     "FBR " + _wheelMeshGenJob.FBR + "\n" +
+        //     "FTL " + _wheelMeshGenJob.FTL + "\n" +
+        //     "FTR " + _wheelMeshGenJob.FTR
+        // );
 
         _vertexCounts = _wheelMeshGenJob.OutputVertexCounts;
         _indexCounts = _wheelMeshGenJob.OutputIndexCounts;
@@ -89,41 +108,52 @@ public class WheelGenerator : MonoBehaviour
         _vertices = _wheelMeshGenJob.OutputVertices;
         _indices = _wheelMeshGenJob.OutputIndices;
 
+        _circleRaysNativeArray = _wheelMeshGenJob.OutputCircleRays;
+
         int vertexBufferStart = 0;
         int indexBufferStart = 0;
 
         for (int i = 0; i < _segmentCount; i++)
         {
-            Mesh mesh = _wheel.GetMesh(i);
-            mesh.MarkDynamic();
+            Mesh newMesh = _wheelSegmentMeshFilters[i].mesh;
+            newMesh.MarkDynamic();
 
-            mesh.SetVertexBufferParams(_wheelMeshGenJob.OutputVertexCounts[i], VertexData.VertexBufferMemoryLayout);
-            mesh.SetIndexBufferParams(_wheelMeshGenJob.OutputIndexCounts[i], IndexFormat.UInt16);
+            newMesh.SetVertexBufferParams(_wheelMeshGenJob.OutputVertexCounts[i], VertexData.VertexBufferMemoryLayout);
+            newMesh.SetIndexBufferParams(_wheelMeshGenJob.OutputIndexCounts[i], IndexFormat.UInt16);
 
-            mesh.SetVertexBufferData(_vertices, vertexBufferStart, 0, _vertexCounts[i], 0, _meshUpdateFlags);
-            mesh.SetIndexBufferData(_indices, indexBufferStart, 0, _indexCounts[i], _meshUpdateFlags);
+            newMesh.SetVertexBufferData(_vertices, vertexBufferStart, 0, _vertexCounts[i], 0, _meshUpdateFlags);
+            newMesh.SetIndexBufferData(_indices, indexBufferStart, 0, _indexCounts[i], _meshUpdateFlags);
 
             vertexBufferStart += _vertexCounts[i];
             indexBufferStart += _indexCounts[i];
 
-            mesh.subMeshCount = 1;
+            newMesh.subMeshCount = 1;
             SubMeshDescriptor subMesh = new SubMeshDescriptor(
                 indexStart: 0,
                 indexCount: _indexCounts[i]
             );
-            mesh.SetSubMesh(0, subMesh);
+            newMesh.SetSubMesh(0, subMesh);
 
-            mesh.RecalculateNormals();
-            mesh.RecalculateBounds();
+            newMesh.RecalculateNormals();
+            newMesh.RecalculateBounds();
 
-            _wheel.AssignMesh(mesh, i);
+            _wheelSegmentMeshFilters[i].mesh = newMesh;
         }
+
+        _wheel.MeshDataInit(_wheelSegmentMeshFilters, _wheelGenParams.SideCount, _wheelGenParams.SegmentCountInOneSide);
+
+        CircleRays circleRays = new CircleRays(_circleRaysNativeArray);
+        WheelUtilities.CurrentRays = circleRays;
+
+        _wheel.GeneralInit(_shuffleButton);
 
         _vertexCounts.Dispose();
         _indexCounts.Dispose();
 
         _vertices.Dispose();
         _indices.Dispose();
+
+        _circleRaysNativeArray.Dispose();
 
         _needsDispose = false;
     }

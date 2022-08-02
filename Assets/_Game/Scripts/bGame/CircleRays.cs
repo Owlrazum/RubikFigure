@@ -1,9 +1,11 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using Unity.Mathematics;
+using Unity.Collections;
 
-public struct CircleRays : IEnumerable<float3>
+using UnityEngine;
+
+public struct CircleRaysStruct
 {
     private float3 _r1;
     private float3 _r2;
@@ -53,17 +55,23 @@ public struct CircleRays : IEnumerable<float3>
             }
         }
     }
+}
 
-    public IEnumerator<float3> GetEnumerator()
+public class CircleRays
+{
+    private Vector3[] _rays;
+
+    public CircleRays(NativeArray<float3> data)
     {
-        for (int i = 0; i < 6; i++)
-        {
-            yield return this[i];
+        _rays = new Vector3[data.Length];
+        for (int i = 0; i < data.Length; i++)
+        { 
+            _rays[i] = data[i];
         }
     }
 
-    IEnumerator IEnumerable.GetEnumerator()
+    public Vector3 GetRay(int index)
     {
-        return GetEnumerator();
+        return _rays[index];
     }
 }

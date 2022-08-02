@@ -9,7 +9,7 @@ using Orazum.UI;
 public class UIButton : MonoBehaviour, IPointerTouchHandler, IPointerEnterExitHandler
 {
     [SerializeField]
-    private Color _highlightColor;
+    private Color _highlightColor = Color.black;
 
     private Color _defaultColor;
 
