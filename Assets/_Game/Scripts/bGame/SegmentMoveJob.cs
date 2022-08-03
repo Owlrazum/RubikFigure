@@ -77,9 +77,10 @@ public struct SegmentMoveJob : IJob
             for (int corner = 0; corner < 8; corner++)
             {
                 int3 meshCorner = WheelLookUpTable.GetCornerIndices(corner);
-                float3 cornerPos = P_SegmentPoint.GetCornerPosition(corner);
+                float3 cornerPos = P_SegmentPoint.GetCornerPosition(corner);;
 
-                if (corner < 4)
+                if (corner < 4 && P_SegmentMoveType == SegmentMoveType.Clockwise ||
+                    corner > 3 && P_SegmentMoveType == SegmentMoveType.CounterClockwise)
                 { 
                     #region ApproachSegmentPoint
                     data = InputVertices[meshCorner.x];
@@ -111,7 +112,10 @@ public struct SegmentMoveJob : IJob
             float P_LerpParamOrigin = P_LerpParam;
             P_LerpParam = math.unlerp(0, 0.5f, P_LerpParamOrigin);
 
-            for (int corner = 0; corner < 4; corner++)
+            int movedCornerStartIndex = P_SegmentMoveType == SegmentMoveType.Clockwise ? 0 : 4;
+            int movedCornerEndIndex = P_SegmentMoveType == SegmentMoveType.Clockwise ? 4 : 8;
+
+            for (int corner = movedCornerStartIndex; corner < movedCornerEndIndex; corner++)
             {
                 #region ApproachSegmentPoint
                 int3 meshCorner = WheelLookUpTable.GetCornerIndices(corner);
@@ -134,8 +138,11 @@ public struct SegmentMoveJob : IJob
                 #endregion
             }
 
+            movedCornerStartIndex = P_SegmentMoveType == SegmentMoveType.Clockwise ? 4 : 0;
+            movedCornerEndIndex = P_SegmentMoveType == SegmentMoveType.Clockwise ? 8 : 4;
+
             P_LerpParam = math.unlerp(P_ClockMoveBufferLerpValue, 1, P_LerpParamOrigin);
-            for (int corner = 4; corner < 8; corner++)
+            for (int corner = movedCornerStartIndex; corner < movedCornerEndIndex; corner++)
             {
                 #region ApproachSegmentPoint
                 int3 meshCorner = WheelLookUpTable.GetCornerIndices(corner);
@@ -166,7 +173,8 @@ public struct SegmentMoveJob : IJob
                 int3 meshCorner = WheelLookUpTable.GetCornerIndices(corner);
                 float3 cornerPos = P_SegmentPoint.GetCornerPosition(corner);
 
-                if (corner < 4)
+                if (corner < 4 && P_SegmentMoveType == SegmentMoveType.Clockwise ||
+                    corner > 3 && P_SegmentMoveType == SegmentMoveType.CounterClockwise)
                 {
                     data = InputVertices[meshCorner.x];
                     data.position = cornerPos;

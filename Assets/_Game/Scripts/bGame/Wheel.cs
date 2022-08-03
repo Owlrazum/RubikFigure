@@ -45,21 +45,13 @@ public class Wheel : MonoBehaviour
         _shuffleButton = shuffleButtonArg;
         _shuffleButton.EventOnTouch += Shuffle;
 
-        _shuffleIndices = new int2[_segments.Length / 2];
-        _shuffleSegments = new int[_segments.Length / 2];
+        _shuffleIndices = new int2[_segments.Length];
+        _shuffleSegments = new int[_segments.Length];
         for (int i = 0; i < _segments.Length; i++)
         {
-            if (i % 2 == 0)
-            { 
-                _segments[i].gameObject.SetActive(false);
-            }
-            else
-            {
-                int2 index = new int2(i / _data.SegmentCountInOneSide, i % _data.SegmentCountInOneSide);
-                index.x = index.x + 1 < _data.SideCount ? index.x + 1 : 0;
-                _shuffleIndices[i / 2] = index;
-                _shuffleSegments[i / 2] = i;
-            }
+            int2 index = new int2(i / _data.SegmentCountInOneSide, i % _data.SegmentCountInOneSide);
+            _shuffleIndices[i] = index;
+            _shuffleSegments[i] = i;
         }
     }
 
@@ -75,7 +67,6 @@ public class Wheel : MonoBehaviour
 
     private int2[] _shuffleIndices;
     private int[] _shuffleSegments;
-    private SegmentMoveType moveType = SegmentMoveType.Clockwise;
 
     private void Shuffle()
     {
@@ -84,17 +75,28 @@ public class Wheel : MonoBehaviour
             for (int i = 0; i < _shuffleSegments.Length; i++)
             {
                 int2 index = _shuffleIndices[i];
+                SegmentMoveType moveType;
+                if (index.y % 2 == 1)
+                {
+                    moveType = SegmentMoveType.CounterClockwise;
+                    index.x = index.x - 1 >= 0 ? index.x - 1 : _data.SideCount - 1;
+                }
+                else
+                { 
+                    moveType = SegmentMoveType.Clockwise;
+                    // index.x = index.x - 1 >= 0 ? index.x - 1 : _data.SideCount - 1;
+                    index.x = index.x + 1 < _data.SideCount ? index.x + 1 : 0;
+                }
+                _shuffleIndices[i] = index;
+
                 SegmentPoint target = _data.SegmentPoints[
                     index.x * _data.SegmentCountInOneSide +
                     index.y
                 ];
-
-                index.x = index.x + 1 < _data.SideCount ? index.x + 1 : 0;
-                _shuffleIndices[i] = index;
-
+                
                 _segments[_shuffleSegments[i]].StartSchedulingMoveJobs(
                     target,
-                    2f,
+                    1,
                     moveType,
                     OnCompleteMoveJobSchedule
                 );

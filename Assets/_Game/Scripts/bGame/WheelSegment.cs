@@ -12,7 +12,7 @@ using UnityEngine.Rendering;
 [RequireComponent(typeof(MeshFilter))]
 public class WheelSegment : MonoBehaviour
 {
-    private const float CLOCK_MOVE_BUFFER_LERP_VALUE = 0.49f;
+    private const float CLOCK_MOVE_BUFFER_LERP_VALUE = 0.4f;
 
     private MeshFilter _meshFilter;
     private MeshRenderer _meshRenderer;
