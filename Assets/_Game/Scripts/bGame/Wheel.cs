@@ -28,11 +28,6 @@ public class Wheel : MonoBehaviour
     {
         _data = wheelDataArg;
 
-        // Reverse is needed because math convention of sin and cos is in counter clockwise order,
-        // which resulted in segmentPoints ordered in a similar fashion
-        // Here the positive means clockwise.
-        CollectionUtilities.ReverseNativeArray(_data.SegmentPoints);
-
         _segmentPointsStates = new int[_data.SideCount * _data.SegmentCountInOneSide];
         for (int i = 0; i < _segmentPointsStates.Length; i++)
         {
@@ -99,7 +94,7 @@ public class Wheel : MonoBehaviour
 
                 _segments[_shuffleSegments[i]].StartSchedulingMoveJobs(
                     target,
-                    2,
+                    2f,
                     moveType,
                     OnCompleteMoveJobSchedule
                 );

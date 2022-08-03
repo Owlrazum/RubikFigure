@@ -59,6 +59,16 @@ public class WheelSegment : MonoBehaviour
         _currentTarget = target;
         _currentSpeed = speed;
         _currentMove = moveType;
+
+        // for (int corner = 0; corner < 1; corner++)
+        // { 
+        //     int3 meshCorner = WheelLookUpTable.GetCornerIndices(corner);
+        //     float3 cornerPos = target.GetCornerPosition(corner);
+
+        //     Debug.DrawLine(_vertices[meshCorner.x].position, cornerPos, Color.red, 100, false);
+        //     Debug.DrawLine(_vertices[meshCorner.y].position, cornerPos, Color.red, 100, false);
+        //     Debug.DrawLine(_vertices[meshCorner.z].position, cornerPos, Color.red, 100, false);
+        // }
         StartCoroutine(MoveSequence(OnCompleteJobSchedule));
     }
 
