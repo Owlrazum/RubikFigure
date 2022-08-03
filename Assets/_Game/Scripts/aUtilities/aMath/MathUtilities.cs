@@ -2,7 +2,7 @@ using UnityEngine;
 using Unity.Mathematics;
 
 namespace Orazum.Utilities
-{ 
+{
     [System.Serializable]
     public struct CubicBeizerVector3Params
     {
@@ -21,6 +21,14 @@ namespace Orazum.Utilities
 
             return toReturn;
         }
+    }
+
+    public struct CubicBeizerFloat3Params
+    {
+        public float3 initial;
+        public float3 anchor1;
+        public float3 anchor2;
+        public float3 target;
     }
 
     public static class MathUtilities

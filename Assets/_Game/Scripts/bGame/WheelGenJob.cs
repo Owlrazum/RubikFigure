@@ -13,7 +13,7 @@ public struct WheelGenJob : IJob
     public float P_OuterCircleRadius;
     public float P_InnerCircleRadius;
     public int P_SideCount;
-    public int P_SegmentsCount;
+    public int P_SegmentsCountInOneSide;
 
     // The size of array is an amount of segments
     public NativeArray<short> OutputVertexCounts;
@@ -28,7 +28,7 @@ public struct WheelGenJob : IJob
     public NativeArray<short> OutputIndices;
 
     [WriteOnly]
-    public NativeArray<float3> OutputCircleRays;
+    public NativeArray<SegmentPoint> OutputSegmentPoints;
 
     private short totalVertexCount;
     private short totalIndexCount;
@@ -48,7 +48,7 @@ public struct WheelGenJob : IJob
         CircleRaysStruct rays = new CircleRaysStruct();
 #region RaysInit
         float angleDelta = 2 * math.PI / P_SideCount;
-        float currentAngle = math.PI / 2;
+        float currentAngle = math.PI / 2 - angleDelta ;
         rays[0] = new float3(math.cos(currentAngle), 0, math.sin(currentAngle));
         currentAngle += angleDelta;
         rays[1] = new float3(math.cos(currentAngle), 0, math.sin(currentAngle));
@@ -56,32 +56,25 @@ public struct WheelGenJob : IJob
         rays[2] = new float3(math.cos(currentAngle), 0, math.sin(currentAngle));
         currentAngle += angleDelta;
 
-        OutputCircleRays[0] = rays[0];
-        OutputCircleRays[1] = rays[1];
-        OutputCircleRays[2] = rays[2];
-
         if (P_SideCount >= 4)
         { 
             rays[3] = new float3(math.cos(currentAngle), 0, math.sin(currentAngle));
-            OutputCircleRays[3] = rays[3];
             currentAngle += angleDelta;
         }
         if (P_SideCount >= 5)
         { 
             rays[4] = new float3(math.cos(currentAngle), 0, math.sin(currentAngle));
-            OutputCircleRays[4] = rays[4];
             currentAngle += angleDelta;
         }
         if (P_SideCount >= 6)
         { 
             rays[5] = new float3(math.cos(currentAngle), 0, math.sin(currentAngle));
-            OutputCircleRays[5] = rays[5];
             currentAngle += angleDelta;
         }
 #endregion
 
         
-        float radiusDelta = (P_OuterCircleRadius - P_InnerCircleRadius) / P_SegmentsCount;
+        float radiusDelta = (P_OuterCircleRadius - P_InnerCircleRadius) / P_SegmentsCountInOneSide;
 
         for (int i = 0; i < P_SideCount; i++)
         {
@@ -92,11 +85,10 @@ public struct WheelGenJob : IJob
 
             _currentRadius = P_InnerCircleRadius;
             _nextRadius = _currentRadius + radiusDelta;
-
             
-            for (int j = 0; j < P_SegmentsCount; j++)
+            for (int j = 0; j < P_SegmentsCountInOneSide; j++)
             {
-                _segmentIndex = i * P_SegmentsCount + j;
+                _segmentIndex = i * P_SegmentsCountInOneSide + j;
 
                 // if (DoesMultiVertexSelectionInOneSegmentNeedInitialization)
                 // {
@@ -105,7 +97,8 @@ public struct WheelGenJob : IJob
                 // }
                 // else
                 // { 
-                    AddSegment(rays[currentRayIndex], rays[nextRayIndex]);
+                    OutputSegmentPoints[_segmentIndex] = AddSegment(rays[currentRayIndex], rays[nextRayIndex]);
+                    
                 // }
 
                 _currentRadius = _nextRadius;
@@ -125,7 +118,7 @@ public struct WheelGenJob : IJob
         // );
     }
 
-    private void AddSegment(float3 currentRay, float3 nextRay)
+    private SegmentPoint AddSegment(float3 currentRay, float3 nextRay)
     {
         OutputVertexCounts[_segmentIndex] = 0;
         OutputIndexCounts[_segmentIndex] = 0;
@@ -204,6 +197,21 @@ public struct WheelGenJob : IJob
         );
         float3 back = -forward;
         AddQuad(posBack, back);
+
+        SegmentPoint segmentPoint = new SegmentPoint
+        {
+            BBL = posBot[0],
+            BTL = posTop[0],
+            FBL = posBot[1],
+            FTL = posTop[1],
+
+            BBR = posBot[2],
+            BTR = posTop[2],
+            FBR = posBot[3],
+            FTR = posTop[3]
+        };
+
+        return segmentPoint;
     }
 
     private void AddQuad(float3x4 positions, float3 normal)

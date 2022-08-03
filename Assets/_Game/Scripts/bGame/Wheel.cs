@@ -1,6 +1,12 @@
 using System.Collections;
 using System.Collections.Generic;
+
+using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Rendering;
+
+using Orazum.Utilities;
 
 public class Wheel : MonoBehaviour
 {
@@ -8,67 +14,119 @@ public class Wheel : MonoBehaviour
     private float _testSpeed = 1;
 
     private UIButton _shuffleButton;
-    private MeshFilter[] _segmentMeshFilters;
+    private WheelSegment[] _segments;
 
-    private int[] _state;
-    private int _segmentCountInOneSide;
-    private int _sideCount;
+    private int[] _segmentPointsStates;
+    private WheelData _data;
 
-    public void MeshDataInit(MeshFilter[] segmentMeshFiltersArg, int sideCountArg, int segmentCountInOneSideArg)
+    private NativeArray<VertexData> _vertexBuffer;
+    private bool _needsDispose;
+
+    private bool _isMoveJobScheduled;
+
+    public void AssignData(WheelData wheelDataArg)
     {
-        _segmentMeshFilters = segmentMeshFiltersArg;
+        _data = wheelDataArg;
 
-        _segmentCountInOneSide = segmentCountInOneSideArg;
-        _sideCount = sideCountArg;
-        _state = new int[_sideCount * _segmentCountInOneSide];
-        for (int i = 0; i < _state.Length; i++)
+        // Reverse is needed because math convention of sin and cos is in counter clockwise order,
+        // which resulted in segmentPoints ordered in a similar fashion
+        // Here the positive means clockwise.
+        CollectionsUtilities.ReverseNativeArray<SegmentPoint>(_data.SegmentPoints);
+
+        _segmentPointsStates = new int[_data.SideCount * _data.SegmentCountInOneSide];
+        for (int i = 0; i < _segmentPointsStates.Length; i++)
         {
-            _state[i] = i / _segmentCountInOneSide;
+            _segmentPointsStates[i] = i / _data.SegmentCountInOneSide;
         }
+
+        _vertexBuffer = new NativeArray<VertexData>(_data.Vertices, Allocator.Persistent);
+        _needsDispose = true;
     }
 
-    public void GeneralInit(UIButton shuffleButtonArg)
+    public void GenerationInitialization(WheelSegment[] segmentMeshFiltersArg, UIButton shuffleButtonArg)
     {
+        _segments = segmentMeshFiltersArg;
+
         _shuffleButton = shuffleButtonArg;
         _shuffleButton.EventOnTouch += Shuffle;
+
+        _shuffleIndices = new int2[_segments.Length / 2];
+        _shuffleSegments = new int[_segments.Length / 2];
+        for (int i = 0; i < _segments.Length; i++)
+        {
+            if (i % 2 == 0)
+            { 
+                _segments[i].gameObject.SetActive(false);
+            }
+            else
+            {
+                int2 index = new int2(i / _data.SegmentCountInOneSide, i % _data.SegmentCountInOneSide);
+                index.x = index.x + 1 < _data.SideCount ? index.x + 1 : 0;
+                _shuffleIndices[i / 2] = index;
+                _shuffleSegments[i / 2] = i;
+            }
+        }
     }
 
     private void OnDestroy()
     {
         _shuffleButton.EventOnTouch -= Shuffle;
+
+        if (_needsDispose)
+        {
+            _vertexBuffer.Dispose();
+        }
     }
+
+    private int2[] _shuffleIndices;
+    private int[] _shuffleSegments;
+    private SegmentMoveType moveType = SegmentMoveType.Clockwise;
 
     private void Shuffle()
     {
-        print("Starting shuffle");
-        StartCoroutine(TestMultipleSelection());
+        if (!_isMoveJobScheduled)
+        {
+            for (int i = 0; i < _shuffleSegments.Length; i++)
+            {
+                int2 index = _shuffleIndices[i];
+                SegmentPoint target = _data.SegmentPoints[
+                    index.x * _data.SegmentCountInOneSide +
+                    index.y
+                ];
+
+                index.x = index.x + 1 < _data.SideCount ? index.x + 1 : 0;
+                _shuffleIndices[i] = index;
+
+                _segments[_shuffleSegments[i]].StartSchedulingMoveJobs(
+                    target,
+                    2,
+                    moveType,
+                    OnCompleteMoveJobSchedule
+                );
+            }
+            _isMoveJobScheduled = true;
+        }
     }
 
-    private IEnumerator TestMultipleSelection()
+    private void OnCompleteMoveJobSchedule(int index)
     {
-        while (true)
-        {
-            for (int side = 0; side < _sideCount; side++)
-            {
-                int nextRayIndex = side + 1 < _sideCount ? side + 1 : 0;
-                Vector2Int rayIndices = new Vector2Int(side, nextRayIndex);
+        _segments[index].CompleteMoveJob();
+        _isMoveJobScheduled = false;
+    }
 
-                for (int s = 0; s < _segmentCountInOneSide; s++)
-                {
-                    int segmentIndex = side * _segmentCountInOneSide + s;
-                    Mesh mesh = _segmentMeshFilters[segmentIndex].mesh;
-                    Vector3[] vertices = mesh.vertices;
-                    WheelUtilities.TestSegment(vertices, _testSpeed, rayIndices);
-                    mesh.vertices = vertices;
-                    _segmentMeshFilters[segmentIndex].mesh = mesh;
-                }
+    private void LateUpdate()
+    {
+        if (_isMoveJobScheduled)
+        {
+            for (int i = 0; i < _shuffleSegments.Length; i++)
+            { 
+                _segments[_shuffleSegments[i]].CompleteMoveJob();
             }
-            yield return null;
         }
     }
 
     private int Index(int x, int y)
     {
-        return y * _segmentCountInOneSide + x;
+        return y * _data.SegmentCountInOneSide + x;
     }
 }

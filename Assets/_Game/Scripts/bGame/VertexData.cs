@@ -18,9 +18,13 @@ public struct VertexData
 
     public static readonly VertexAttributeDescriptor[] VertexBufferMemoryLayout =
     {
-            new VertexAttributeDescriptor(VertexAttribute.Position),
-            new VertexAttributeDescriptor(VertexAttribute.Normal),
-            new VertexAttributeDescriptor(VertexAttribute.TexCoord0, VertexAttributeFormat.Float32, 2)
+        new VertexAttributeDescriptor(VertexAttribute.Position, stream: 0),
+        new VertexAttributeDescriptor(VertexAttribute.Normal, stream: 0),
+        new VertexAttributeDescriptor(
+                VertexAttribute.TexCoord0, 
+                VertexAttributeFormat.Float32, 
+                dimension: 2, 
+                stream : 0)
     };
 
     public override string ToString()
