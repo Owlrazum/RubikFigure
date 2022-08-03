@@ -147,7 +147,7 @@ public class WheelGenerator : MonoBehaviour
 
             _wheelSegments[i].MeshContainer.mesh = newMesh;
 
-            NativeArray<VertexData> segmentVertices = CollectionsUtilities.GetVerticesSlice(
+            NativeArray<VertexData> segmentVertices = CollectionUtilities.GetSlice(
                 _vertices, vertexBufferStart, _vertexCounts[i]);
             _wheelSegments[i].Initialize(_wheelGenParams.MeshesMaterial, segmentVertices, i);
 

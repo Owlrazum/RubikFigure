@@ -3,11 +3,11 @@ using UnityEngine;
 
 namespace Orazum.Utilities
 {
-    public static class CollectionsUtilities
+    public static class CollectionUtilities
     {
-        public static NativeArray<VertexData> GetVerticesSlice(NativeArray<VertexData> source, int start, int count)
+        public static NativeArray<T> GetSlice<T>(NativeArray<T> source, int start, int count) where T : struct
         {
-            NativeArray<VertexData> slice = new NativeArray<VertexData>(count, Allocator.Persistent);
+            NativeArray<T> slice = new NativeArray<T>(count, Allocator.Persistent);
             for (int i = 0; i < count; i++)
             {
                 slice[i] = source[i + start];
