@@ -13,7 +13,7 @@ public class UISceneLoadProgressBar : MonoBehaviour
 
     private void Update()
     {
-        float loadProgress = ApplicationDelegatesContainer.GetSceneLoadingProgress();
+        float loadProgress = UIDelegatesContainer.GetSceneLoadingProgress();
         if (loadProgress < 0)
         {
             return;

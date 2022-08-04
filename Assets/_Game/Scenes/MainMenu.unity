@@ -386,6 +386,7 @@ GameObject:
   - component: {fileID: 666141515}
   - component: {fileID: 666141516}
   - component: {fileID: 666141517}
+  - component: {fileID: 666141518}
   m_Layer: 0
   m_Name: GameController
   m_TagString: Untagged
@@ -434,8 +435,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _sceneIndexToTest: -1
-  _gameDesc: {fileID: 0}
+  _gameDesc: {fileID: 11400000, guid: 139299db7233846e59db68cf1c657689, type: 2}
   _wheelLerpSpeed: 1
+--- !u!114 &666141518
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 666141514}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786516aaf084be6b5395d3faeaba77, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1090396983
 GameObject:
   m_ObjectHideFlags: 0

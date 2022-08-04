@@ -6,7 +6,7 @@ using Unity.Collections;
 using UnityEngine;
 using UnityEngine.Assertions;
 
-// [BurstCompile]
+[BurstCompile]
 public struct WheelGenJob : IJob
 {
     public float P_WheelHeight;
@@ -14,12 +14,6 @@ public struct WheelGenJob : IJob
     public float P_InnerCircleRadius;
     public int P_SideCount;
     public int P_SegmentsCountInOneSide;
-
-    // The size of array is an amount of segments
-    public NativeArray<short> OutputVertexCounts;
-
-    // The size of array is an amount of segments
-    public NativeArray<short> OutputIndexCounts;
 
     [WriteOnly]
     public NativeArray<VertexData> OutputVertices;
@@ -30,8 +24,11 @@ public struct WheelGenJob : IJob
     [WriteOnly]
     public NativeArray<SegmentPoint> OutputSegmentPoints;
 
-    private short totalVertexCount;
-    private short totalIndexCount;
+    private short _totalVertexCount;
+    private short _totalIndexCount;
+
+    private short _currentVertexCount;
+    private short _currentIndexCount;
 
     private float2 _uv;
     private int _segmentIndex;
@@ -100,8 +97,8 @@ public struct WheelGenJob : IJob
 
     private SegmentPoint AddSegment(float3 currentRay, float3 nextRay)
     {
-        OutputVertexCounts[_segmentIndex] = 0;
-        OutputIndexCounts[_segmentIndex] = 0;
+        _currentVertexCount = 0;
+        _currentIndexCount = 0;
 
         float3 left = math.rotate(quaternion.AxisAngle(math.up(), -90), currentRay);
         float3 right = math.rotate(quaternion.AxisAngle(math.up(), 90), nextRay);
@@ -206,19 +203,19 @@ public struct WheelGenJob : IJob
         vertex.normal = normal;
         vertex.uv = _uv;
         
-        OutputVertices[totalVertexCount++] = vertex;
-        short addedVertexIndex = OutputVertexCounts[_segmentIndex];
-        OutputVertexCounts[_segmentIndex]++;
+        OutputVertices[_totalVertexCount++] = vertex;
+        short addedVertexIndex = _currentVertexCount;
+        _currentVertexCount++;
 
-        OutputIndices[totalIndexCount++] = addedVertexIndex;
-        OutputIndexCounts[_segmentIndex]++;
+        OutputIndices[_totalIndexCount++] = addedVertexIndex;
+        _currentIndexCount++;
 
         return addedVertexIndex;
     }
 
     private void AddIndex(short vertexIndex)
     {
-        OutputIndexCounts[_segmentIndex]++;
-        OutputIndices[totalIndexCount++] = vertexIndex;
+        _currentIndexCount++;
+        OutputIndices[_totalIndexCount++] = vertexIndex;
     }
 }

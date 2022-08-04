@@ -32,5 +32,13 @@ namespace Orazum.Utilities
                 }
             }
         }
+
+        public static void DisposeIfNeeded<T>(NativeArray<T> array) where T : struct
+        { 
+            if (array.IsCreated)
+            {
+                array.Dispose();
+            }
+        }
     }
 }

@@ -6,11 +6,13 @@ using UnityEngine.Rendering;
 
 using Orazum.Utilities;
 
-public class WheelData
+public class WheelGenerationData
 {
     public NativeArray<VertexData> Vertices { get; set; }
+    public WheelSegment[] Segments {get; set;}
+    public LevelDescriptionSO LevelDescriptionSO { get; set; }
 
-    public WheelData(
+    public WheelGenerationData(
         NativeArray<SegmentPoint> segmentPointsArg, 
         int sideCountArg, 
         int segmentCountInOneSideArg)
@@ -36,13 +38,10 @@ public class WheelGenerator : MonoBehaviour
     private WheelGenParamsSO _wheelGenParams;
 
     [SerializeField]
-    private UIButton _shuffleButton;
+    private LevelDescriptionSO _levelDesc;
 
     private WheelGenJob _wheelMeshGenJob;
     private JobHandle _wheelMeshGenJobHandle;
-
-    private NativeArray<short> _vertexCounts;
-    private NativeArray<short> _indexCounts;
 
     private NativeArray<VertexData> _vertices;
     private NativeArray<short> _indices;
@@ -54,22 +53,15 @@ public class WheelGenerator : MonoBehaviour
     private Wheel _wheel;
     private WheelSegment[] _wheelSegments;
 
-    private bool _needsDispose;
-
     private void Awake()
     {
         _segmentCount = _wheelGenParams.SegmentCountInOneSide * _wheelGenParams.SideCount;
         print("segment count " + _segmentCount);
 
-        _vertexCounts = new NativeArray<short>(_segmentCount, Allocator.TempJob);
-        _indexCounts = new NativeArray<short>(_segmentCount, Allocator.TempJob);
-
         _vertices = new NativeArray<VertexData>(VERTEX_COUNT_ONE_SEGMENT * _segmentCount, Allocator.Persistent);
         _indices = new NativeArray<short>(INDEX_COUNT_ONE_SEGMENT * _segmentCount, Allocator.TempJob);
         
         _segmentPoints = new NativeArray<SegmentPoint>(_segmentCount, Allocator.Persistent);
-
-        _needsDispose = true;
 
         _wheelMeshGenJob = new WheelGenJob()
         {
@@ -79,8 +71,6 @@ public class WheelGenerator : MonoBehaviour
             P_SideCount = _wheelGenParams.SideCount,
             P_SegmentsCountInOneSide = _wheelGenParams.SegmentCountInOneSide,
             
-            OutputVertexCounts = _vertexCounts,
-            OutputIndexCounts = _indexCounts,
             OutputVertices = _vertices,
             OutputIndices = _indices,
 
@@ -108,18 +98,8 @@ public class WheelGenerator : MonoBehaviour
     {
         _wheelMeshGenJobHandle.Complete();
 
-        _vertexCounts = _wheelMeshGenJob.OutputVertexCounts;
-        _indexCounts = _wheelMeshGenJob.OutputIndexCounts;
-
         _vertices = _wheelMeshGenJob.OutputVertices;
         _indices = _wheelMeshGenJob.OutputIndices;
-
-        _segmentPoints = _wheelMeshGenJob.OutputSegmentPoints;
-
-        WheelData wheelData = new WheelData(
-            _segmentPoints, _wheelGenParams.SideCount, _wheelGenParams.SegmentCountInOneSide);
-        wheelData.Vertices = _vertices;
-        _wheel.AssignData(wheelData);
 
         int vertexBufferStart = 0;
         int indexBufferStart = 0;
@@ -129,16 +109,16 @@ public class WheelGenerator : MonoBehaviour
             Mesh newMesh = _wheelSegments[i].MeshContainer.mesh;
             newMesh.MarkDynamic();
 
-            newMesh.SetVertexBufferParams(_wheelMeshGenJob.OutputVertexCounts[i], VertexData.VertexBufferMemoryLayout);
-            newMesh.SetIndexBufferParams(_wheelMeshGenJob.OutputIndexCounts[i], IndexFormat.UInt16);
+            newMesh.SetVertexBufferParams(VERTEX_COUNT_ONE_SEGMENT, VertexData.VertexBufferMemoryLayout);
+            newMesh.SetIndexBufferParams(INDEX_COUNT_ONE_SEGMENT, IndexFormat.UInt16);
 
-            newMesh.SetVertexBufferData(_vertices, vertexBufferStart, 0, _vertexCounts[i], 0, MESH_UPDATE_FLAGS);
-            newMesh.SetIndexBufferData(_indices, indexBufferStart, 0, _indexCounts[i], MESH_UPDATE_FLAGS);
+            newMesh.SetVertexBufferData(_vertices, vertexBufferStart, 0, VERTEX_COUNT_ONE_SEGMENT, 0, MESH_UPDATE_FLAGS);
+            newMesh.SetIndexBufferData(_indices, indexBufferStart, 0, INDEX_COUNT_ONE_SEGMENT, MESH_UPDATE_FLAGS);
 
             newMesh.subMeshCount = 1;
             SubMeshDescriptor subMesh = new SubMeshDescriptor(
                 indexStart: 0,
-                indexCount: _indexCounts[i]
+                indexCount: INDEX_COUNT_ONE_SEGMENT
             );
             newMesh.SetSubMesh(0, subMesh);
 
@@ -148,34 +128,30 @@ public class WheelGenerator : MonoBehaviour
             _wheelSegments[i].MeshContainer.mesh = newMesh;
 
             NativeArray<VertexData> segmentVertices = CollectionUtilities.GetSlice(
-                _vertices, vertexBufferStart, _vertexCounts[i]);
+                _vertices, vertexBufferStart, VERTEX_COUNT_ONE_SEGMENT);
             _wheelSegments[i].Initialize(_wheelGenParams.MeshesMaterial, segmentVertices, i);
 
-            vertexBufferStart += _vertexCounts[i];
-            indexBufferStart += _indexCounts[i];
+            vertexBufferStart += VERTEX_COUNT_ONE_SEGMENT;
+            indexBufferStart += INDEX_COUNT_ONE_SEGMENT;
         }
 
-        _wheel.GenerationInitialization(_wheelSegments, _shuffleButton);
+        _segmentPoints = _wheelMeshGenJob.OutputSegmentPoints;
 
-        _vertexCounts.Dispose();
-        _indexCounts.Dispose();
+        WheelGenerationData wheelData = new WheelGenerationData(
+            _segmentPoints, _wheelGenParams.SideCount, _wheelGenParams.SegmentCountInOneSide);
+        wheelData.Vertices = _vertices;
+        wheelData.Segments = _wheelSegments;
+        wheelData.LevelDescriptionSO = _levelDesc;
+
+        _wheel.GenerationInitialization(wheelData);
 
         _indices.Dispose();
-
-        _needsDispose = false;
     }
 
     private void OnDestroy()
     {
-        if (_needsDispose)
-        { 
-            _vertexCounts.Dispose();
-            _indexCounts.Dispose();
-
-            _indices.Dispose();
-        }
-
-        _segmentPoints.Dispose();
-        _vertices.Dispose();
+        CollectionUtilities.DisposeIfNeeded(_vertices);
+        CollectionUtilities.DisposeIfNeeded(_indices);
+        CollectionUtilities.DisposeIfNeeded(_segmentPoints);
     }
 }

@@ -1,0 +1,17 @@
+{
+    "name": "aAssemblyUtilities",
+    "rootNamespace": "Orazum.Utilities",
+    "references": [
+        "GUID:d8b63aba1907145bea998dd612889d6b",
+        "GUID:4495370d5a75941f8be8a223fc2c7410"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
