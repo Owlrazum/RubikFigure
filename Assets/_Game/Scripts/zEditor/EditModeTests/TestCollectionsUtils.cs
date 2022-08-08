@@ -1,10 +1,51 @@
 using NUnit.Framework;
 
 using Unity.Collections;
+using UnityEngine;
+
 using Orazum.Utilities;
 
-public class TestCollectionUtils
+public class TestCollectionsUtils
 {
+    [Test]
+    public void Array2DTests()
+    {
+        Array2D<Vector2Int> arr = new Array2D<Vector2Int>(3, 6);
+        for (int row = 0; row < arr.RowCount; row++)
+        {
+            for (int col = 0; col < arr.ColCount; col++)
+            {
+                arr[col, row] = new Vector2Int(col, row);
+                Assert.AreEqual(arr[col, row], new Vector2Int(col, row));
+            }
+        }
+
+        for (int col = 0; col < arr.ColCount; col++)
+        {
+            for (int row = 0; row < arr.RowCount; row++)
+            {
+                Assert.AreEqual(arr[col, row], new Vector2Int(col, row));
+            }
+        }
+
+        for (int col = 0; col < arr.ColCount; col++)
+        {
+            for (int row = 0; row < arr.RowCount; row++)
+            {
+                arr[col, row] += Vector2Int.down + Vector2Int.right;
+            }
+        }
+
+
+        for (int row = 0; row < arr.RowCount; row++)
+        {
+            for (int col = 0; col < arr.ColCount; col++)
+            {
+                Assert.AreEqual(arr[col, row], new Vector2Int(col + 1, row - 1));
+            }
+        }
+    }
+
     [Test]
     public void Reverse()
     {

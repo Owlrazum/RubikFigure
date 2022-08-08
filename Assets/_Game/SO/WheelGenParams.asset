@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1eeb9d24981c04b148a37e9cbb558e9f, type: 3}
   m_Name: WheelGenParams
   m_EditorClassIdentifier: 
-  _height: 1
+  _height: 0.1
   _outerRadius: 5
   _innerRadius: 0.4
   _sideCount: 6

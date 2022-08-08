@@ -1,12 +1,13 @@
+using System;
+
 using Unity.Burst;
 using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Collections;
 
-using UnityEngine;
 using UnityEngine.Assertions;
 
-[BurstCompile]
+// [BurstCompile]
 public struct WheelGenJob : IJob
 {
     public float P_WheelHeight;
@@ -22,7 +23,7 @@ public struct WheelGenJob : IJob
     public NativeArray<short> OutputIndices;
 
     [WriteOnly]
-    public NativeArray<SegmentPoint> OutputSegmentPoints;
+    public NativeArray<SegmentPointCornerPositions> OutputSegmentPoints;
 
     private short _totalVertexCount;
     private short _totalIndexCount;
@@ -39,7 +40,7 @@ public struct WheelGenJob : IJob
     {
         Assert.IsTrue(P_SideCount >= 3 && P_SideCount <= 6);
 
-        CircleRaysStruct rays = new CircleRaysStruct();
+        CircleRays rays = new CircleRays();
 #region RaysInit
         float angleDelta = 2 * math.PI / P_SideCount;
         float currentAngle = math.PI / 2;
@@ -95,7 +96,7 @@ public struct WheelGenJob : IJob
         }
     }
 
-    private SegmentPoint AddSegment(float3 currentRay, float3 nextRay)
+    private SegmentPointCornerPositions AddSegment(float3 currentRay, float3 nextRay)
     {
         _currentVertexCount = 0;
         _currentIndexCount = 0;
@@ -169,7 +170,7 @@ public struct WheelGenJob : IJob
         );
         AddQuad(posForward, forward);
 
-        SegmentPoint segmentPoint = new SegmentPoint
+        SegmentPointCornerPositions segmentPoint = new SegmentPointCornerPositions
         {
             BBL = posBot[0],
             BTL = posTop[0],
@@ -217,5 +218,57 @@ public struct WheelGenJob : IJob
     {
         _currentIndexCount++;
         OutputIndices[_totalIndexCount++] = vertexIndex;
+    }
+
+    private struct CircleRays
+    {
+        private float3 _r1;
+        private float3 _r2;
+        private float3 _r3;
+        private float3 _r4;
+        private float3 _r5;
+        private float3 _r6;
+
+        public float3 this[int index]
+        {
+            get
+            {
+                switch (index)
+                {
+                    case 0: return _r1;
+                    case 1: return _r2;
+                    case 2: return _r3;
+                    case 3: return _r4;
+                    case 4: return _r5;
+                    case 5: return _r6;
+                    default: throw new ArgumentOutOfRangeException($"There are only 12 vertices! You tried to access the vertex at index {index}");
+                }
+            }
+            set
+            {
+                switch (index)
+                {
+                    case 0:
+                        _r1 = value;
+                        break;
+                    case 1:
+                        _r2 = value;
+                        break;
+                    case 2:
+                        _r3 = value;
+                        break;
+                    case 3:
+                        _r4 = value;
+                        break;
+                    case 4:
+                        _r5 = value;
+                        break;
+                    case 5:
+                        _r6 = value;
+                        break;
+                    default: throw new ArgumentOutOfRangeException($"There are only 12 vertices! You tried to access the vertex at index {index}");
+                }
+            }
+        }
     }
 }

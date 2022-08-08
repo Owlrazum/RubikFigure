@@ -5,10 +5,10 @@ using Unity.Collections;
 
 public enum SegmentMoveType
 { 
-    Up,
     Down,
-    Clockwise,
-    CounterClockwise
+    Up,
+    CounterClockwise,
+    Clockwise
 }
 
 [BurstCompile]
@@ -19,7 +19,7 @@ public struct SegmentMoveJob : IJob
 
     public float P_LerpParam;
     public SegmentMoveType P_SegmentMoveType;
-    public SegmentPoint P_SegmentPoint;
+    public SegmentPointCornerPositions P_SegmentPoint;
 
     [ReadOnly]
     public NativeArray<VertexData> InputVertices;

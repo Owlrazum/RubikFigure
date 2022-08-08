@@ -4,7 +4,6 @@ using UnityEngine;
 public static class GameDelegatesContainer
 {
     public static Func<GameStateType> GetGameState;
-    public static Func<float> GetWheelLerpSpeed;
 
     public static Action StartCameraTransitionTo;
 

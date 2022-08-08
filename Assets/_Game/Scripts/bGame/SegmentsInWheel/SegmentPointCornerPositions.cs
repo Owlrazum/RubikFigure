@@ -1,7 +1,7 @@
 using System;
 using Unity.Mathematics;
 
-public struct SegmentPoint
+public struct SegmentPointCornerPositions
 {
     public float3 BBL;
     public float3 BTL;
