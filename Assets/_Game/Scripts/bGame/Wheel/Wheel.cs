@@ -13,6 +13,8 @@ public class Wheel : MonoBehaviour
     private Array2D<SegmentPoint> _segmentPoints;
 
     private int2[] _emptySegmentPointIndices;
+
+    private HashSet<int2> _currentBusySegmentPointIndices;
     private Dictionary<SegmentMove, bool> _currentMoves; // the value is whether a move IsCompleted
 
     public void GenerationInitialization(WheelGenerationData generationData)
@@ -22,25 +24,24 @@ public class Wheel : MonoBehaviour
 
         // we need to change dimensions from generation
         _segmentPoints = new Array2D<SegmentPoint>(_sideCount, _segmentCountInOneSide);
-        for (int row = 0; row < _segmentPoints.RowCount; row++)
+        for (int side = 0; side < _sideCount; side++)
         {
-            for (int col = 0; col < _segmentPoints.ColCount; col++)
+            for (int col = 0; col < _segmentCountInOneSide; col++)
             {
-                int2 segmentPointIndex = new int2(row, col);
-                int cornerIndex = segmentPointIndex.x * _segmentCountInOneSide + segmentPointIndex.y;
+                int cornerIndex = side * _segmentCountInOneSide + col;
                 SegmentPoint segmentPoint =
                     new SegmentPoint(generationData.SegmentPointCornerPositions[cornerIndex]);
 
-                segmentPoint.Segment = generationData.Segments[segmentPointIndex.x, segmentPointIndex.y];
+                segmentPoint.Segment = generationData.Segments[col, side];
                 
-                int2 segmentPointIndexReversed = new int2(col, row);
-                _segmentPoints[segmentPointIndexReversed] = segmentPoint;
+                _segmentPoints[side, col] = segmentPoint;
             }
         }
 
         if (generationData.LevelDescriptionSO.ShouldUsePredefinedEmptyPlaces)
         {
-            _emptySegmentPointIndices = generationData.LevelDescriptionSO.PredefinedEmptyPlaces;
+            _emptySegmentPointIndices = new int2[generationData.LevelDescriptionSO.PredefinedEmptyPlaces.Length];
+            generationData.LevelDescriptionSO.PredefinedEmptyPlaces.CopyTo(_emptySegmentPointIndices, 0);
         }
         else
         {
@@ -56,6 +57,7 @@ public class Wheel : MonoBehaviour
         }
 
         _currentMoves = new Dictionary<SegmentMove, bool>(_emptySegmentPointIndices.Length);
+        _currentBusySegmentPointIndices = new HashSet<int2>(_emptySegmentPointIndices.Length);
     }
     private void GenerateRandomEmptyPoints(int emptyPlacesCount)
     {
@@ -107,8 +109,9 @@ public class Wheel : MonoBehaviour
             lerpSpeed,
             OnSegmentCompletedMove
         );
-        // PrintDebug();
+        Debug.Log(_segmentPoints);
         _currentMoves.Add(move, false);
+        _currentBusySegmentPointIndices.Add(move.ToIndex);
     }
 
     [ContextMenu("Print")]
@@ -172,6 +175,7 @@ public class Wheel : MonoBehaviour
             }
             LogThis();
             _currentMoves.Clear();
+            _currentBusySegmentPointIndices.Clear();
         }
     }
     
@@ -188,12 +192,15 @@ public class Wheel : MonoBehaviour
             return false;
         }
 
-        if (_segmentPoints[upIndex].Segment == null)
+        bool isNotEmpty = _segmentPoints[upIndex].Segment != null;
+        if (isNotEmpty && !_currentBusySegmentPointIndices.Contains(upIndex))
+        {
+            return true;
+        }
+        else
         {
             return false;
         }
-
-        return true;
     }
     public bool HasSegmentThatWillMoveUp(int2 emptyIndex)
     {
@@ -203,24 +210,42 @@ public class Wheel : MonoBehaviour
             return false;
         }
 
-        if (_segmentPoints[downIndex].Segment == null)
+        bool isNotEmpty = _segmentPoints[downIndex].Segment != null;
+        if (isNotEmpty && !_currentBusySegmentPointIndices.Contains(downIndex))
+        {
+            return true;
+        }
+        else
         {
             return false;
         }
-
-        return true;
     }
     public bool HasSegmentThatWillMoveCounterClockwise(int2 emptyIndex)
     {
         int2 ccw = MoveIndexClockwise(emptyIndex);
-        Assert.IsNull(_segmentPoints[ccw].Segment);
-        return _segmentPoints[ccw].Segment != null;
+        bool isNotEmpty = _segmentPoints[ccw].Segment != null;
+        if (isNotEmpty && !_currentBusySegmentPointIndices.Contains(ccw))
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
     }
     public bool HasSegmentThatWillMoveClockwise(int2 emptyIndex)
     {
         int2 cw = MoveIndexCounterClockwise(emptyIndex);
-        Assert.IsNull(_segmentPoints[cw].Segment);
-        return _segmentPoints[cw].Segment != null;
+        bool isNotEmpty = _segmentPoints[cw].Segment != null;
+
+        if (isNotEmpty && !_currentBusySegmentPointIndices.Contains(cw))
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
     }
 
     public int2 MoveIndexDown(int2 index)
