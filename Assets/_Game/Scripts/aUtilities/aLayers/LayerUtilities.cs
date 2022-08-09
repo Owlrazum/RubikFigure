@@ -1,4 +1,4 @@
-namespace Orazum.Utilities
+namespace Orazum.Utilities.ConstContainers
 {
     public static class LayerUtilities
     {

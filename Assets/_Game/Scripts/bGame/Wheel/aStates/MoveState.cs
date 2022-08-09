@@ -2,8 +2,8 @@ using Unity.Mathematics;
 
 using UnityEngine;
 using UnityEngine.Assertions;
-using Orazum.Utilities;
-using static Orazum.Utilities.MathUtilities;
+
+using static Orazum.Math.MathUtilities;
 
 public class MoveState : WheelState
 {
@@ -34,39 +34,43 @@ public class MoveState : WheelState
         Vector3 viewEndPos = new Vector3(_currentSwipeCommand.ViewEndPos.x, 
             _currentSwipeCommand.ViewEndPos.y, planeDistance);
 
-        Ray ray = renderingCamera.ViewportPointToRay(viewStartPos);
-        if (Physics.Raycast(ray, out RaycastHit hitInfo, 1000, LayerUtilities.SEGMENT_POINTS_LAYER_MASK, QueryTriggerInteraction.Collide))
-        { 
+        
+       
+            Vector3 worldStartPos = renderingCamera.ViewportToWorldPoint(viewStartPos);
+            Vector3 worldEndPos = renderingCamera.ViewportToWorldPoint(viewEndPos);
+            Vector3 worldDir = (worldEndPos - worldStartPos).normalized;
 
-        }
+            int2[] emptyIndices = wheel.GetEmptyIndices();
 
-        Vector3 worldStartPos = renderingCamera.ViewportToWorldPoint(viewStartPos);
-        Vector3 worldEndPos = renderingCamera.ViewportToWorldPoint(viewEndPos);
-        Vector3 worldDir = (worldEndPos - worldStartPos).normalized;
-
-        int2[] emptyIndices = wheel.GetEmptyIndices();
-
-        int minDistanceIndex = -1;
-        float minDistance = -1;
-        for (int i = 0; i < emptyIndices.Length; i++)
-        {
-            Vector3 emptyPoint = wheel.GetEmptySegmentPointPosition(i);
-            float distance = (emptyPoint - worldStartPos).sqrMagnitude;
-            if (minDistance < 0)
+            int minDistanceIndex = -1;
+            float minDistance = -1;
+            for (int i = 0; i < emptyIndices.Length; i++)
             {
-                minDistance = distance;
-                minDistanceIndex = i;
-            }
-            else if (minDistance > distance)
-            {
-                minDistance = distance;
-                minDistanceIndex = i;
-            }
-        }
+                if (!wheel.IsAdjacentToEmpty(emptyIndices[i], segmentPoint.Index))
+                {
+                    continue;
+                }
 
-        int2 closestEmptyPointIndex = emptyIndices[minDistanceIndex];
-        SegmentMoveType moveType = DetermineMoveType(center, worldStartPos, worldDir);
-        Debug.Log(moveType + " " + closestEmptyPointIndex);
+                Vector3 emptyPoint = wheel.GetEmptySegmentPointPosition(i);
+                float distance = (emptyPoint - worldStartPos).sqrMagnitude;
+                if (minDistance < 0)
+                {
+                    minDistance = distance;
+                    minDistanceIndex = i;
+                }
+                else if (minDistance > distance)
+                {
+                    minDistance = distance;
+                    minDistanceIndex = i;
+                }
+            }
+
+            if (minDistanceIndex >= 0)
+            {
+                int2 closestEmptyPointIndex = emptyIndices[minDistanceIndex];
+                SegmentMoveType moveType = DetermineMoveType(center, worldStartPos, worldDir);
+            }
+
         _currentSwipeCommand = null;
     }
 
@@ -121,6 +125,8 @@ public class MoveState : WheelState
     {
         return this;
     }
+
+    
 }
 
 /*

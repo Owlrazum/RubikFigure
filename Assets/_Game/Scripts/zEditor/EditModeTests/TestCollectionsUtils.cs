@@ -3,7 +3,7 @@ using NUnit.Framework;
 using Unity.Collections;
 using UnityEngine;
 
-using Orazum.Utilities;
+using Orazum.Collections;
 
 public class TestCollectionsUtils
 {

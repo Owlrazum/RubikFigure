@@ -1,6 +1,6 @@
 {
-    "name": "Vibration",
-    "rootNamespace": "",
+    "name": "aAssemblyConstContainers",
+    "rootNamespace": "Orazum.Utilities.Containers",
     "references": [],
     "includePlatforms": [],
     "excludePlatforms": [],

@@ -1,6 +1,6 @@
 using UnityEngine;
 using UnityEditor;
-using Orazum.Utilities;
+using Orazum.Math;
 
 namespace Orazum.CustomEditor
 { 

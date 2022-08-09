@@ -1,8 +1,8 @@
 {
-    "name": "aAssemblyInput",
-    "rootNamespace": "",
+    "name": "aAssemblyMath",
+    "rootNamespace": "Orazum.Math",
     "references": [
-        "GUID:c2b7f7435cee847fdb9a017be3af267f"
+        "GUID:d8b63aba1907145bea998dd612889d6b"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

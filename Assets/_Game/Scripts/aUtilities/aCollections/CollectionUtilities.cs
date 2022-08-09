@@ -1,7 +1,7 @@
 using Unity.Collections;
 using UnityEngine;
 
-namespace Orazum.Utilities
+namespace Orazum.Collections
 {
     public static class CollectionUtilities
     {

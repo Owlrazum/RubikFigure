@@ -1,4 +1,5 @@
 using UnityEngine;
+using Orazum.Utilities.ConstContainers;
 
 public class InputReceiverEditor : MonoBehaviour
 {
@@ -9,15 +10,30 @@ public class InputReceiverEditor : MonoBehaviour
 
     private Camera _renderingCamera;
 
-    private bool _isSwiping;
     private Vector2 _pressPos;
     private Vector2 _lastPos;
 
+    private bool _isSegmentSelected;
     private SwipeCommand _swipeCommand;
+
+    private bool _shouldRespond;
 
     private void Awake()
     {
         _swipeCommand = new SwipeCommand();
+
+        _shouldRespond = true;
+        InputDelegatesContainer.SetShouldRespond += SetShouldRespond;
+    }
+
+    private void OnDestroy()
+    { 
+        InputDelegatesContainer.SetShouldRespond -= SetShouldRespond;
+    }
+
+    private void SetShouldRespond(bool value)
+    {
+        _shouldRespond = value;
     }
 
     private void Start()
@@ -32,13 +48,38 @@ public class InputReceiverEditor : MonoBehaviour
 
     private void Update()
     {
-        if (!Input.GetMouseButton(0))
+        if (!_shouldRespond)
         {
-            if (_isSwiping)
+            return;
+        }
+        
+        if (Input.GetMouseButtonDown(0))
+        { 
+            _pressPos = Input.mousePosition;
+            Ray ray = _renderingCamera.ScreenPointToRay(_pressPos);
+            if (Physics.Raycast(ray, out RaycastHit hitInfo, 1000,
+               LayerUtilities.SEGMENT_POINTS_LAYER_MASK, QueryTriggerInteraction.Collide))
             {
+                _isSegmentSelected = true;
+                InputDelegatesContainer.SelectSegmentCommand?.Invoke(hitInfo.collider);
+            }
+        }
+
+        if (Input.GetMouseButton(0))
+        {
+            _lastPos = Input.mousePosition;
+        }
+
+        if (Input.GetMouseButtonUp(0))
+        {
+            if (_isSegmentSelected)
+            {
+                InputDelegatesContainer.DeselectSegmentCommand?.Invoke();
+                _isSegmentSelected = false;
+
                 Vector2 viewStartPos = _renderingCamera.ScreenToViewportPoint(_pressPos);
                 Vector2 viewEndPos = _renderingCamera.ScreenToViewportPoint(_lastPos);
-                 
+
                 Vector2 delta = viewEndPos - viewStartPos;
                 if (delta.sqrMagnitude >= _swipeThreshold * _swipeThreshold)
                 {
@@ -46,20 +87,7 @@ public class InputReceiverEditor : MonoBehaviour
                     _swipeCommand.SetViewEndPos(viewEndPos);
                     InputDelegatesContainer.SwipeCommand?.Invoke(_swipeCommand);
                 }
-                
-                _isSwiping = false;
             }
-            return;
-        }
-
-        if (_isSwiping)
-        {
-            _lastPos = Input.mousePosition;
-        }
-        else
-        {
-            _isSwiping = true;
-            _pressPos = Input.mousePosition;
         }
     }
 #endif

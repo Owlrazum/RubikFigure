@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 
 using Unity.Mathematics;
-using Orazum.Utilities;
+using Orazum.Collections;
 
 public class WheelGenerationData
 {

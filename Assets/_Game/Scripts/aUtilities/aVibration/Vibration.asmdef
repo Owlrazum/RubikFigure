@@ -1,15 +1,13 @@
 {
-    "name": "aAssemblyInput",
-    "rootNamespace": "",
-    "references": [
-        "GUID:c2b7f7435cee847fdb9a017be3af267f"
-    ],
+    "name": "Vibration",
+    "rootNamespace": "Orazum.Utilities.Vibration",
+    "references": [],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,
     "precompiledReferences": [],
-    "autoReferenced": false,
+    "autoReferenced": true,
     "defineConstraints": [],
     "versionDefines": [],
     "noEngineReferences": false

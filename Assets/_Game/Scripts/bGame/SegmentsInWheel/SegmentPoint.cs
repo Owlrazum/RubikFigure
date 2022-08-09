@@ -7,8 +7,8 @@ using UnityEngine.Assertions;
 [RequireComponent(typeof(MeshRenderer))]
 public class SegmentPoint : MonoBehaviour
 {
-    private MeshFilter _meshFilter;    
-    private MeshCollider _meshCollider;    
+    private MeshFilter _meshFilter;
+    private MeshCollider _meshCollider;
     private MeshRenderer _meshRenderer;
 
     private Material _emptyMaterial;
@@ -23,13 +23,15 @@ public class SegmentPoint : MonoBehaviour
 
     public SegmentPointCornerPositions CornerPositions { get; private set; }
     public Vector3 Position { get; private set; }
+    public int2 Index { get; private set; }
     public void Initialize(SegmentPointCornerPositions cornerPositionsArg, 
-        Material emptyMaterialArg, Material highlightMaterialArg)
+        Material emptyMaterialArg, Material highlightMaterialArg, int2 indexArg)
     {
         Assert.IsNotNull(Segment);
         CornerPositions = cornerPositionsArg;
         float3 center = (CornerPositions.BBL + CornerPositions.FTR) / 2;
         Position = center;
+        Index = indexArg;
 
         _meshFilter.mesh = Instantiate(Segment.MeshContainer.mesh);
         _meshCollider.sharedMesh = Instantiate(Segment.MeshContainer.mesh);

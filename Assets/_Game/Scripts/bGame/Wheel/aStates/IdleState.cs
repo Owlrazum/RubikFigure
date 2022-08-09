@@ -1,3 +1,6 @@
+using UnityEngine;
+using UnityEngine.Assertions;
+
 public class IdleState : WheelState
 {
     private SwipeCommand _currentSwipeCommand;
@@ -8,12 +11,30 @@ public class IdleState : WheelState
 
     public override void OnEnter(Wheel notUsed)
     {
+        InputDelegatesContainer.SelectSegmentCommand += OnSelectSegmentCommand;
+        InputDelegatesContainer.DeselectSegmentCommand += OnDeselectSegmentCommand;
         InputDelegatesContainer.SwipeCommand += OnSwipeCommand;
+        InputDelegatesContainer.SetShouldRespond(true);
     }
 
     public override void OnExit()
     {
+        InputDelegatesContainer.SelectSegmentCommand -= OnSelectSegmentCommand;
+        InputDelegatesContainer.DeselectSegmentCommand -= OnDeselectSegmentCommand;
         InputDelegatesContainer.SwipeCommand -= OnSwipeCommand;
+        InputDelegatesContainer.SetShouldRespond(false);
+    }
+
+    private void OnSelectSegmentCommand(Collider collider)
+    {
+        bool isFound = collider.TryGetComponent(out SegmentPoint segmentPoint);
+        Assert.IsTrue(isFound);
+        segmentPoint.Highlight();
+    }
+
+    private void OnDeselectSegmentCommand()
+    { 
+        
     }
 
     private void OnSwipeCommand(SwipeCommand swipeCommand)

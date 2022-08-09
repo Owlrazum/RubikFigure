@@ -1,25 +1,28 @@
 using UnityEngine;
 
-[System.Serializable]
-public class SingleUnityLayer
-{
-    [SerializeField]
-    private int m_LayerIndex = 0;
-    public int LayerIndex
+namespace Orazum.Utilities.Layers
+{ 
+    [System.Serializable]
+    public class SingleUnityLayer
     {
-        get { return m_LayerIndex; }
-    }
-
-    public void Set(int _layerIndex)
-    {
-        if (_layerIndex > 0 && _layerIndex < 32)
+        [SerializeField]
+        private int m_LayerIndex = 0;
+        public int LayerIndex
         {
-            m_LayerIndex = _layerIndex;
+            get { return m_LayerIndex; }
         }
-    }
 
-    public int Mask
-    {
-        get { return 1 << m_LayerIndex; }
+        public void Set(int _layerIndex)
+        {
+            if (_layerIndex > 0 && _layerIndex < 32)
+            {
+                m_LayerIndex = _layerIndex;
+            }
+        }
+
+        public int Mask
+        {
+            get { return 1 << m_LayerIndex; }
+        }
     }
 }

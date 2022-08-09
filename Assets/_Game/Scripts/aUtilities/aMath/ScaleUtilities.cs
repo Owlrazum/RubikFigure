@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Orazum.Utilities
+namespace Orazum.Math
 { 
     public static class ScaleUtilities
     {

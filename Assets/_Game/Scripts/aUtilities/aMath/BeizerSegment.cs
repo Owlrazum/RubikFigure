@@ -1,7 +1,37 @@
+using Unity.Mathematics;
+
 using UnityEngine;
 
-namespace Orazum.Utilities
+namespace Orazum.Math
 { 
+    [System.Serializable]
+    public struct CubicBeizerVector3Params
+    {
+        public Vector3 initial;
+        public Vector3 anchor1;
+        public Vector3 anchor2;
+        public Vector3 target;
+
+        public override string ToString()
+        {
+            string toReturn =
+                "initial " + initial + "\n" +
+                "anchor1 " + anchor1 + "\n" +
+                "anchor2 " + anchor2 + "\n" +
+                "target  " + target + "\n";
+
+            return toReturn;
+        }
+    }
+
+    public struct CubicBeizerFloat3Params
+    {
+        public float3 initial;
+        public float3 anchor1;
+        public float3 anchor2;
+        public float3 target;
+    }
+
     /// <summary>
     /// Needs Initialization;
     /// </summary>

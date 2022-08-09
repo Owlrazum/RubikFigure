@@ -1,9 +1,12 @@
 using System.Collections.Generic;
 
 using Unity.Mathematics;
+
 using UnityEngine;
 using UnityEngine.Assertions;
-using Orazum.Utilities;
+
+using Orazum.Collections;
+using Orazum.Utilities.ConstContainers;
 
 public class Wheel : MonoBehaviour
 {
@@ -14,8 +17,7 @@ public class Wheel : MonoBehaviour
 
     private int2[] _emptySegmentPointIndices;
 
-    private HashSet<int2> _currentBusySegmentPointIndices;
-    private Dictionary<SegmentMove, bool> _currentMoves; // the value is whether a move IsCompleted
+    private HashSet<SegmentMove> _currentMoves; // the value is whether a move IsCompleted
 
     public void GenerationInitialization(WheelGenerationData generationData)
     {
@@ -40,7 +42,7 @@ public class Wheel : MonoBehaviour
                 SegmentPoint segmentPoint = segmentPointGb.AddComponent<SegmentPoint>();
                 segmentPoint.Segment = generationData.Segments[col, side];
                 segmentPoint.Initialize(generationData.SegmentPointCornerPositions[cornerIndex],
-                    generationData.EmptyMaterial, generationData.HighlightMaterial);
+                    generationData.EmptyMaterial, generationData.HighlightMaterial, new int2(side, col));
                 
                 _segmentPoints[side, col] = segmentPoint;
             }
@@ -64,8 +66,7 @@ public class Wheel : MonoBehaviour
             _segmentPoints[index].Segment = null;
         }
 
-        _currentMoves = new Dictionary<SegmentMove, bool>(_emptySegmentPointIndices.Length);
-        _currentBusySegmentPointIndices = new HashSet<int2>(_emptySegmentPointIndices.Length);
+        _currentMoves = new HashSet<SegmentMove>(_emptySegmentPointIndices.Length);
     }
     private void GenerateRandomEmptyPoints(int emptyPlacesCount)
     {
@@ -112,14 +113,13 @@ public class Wheel : MonoBehaviour
         target.Segment = movedSegment;
         move.AssignTarget(target);
 
-        movedSegment.StartSchedulingMoveJobs(
+        movedSegment.StartProcessingMove(
             move,
             lerpSpeed,
             OnSegmentCompletedMove
         );
         // Debug.Log(_segmentPoints);
-        _currentMoves.Add(move, false);
-        _currentBusySegmentPointIndices.Add(move.ToIndex);
+        _currentMoves.Add(move);
     }
 
     [ContextMenu("Print")]
@@ -147,7 +147,7 @@ public class Wheel : MonoBehaviour
         string log = "";
         foreach (var entry in _currentMoves)
         {
-            log += entry.Key.ToString() + "\n";
+            log += entry.ToString() + "\n";
         }
         Debug.Log(log);
     }
@@ -172,7 +172,7 @@ public class Wheel : MonoBehaviour
             }
             else
             { 
-                _segmentPoints[move.ToIndex].Segment.CompleteMoveJob();
+                _segmentPoints[move.ToIndex].Segment.CompleteProcessingMove();
             }
         }
 
@@ -199,6 +199,28 @@ public class Wheel : MonoBehaviour
         int2 index = _emptySegmentPointIndices[emptyIndex];
         return _segmentPoints[index].transform.position;
     }
+    
+    public bool IsAdjacentToEmpty(int2 empty, int2 toCheck)
+    {
+        Assert.IsTrue(math.any(empty != toCheck));
+        int2 delta = math.abs(toCheck - empty);
+        if (delta.x == 0)
+        {
+            if (delta.y == 1)
+            {
+                return true;
+            }
+        }
+        else if (delta.y == 0)
+        {
+            if (delta.x == _sideCount - 1 || delta.x == 1)
+            {
+                return true;
+            }
+        }
+        
+        return false;
+    }   
 
     public bool HasSegmentThatWillMoveDown(int2 emptyIndex)
     {
