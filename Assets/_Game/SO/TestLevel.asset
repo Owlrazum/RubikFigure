@@ -12,22 +12,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2caf639ba8b5f4a68b9af161ec839b6d, type: 3}
   m_Name: TestLevel
   m_EditorClassIdentifier: 
-  ShouldUsePredefinedEmptyPlaces: 1
+  ShouldUsePredefinedEmptyPlaces: 0
   PredefinedEmptyPlaces:
   - x: 0
     y: 0
   - x: 1
-    y: 0
+    y: 1
   - x: 2
     y: 0
   - x: 3
-    y: 0
+    y: 3
   - x: 4
     y: 0
   - x: 5
-    y: 0
-  EmptyPlacesCount: 11
-  ShuffleStepsAmount: 20
-  ShufflePauseTime: 0.5
+    y: 5
+  EmptyPlacesCount: 4
+  ShuffleStepsAmount: 5
+  ShufflePauseTime: 10
   ShuffleLerpSpeed: 5
   MoveLerpSpeed: 1

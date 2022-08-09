@@ -11,6 +11,8 @@ public class WheelGenerationData
 {
     public Segment[,] Segments {get; set;}
     public LevelDescriptionSO LevelDescriptionSO { get; set; }
+    public Material EmptyMaterial { get; set; }
+    public Material HighlightMaterial { get; set; }
 
     public WheelGenerationData(
         NativeArray<SegmentPointCornerPositions> SegmentPointCornerPositionsArg, 
@@ -151,6 +153,9 @@ public class WheelGenerator : MonoBehaviour
             _segmentPoints, _wheelGenParams.SideCount, _wheelGenParams.SegmentCountInOneSide);
         generationData.Segments = _segments;
         generationData.LevelDescriptionSO = _levelDesc;
+
+        generationData.EmptyMaterial = _wheelGenParams.EmptyMaterial;
+        generationData.HighlightMaterial = _wheelGenParams.HighlightMaterial;
 
         _wheel.GenerationInitialization(generationData);
         _wheelController.GenerationInitialization(_wheel, generationData);

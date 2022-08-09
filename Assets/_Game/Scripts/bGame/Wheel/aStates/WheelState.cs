@@ -6,11 +6,16 @@ public abstract class WheelState
     }
 
     public abstract WheelState HandleTransitions();
-    public virtual void OnEnter()
+    public virtual void OnEnter(Wheel wheel)
     { 
 
     }
-    
+
+    public virtual void OnExit()
+    { 
+
+    }
+
     public abstract void StartProcessingState(Wheel wheel);
     public abstract void OnDestroy();
     protected abstract WheelState GetThisState();

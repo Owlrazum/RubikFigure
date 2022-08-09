@@ -52,7 +52,7 @@ public class ShuffleState : WheelState
         return null;
     }
 
-    public override void OnEnter()
+    public override void OnEnter(Wheel notUsed)
     {
         _currentStep = 0;
     }

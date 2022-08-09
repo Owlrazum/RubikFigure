@@ -24,15 +24,23 @@ public class Wheel : MonoBehaviour
 
         // we need to change dimensions from generation
         _segmentPoints = new Array2D<SegmentPoint>(_sideCount, _segmentCountInOneSide);
+        GameObject segmentPointsContainerGb = new GameObject("SegmentPoints");
+        Transform segmentPointsParent = segmentPointsContainerGb.transform;
+        segmentPointsParent.parent = transform;
+        segmentPointsParent.SetSiblingIndex(0);
         for (int side = 0; side < _sideCount; side++)
         {
             for (int col = 0; col < _segmentCountInOneSide; col++)
             {
                 int cornerIndex = side * _segmentCountInOneSide + col;
-                SegmentPoint segmentPoint =
-                    new SegmentPoint(generationData.SegmentPointCornerPositions[cornerIndex]);
+                GameObject segmentPointGb = new GameObject("Point[" + side + "," + col + "]");
+                segmentPointGb.layer = LayerUtilities.SEGMENT_POINTS_LAYER;
+                segmentPointGb.transform.parent = segmentPointsParent;
 
+                SegmentPoint segmentPoint = segmentPointGb.AddComponent<SegmentPoint>();
                 segmentPoint.Segment = generationData.Segments[col, side];
+                segmentPoint.Initialize(generationData.SegmentPointCornerPositions[cornerIndex],
+                    generationData.EmptyMaterial, generationData.HighlightMaterial);
                 
                 _segmentPoints[side, col] = segmentPoint;
             }
@@ -109,7 +117,7 @@ public class Wheel : MonoBehaviour
             lerpSpeed,
             OnSegmentCompletedMove
         );
-        Debug.Log(_segmentPoints);
+        // Debug.Log(_segmentPoints);
         _currentMoves.Add(move, false);
         _currentBusySegmentPointIndices.Add(move.ToIndex);
     }
@@ -121,6 +129,8 @@ public class Wheel : MonoBehaviour
         Debug.Log(_segmentPoints);
         LogCurrentMoves();
     }
+
+    
 
     private void LogEmtpySegments()
     { 
@@ -173,7 +183,7 @@ public class Wheel : MonoBehaviour
                 SegmentMove move = entry.Key;
                 _segmentPoints[move.ToIndex].Segment.OnMoveComplete();
             }
-            LogThis();
+            // LogThis();
             _currentMoves.Clear();
             _currentBusySegmentPointIndices.Clear();
         }
@@ -182,6 +192,12 @@ public class Wheel : MonoBehaviour
     private void OnSegmentCompletedMove(SegmentMove move)
     {
         _currentMoves[move] = true;
+    }
+
+    public Vector3 GetEmptySegmentPointPosition(int emptyIndex)
+    {
+        int2 index = _emptySegmentPointIndices[emptyIndex];
+        return _segmentPoints[index].transform.position;
     }
 
     public bool HasSegmentThatWillMoveDown(int2 emptyIndex)

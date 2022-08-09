@@ -27,4 +27,11 @@ public class WheelGenParamsSO : ScriptableObject
     private Material _meshesMaterial;
     public Material MeshesMaterial { get { return _meshesMaterial; } }
 
+    [SerializeField]
+    private Material _emptyMaterial;
+    public Material EmptyMaterial { get { return _emptyMaterial; } }
+
+    [SerializeField]
+    private Material _highlightMaterial;
+    public Material HighlightMaterial { get { return _highlightMaterial; } }
 }

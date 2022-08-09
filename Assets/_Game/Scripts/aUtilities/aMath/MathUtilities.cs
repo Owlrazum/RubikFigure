@@ -122,109 +122,17 @@ namespace Orazum.Utilities
         }
 
         /// <summary>
-        /// Returns with
-        /// x - min
-        /// y - max
-        /// </summary>
-        public static float2 MinMaxComponentsRGB(float3 rgb)
-        {
-            float2 minMax = new float2(rgb.x, rgb.y);
-            float x = rgb.x;
-            float y = rgb.y;
-            float z = rgb.z;
-            if (x > y || x > z)
-            {
-                if (y < z)
-                {
-                    minMax.x = y;
-                    if (x > z)
-                    {
-                        minMax.y = x;
-                    }
-                    else
-                    {
-                        minMax.y = z;
-                    }
-                }
-                else
-                {
-                    minMax.x = z;
-                    if (x > y)
-                    {
-                        minMax.y = x;
-                    }
-                    else
-                    {
-                        minMax.y = y;
-                    }
-                }
-            }
-            else
-            { 
-                if (y > z)
-                {
-                    minMax.y = y;
-                }
-                else
-                {
-                    minMax.y = z;
-                }
-            }
-
-            return minMax;
-        }
-
-        public static float MaxComponentRGB(float3 rgb)
-        {
-            float x = rgb.x;
-            float y = rgb.y;
-            float z = rgb.z;
-            if (x < y || x < z)
-            {
-                if (y < z)
-                {
-                    return z;
-                }
-                else
-                {
-                    return y;
-                }
-            }
-            else
-            {
-                return x;
-            }
-        }
-
-        public static float MinComponentRGB(float3 rgb)
-        { 
-            float x = rgb.x;
-            float y = rgb.y;
-            float z = rgb.z;
-            if (x > y || x > z)
-            {
-                if (y > z)
-                {
-                    return z;
-                }
-                else
-                {
-                    return y;
-                }
-            }
-            else
-            {
-                return x;
-            }
-        }
-
-        /// <summary>
         /// She would like it to be added to Unity.
         /// </summary>
         /// <see href="https://gist.github.com/FreyaHolmer/f7fdf72e9037f4cf7d10f232aedb97b0">Github page where she said it.</see>
+        private static int t;
         #region FreyaHolmer
-        // Mathf
-        public const float TAU = 6.28318530717959f;
+        
+        /// <summary>
+        /// The 2 * PI value.
+        /// <see href="https://tauday.com/tau-manifesto">Tau manifesto.</see>
+        /// </summary>
+        public const float TAU = 6.28318530717959f;  
         public static float Frac(float x) => x - Mathf.Floor(x);
         public static float Smooth01(float x) => x * x * (3 - 2 * x);
         public static float InverseLerpUnclamped(float a, float b, float value) => (value - a) / (b - a);

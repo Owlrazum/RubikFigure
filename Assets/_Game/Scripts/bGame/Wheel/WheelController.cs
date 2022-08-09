@@ -27,8 +27,12 @@ public class WheelController : MonoBehaviour
             WheelState newState = _currentState.HandleTransitions();
             if (newState != null)
             {
-                newState.OnEnter();
-                _currentState = newState;
+                do
+                {
+                    _currentState = newState;
+                    newState.OnEnter(_wheel);
+                    newState = newState.HandleTransitions();
+                } while (newState != null);
             }
             
             _currentState.StartProcessingState(_wheel);

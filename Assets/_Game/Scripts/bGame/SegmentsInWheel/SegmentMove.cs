@@ -23,7 +23,7 @@ public class SegmentMove
     private SegmentPoint _target;
     public SegmentPointCornerPositions GetTargetCornerPositions()
     {
-        return _target.GetCornerPositions();
+        return _target.CornerPositions;
     }
 
     public void AssignTarget(SegmentPoint targetArg)

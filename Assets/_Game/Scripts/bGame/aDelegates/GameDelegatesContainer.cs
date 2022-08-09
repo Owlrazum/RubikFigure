@@ -15,5 +15,7 @@ public static class GameDelegatesContainer
     public static Action EventLevelCompleted;
     public static Action EventLevelFailed;
 
+    public static Func<Camera> GetRenderingCamera;
+
     public static Func<bool> GetShouldShowTutorial;
 }

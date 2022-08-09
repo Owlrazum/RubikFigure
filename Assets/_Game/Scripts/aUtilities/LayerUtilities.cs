@@ -2,12 +2,9 @@ namespace Orazum.Utilities
 {
     public static class LayerUtilities
     {
-        public const int PLAYER_COLLISION_LAYER = 6;
-        public const int PLAYER_COLLISION_LAYER_MASK = 1 << PLAYER_COLLISION_LAYER;
-
-        public static bool IsInLayerMaskLayer(int layer)
+        public static bool IsInLayerMaskLayer(int layer, int layerMask)
         {
-            if ((PLAYER_COLLISION_LAYER_MASK & (1 << layer)) != 0)
+            if ((layerMask & (1 << layer)) != 0)
             {
                 return true;
             }
@@ -16,5 +13,8 @@ namespace Orazum.Utilities
                 return false;
             }
         }
+
+        public const int SEGMENT_POINTS_LAYER = 7;
+        public const int SEGMENT_POINTS_LAYER_MASK = 1 << SEGMENT_POINTS_LAYER;
     }
 }

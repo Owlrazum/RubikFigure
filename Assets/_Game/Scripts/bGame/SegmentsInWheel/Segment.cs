@@ -10,12 +10,11 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Assertions;
 
-
-
 /// <summary>
 /// Segment of the Wheel
 /// </summary>
 [RequireComponent(typeof(MeshFilter))]
+[RequireComponent(typeof(MeshCollider))]
 public class Segment : MonoBehaviour
 {
     public const int VERTEX_COUNT = 24;
@@ -25,7 +24,9 @@ public class Segment : MonoBehaviour
     private const float CLOCK_MOVE_BUFFER_LERP_VALUE = 0.4f;
 
     private MeshFilter _meshFilter;
+    private MeshCollider _meshCollider;
     private MeshRenderer _meshRenderer;
+
 
     public MeshFilter MeshContainer { get { return _meshFilter; } }
     private int2 _segmentIndex;
@@ -48,6 +49,7 @@ public class Segment : MonoBehaviour
     {
         TryGetComponent(out _meshFilter);
         TryGetComponent(out _meshRenderer);
+        TryGetComponent(out _meshCollider);
     }
 
     public void Initialize(
@@ -68,6 +70,8 @@ public class Segment : MonoBehaviour
         _colorIndex = colorIndexArg;
 
         wasJobCompleted = true;
+
+        _meshCollider.sharedMesh = _meshFilter.mesh;
     }
 
     public void StartSchedulingMoveJobs(
@@ -142,6 +146,7 @@ public class Segment : MonoBehaviour
         {
             _vertices[i] = _currentVertices[i];
         }
+        _meshCollider.sharedMesh = _meshFilter.mesh;
     }
 
     public void Dissappear()
