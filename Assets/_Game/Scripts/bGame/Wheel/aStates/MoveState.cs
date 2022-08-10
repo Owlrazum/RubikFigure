@@ -45,6 +45,7 @@ public class MoveState : WheelState
         Vector3 worldDir = (worldEndPos - worldStartPos).normalized;
 
         SegmentMoveType moveType = DetermineMoveType(center, worldStartPos, worldDir);
+        Debug.Log(moveType);
         _moveToMake.FromIndex = _currentSelectedPoint.Index;
         _moveToMake.MoveType = moveType;
         if (_wheel.IsMovePossible(_moveToMake, out int2 toIndex))
@@ -66,16 +67,15 @@ public class MoveState : WheelState
         Quaternion rotation = Quaternion.AngleAxis(rotateAngleDeg, Vector3.up);
         worldDir = rotation * worldDir;
         float swipeAngle = Mathf.Atan2(worldDir.z, worldDir.x);
-
-        if (swipeAngle > -TAU / 8 && swipeAngle < TAU / 8)
+        if (swipeAngle > -TAU / 12 && swipeAngle < TAU / 12)
         { 
             return SegmentMoveType.Down;
         }
-        else if (swipeAngle > TAU / 8 && swipeAngle < 3 * TAU / 8)
+        else if (swipeAngle > TAU / 12 && swipeAngle < 5 * TAU / 12)
         {
             return SegmentMoveType.Clockwise;
         }
-        else if (swipeAngle > -3 * TAU / 8 && swipeAngle < -TAU / 8)
+        else if (swipeAngle > -5 * TAU / 12 && swipeAngle < -TAU / 12)
         {
             return SegmentMoveType.CounterClockwise;
         }

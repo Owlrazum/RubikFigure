@@ -12,6 +12,8 @@ public static class InputDelegatesContainer
     public static Action ExitToMainMenuCommand;
     public static Action ExitGameCommand;
 
+    public static Action ShuffleCommand;
+
     public static Action<Collider> SelectSegmentCommand;
     public static Action DeselectSegmentCommand;
 

@@ -5,6 +5,8 @@ public class IdleState : WheelState
 {
     private SwipeCommand _currentSwipeCommand;
     private SegmentPoint _currentSelectedPoint;
+    private bool _isShuffleCommandTriggered;
+
     public IdleState(LevelDescriptionSO levelDescription, Wheel wheelArg) : base(levelDescription, wheelArg)
     {
         WheelStatesDelegates.IdleState += GetThisState;
@@ -15,6 +17,7 @@ public class IdleState : WheelState
         InputDelegatesContainer.SelectSegmentCommand += OnSelectSegmentCommand;
         InputDelegatesContainer.DeselectSegmentCommand += OnDeselectSegmentCommand;
         InputDelegatesContainer.SwipeCommand += OnSwipeCommand;
+        InputDelegatesContainer.ShuffleCommand += OnShuffleCommand;
         InputDelegatesContainer.SetShouldRespond(true);
     }
 
@@ -23,6 +26,7 @@ public class IdleState : WheelState
         InputDelegatesContainer.SelectSegmentCommand -= OnSelectSegmentCommand;
         InputDelegatesContainer.DeselectSegmentCommand -= OnDeselectSegmentCommand;
         InputDelegatesContainer.SwipeCommand -= OnSwipeCommand;
+        InputDelegatesContainer.ShuffleCommand -= OnShuffleCommand;
         InputDelegatesContainer.SetShouldRespond(false);
     }
 
@@ -54,8 +58,21 @@ public class IdleState : WheelState
         _currentSwipeCommand = swipeCommand;
     }
 
+    private void OnShuffleCommand()
+    {
+        _isShuffleCommandTriggered = true;
+    }
+
     public override WheelState HandleTransitions()
     {
+        if (_isShuffleCommandTriggered)
+        {
+            // _isShuffleCommandTriggered = false;
+            // ShuffleState shuffleState = WheelStatesDelegates.ShuffleState() as ShuffleState;
+            // _wheel.Get
+            // shuffleState.PrepareForShuffle();
+            // return shuffleState;
+        }
         if (_currentSwipeCommand == null)
         {
             return null;

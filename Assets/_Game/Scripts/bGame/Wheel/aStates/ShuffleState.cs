@@ -36,7 +36,7 @@ public class ShuffleState : WheelState
         _fastShuffleTime = 1 / FAST_SPEED + _shufflePauseTime / 10;
         _shuffleTime = 1 / _shuffleLerpSpeed + _shufflePauseTime;
 
-        _randomGenerator = rnd.CreateFromIndex(15);
+        _randomGenerator = rnd.CreateFromIndex(100203);
 
         _possibleMoves = new List<SegmentMove>(4);
 

@@ -3,10 +3,10 @@ using Orazum.Utilities.ConstContainers;
 
 public class InputReceiverEditor : MonoBehaviour
 {
-#if UNITY_EDITOR// && !UNITY_ANDROID && !UNITY_IOS
     [SerializeField]
     [Range(0, 0.5f)]
     private float _swipeThreshold;
+#if UNITY_EDITOR// && !UNITY_ANDROID && !UNITY_IOS
 
     private Camera _renderingCamera;
 

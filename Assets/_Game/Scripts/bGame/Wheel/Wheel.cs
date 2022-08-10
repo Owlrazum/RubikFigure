@@ -102,6 +102,11 @@ public class Wheel : MonoBehaviour
         _currentMoveCompleteAction?.Invoke();
     }
 
+    // public int2[] GetCurrentEmptySegmentPoints()
+    // {
+    //     int2[] emptySegmentPoints = new int2[];
+    // }
+
     public Vector3 GetEmptySegmentPointPosition(int2 emptyIndex)
     {
         return _segmentPoints[emptyIndex].transform.position;
@@ -183,7 +188,6 @@ public class Wheel : MonoBehaviour
     }
     public bool IsMovePossible(SegmentMove move, out int2 toIndex)
     {
-        print(_segmentPoints[move.FromIndex].Segment != null);
         Assert.IsNotNull(_segmentPoints[move.FromIndex].Segment);
         toIndex = int2.zero;
         switch (move.MoveType)

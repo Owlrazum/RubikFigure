@@ -4,10 +4,10 @@ using Orazum.Utilities.ConstContainers;
 
 public class InputReceiverMobile : MonoBehaviour
 {
-#if !UNITY_EDITOR && (UNITY_ANDROID || UNITY_IOS)
     [SerializeField]
     [Range(0, 0.5f)]
     private float _swipeThreshold;
+#if !UNITY_EDITOR && (UNITY_ANDROID || UNITY_IOS)
 
     private Camera _renderingCamera;
 
@@ -55,6 +55,7 @@ public class InputReceiverMobile : MonoBehaviour
             Touch currentTouch = Input.GetTouch(0);
             if (!_isSwiping)
             {
+                _isSwiping = true;
                 _pressPos = currentTouch.position;
                 Ray ray = _renderingCamera.ScreenPointToRay(_pressPos);
                 if (Physics.Raycast(ray, out RaycastHit hitInfo, 1000,
@@ -69,8 +70,13 @@ public class InputReceiverMobile : MonoBehaviour
                 _lastPos = currentTouch.position;
             }
         }
+        else if (Input.touchCount == 3)
+        {
+            InputDelegatesContainer.ShuffleCommand?.Invoke();
+        }
         else
         { 
+            _isSwiping = false;
             if (_isSegmentSelected)
             {
                 InputDelegatesContainer.DeselectSegmentCommand?.Invoke();

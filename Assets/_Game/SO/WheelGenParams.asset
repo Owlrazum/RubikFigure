@@ -14,9 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _height: 1
   _outerRadius: 5
-  _innerRadius: 0.4
-  _sideCount: 4
-  _segmentCountInOneSide: 3
-  _meshesMaterial: {fileID: 2100000, guid: a0e7b8218640c4ce8a7b698683b844f9, type: 2}
-  _emptyMaterial: {fileID: 2100000, guid: f66f201095a6d47c48589103713a10a6, type: 2}
-  _highlightMaterial: {fileID: 2100000, guid: 054c82d6e0a504693892c693f9890ae9, type: 2}
+  _innerRadius: 0.6
+  _sideCount: 6
+  _segmentCountInOneSide: 4
