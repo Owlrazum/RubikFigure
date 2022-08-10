@@ -13,8 +13,8 @@ public class InputReceiverEditor : MonoBehaviour
     private Vector2 _pressPos;
     private Vector2 _lastPos;
 
-    private bool _isSegmentSelected;
     private SwipeCommand _swipeCommand;
+    private bool _isSegmentSelected;
 
     private bool _shouldRespond;
 
@@ -39,11 +39,6 @@ public class InputReceiverEditor : MonoBehaviour
     private void Start()
     {
         _renderingCamera = InputDelegatesContainer.GetRenderingCamera();
-    }
-
-    private SwipeCommand GetCurrentSwipeCommand()
-    {
-        return _swipeCommand;
     }
 
     private void Update()

@@ -1,49 +1,92 @@
 using UnityEngine;
 
+using Orazum.Utilities.ConstContainers;
+
 public class InputReceiverMobile : MonoBehaviour
 {
-#if !UNITY_EDITOR && UNITY_ANDROID && UNITY_IOS
+#if !UNITY_EDITOR && (UNITY_ANDROID || UNITY_IOS)
     [SerializeField]
     [Range(0, 0.5f)]
     private float _swipeThreshold;
 
-    [SerializeField]
     private Camera _renderingCamera;
 
-    private bool _isSwiping;
     private Vector2 _pressPos;
     private Vector2 _lastPos;
 
+    private bool _isSwiping;
+    private SwipeCommand _swipeCommand;
+    private bool _isSegmentSelected;
+
+    private bool _shouldRespond;
+
+    private void Awake()
+    {
+        _swipeCommand = new SwipeCommand();
+
+        _shouldRespond = true;
+        InputDelegatesContainer.SetShouldRespond += SetShouldRespond;
+    }
+
+    private void OnDestroy()
+    { 
+        InputDelegatesContainer.SetShouldRespond -= SetShouldRespond;
+    }
+
+    private void SetShouldRespond(bool value)
+    {
+        _shouldRespond = value;
+    }
+
+    private void Start()
+    {
+        _renderingCamera = InputDelegatesContainer.GetRenderingCamera();
+    }
+
     private void Update()
     {
-        if (Input.touchCount != 1)
+        if (!_shouldRespond)
         {
-            if (_isSwiping)
-            {
-                Vector2 viewStartPos = _renderingCamera.ScreenToViewportPoint(_pressPos);
-                Vector2 viewEndPos = _renderingCamera.ScreenToViewportPoint(_lastPos);
-                 
-                Vector2 delta = viewEndPos - viewStartPos;
-                if (delta.sqrMagnitude >= _swipeThreshold * _swipeThreshold)
-                {
-                    SwipeCommand swipeCommand = new SwipeCommand(delta.normalized, _pressPos);
-                    InputDelegatesContainer.SwipeCommand?.Invoke(swipeCommand);
-                }
-                
-                _isSwiping = false;
-            }
             return;
         }
 
-        Touch touch = Input.GetTouch(0);
-        if (_isSwiping)
+        if (Input.touchCount == 1)
         {
-            _lastPos = touch.position;
+            Touch currentTouch = Input.GetTouch(0);
+            if (!_isSwiping)
+            {
+                _pressPos = currentTouch.position;
+                Ray ray = _renderingCamera.ScreenPointToRay(_pressPos);
+                if (Physics.Raycast(ray, out RaycastHit hitInfo, 1000,
+                   LayerUtilities.SEGMENT_POINTS_LAYER_MASK, QueryTriggerInteraction.Collide))
+                {
+                    _isSegmentSelected = true;
+                    InputDelegatesContainer.SelectSegmentCommand?.Invoke(hitInfo.collider);
+                }
+            }
+            else
+            { 
+                _lastPos = currentTouch.position;
+            }
         }
         else
-        {
-            _isSwiping = true;
-            _pressPos = touch.position;
+        { 
+            if (_isSegmentSelected)
+            {
+                InputDelegatesContainer.DeselectSegmentCommand?.Invoke();
+                _isSegmentSelected = false;
+
+                Vector2 viewStartPos = _renderingCamera.ScreenToViewportPoint(_pressPos);
+                Vector2 viewEndPos = _renderingCamera.ScreenToViewportPoint(_lastPos);
+
+                Vector2 delta = viewEndPos - viewStartPos;
+                if (delta.sqrMagnitude >= _swipeThreshold * _swipeThreshold)
+                {
+                    _swipeCommand.SetViewStartPos(viewStartPos);
+                    _swipeCommand.SetViewEndPos(viewEndPos);
+                    InputDelegatesContainer.SwipeCommand?.Invoke(_swipeCommand);
+                }
+            }
         }
     }
 #endif

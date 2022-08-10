@@ -30,9 +30,10 @@ public class WheelController : MonoBehaviour
             {
                 do
                 {
+                    _currentState.OnExit(); 
                     _currentState = newState;
-                    newState.OnEnter();
-                    newState = newState.HandleTransitions();
+                    _currentState.OnEnter();
+                    newState = _currentState.HandleTransitions();
                 } while (newState != null);
             }
             
