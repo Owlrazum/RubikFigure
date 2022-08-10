@@ -22,16 +22,17 @@ public class ShuffleState : WheelState
     private float _fastShuffleTime;
     private float _shuffleTime;
 
-    private Wheel _currentWheel;
     private float _currentShuffleTimer;
     private int _currentStep;
 
-    public ShuffleState(WheelGenerationData generationData) : base(generationData)
-    {
-        _shuffleLerpSpeed = generationData.LevelDescriptionSO.ShuffleLerpSpeed;
-        _shufflePauseTime = generationData.LevelDescriptionSO.ShufflePauseTime;
+    private int2[] _currentEmptyIndices;
 
-        _shuffleStepsAmount = generationData.LevelDescriptionSO.ShuffleStepsAmount;
+    public ShuffleState(LevelDescriptionSO levelDescription, Wheel wheelArg) : base(levelDescription, wheelArg)
+    {
+        _shuffleLerpSpeed = levelDescription.ShuffleLerpSpeed;
+        _shufflePauseTime = levelDescription.ShufflePauseTime;
+
+        _shuffleStepsAmount = levelDescription.ShuffleStepsAmount;
         _fastShuffleTime = 1 / FAST_SPEED + _shufflePauseTime / 10;
         _shuffleTime = 1 / _shuffleLerpSpeed + _shufflePauseTime;
 
@@ -40,6 +41,11 @@ public class ShuffleState : WheelState
         _possibleMoves = new List<SegmentMove>(4);
 
         Subscribe();
+    }
+
+    public void PrepareForShuffle(int2[] currentEmptyIndicesArg)
+    {
+        _currentEmptyIndices = currentEmptyIndicesArg;
     }
 
     public override WheelState HandleTransitions()
@@ -52,14 +58,13 @@ public class ShuffleState : WheelState
         return null;
     }
 
-    public override void OnEnter(Wheel notUsed)
+    public override void OnEnter()
     {
         _currentStep = 0;
     }
 
-    public override void StartProcessingState(Wheel wheel)
+    public override void ProcessState()
     {
-        _currentWheel = wheel;
         _currentShuffleTimer += Time.deltaTime;
         // Debug.Log("Processing shuffleState " + _currentShuffleTimer);
         if (_currentStep < FAST_STEPS)
@@ -84,12 +89,11 @@ public class ShuffleState : WheelState
 
     private void Shuffle(float lerpSpeed)
     {
-        int2[] emptyIndices = _currentWheel.GetEmptyIndices();
-        for (int i = 0; i < emptyIndices.Length; i++)
+        for (int i = 0; i < _currentEmptyIndices.Length; i++)
         {
-            int2 emptyIndex = emptyIndices[i];
+            int2 emptyIndex = _currentEmptyIndices[i];
 
-            DeterminePossibleMoves(emptyIndex);
+            _wheel.DeterminePossibleMoves(emptyIndex, _possibleMoves);
             if (_possibleMoves.Count == 0)
             {
                 continue;
@@ -97,37 +101,10 @@ public class ShuffleState : WheelState
 
             int rnd = _randomGenerator.NextInt(0, _possibleMoves.Count);
             SegmentMove randomMove = _possibleMoves[rnd];
-            randomMove.IsValid = true;
-            randomMove.EmtpyPointIndex = i;
+            _currentEmptyIndices[i] = randomMove.FromIndex;
 
-            _currentWheel.MakeMove(in randomMove, lerpSpeed);
-
+            _wheel.MakeMove(in randomMove, lerpSpeed);
             _possibleMoves.Clear();
-        }
-    }
-
-    private void DeterminePossibleMoves(int2 emptyIndex)
-    {
-        if (_currentWheel.HasSegmentThatWillMoveDown(emptyIndex))
-        {
-            _possibleMoves.Add(new SegmentMove(SegmentMoveType.Down, _currentWheel.MoveIndexUp(emptyIndex), emptyIndex));
-        }
-        if (_currentWheel.HasSegmentThatWillMoveUp(emptyIndex))
-        {
-            _possibleMoves.Add(new SegmentMove(SegmentMoveType.Up, _currentWheel.MoveIndexDown(emptyIndex), emptyIndex));
-        }
-        if (_currentWheel.HasSegmentThatWillMoveCounterClockwise(emptyIndex))
-        {
-            _possibleMoves.Add(
-                new SegmentMove(SegmentMoveType.CounterClockwise, 
-                _currentWheel.MoveIndexClockwise(emptyIndex), emptyIndex)
-            );
-        }
-        if (_currentWheel.HasSegmentThatWillMoveClockwise(emptyIndex))
-        {
-            _possibleMoves.Add(
-                new SegmentMove(SegmentMoveType.Clockwise, 
-                _currentWheel.MoveIndexCounterClockwise(emptyIndex), emptyIndex));
         }
     }
 

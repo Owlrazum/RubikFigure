@@ -1,12 +1,13 @@
 public abstract class WheelState
 {
-    public WheelState(WheelGenerationData generationData)
-    { 
-
+    protected Wheel _wheel;
+    public WheelState(LevelDescriptionSO levelDescription, Wheel wheelArg)
+    {
+        _wheel = wheelArg;
     }
 
     public abstract WheelState HandleTransitions();
-    public virtual void OnEnter(Wheel wheel)
+    public virtual void OnEnter()
     { 
 
     }
@@ -16,7 +17,7 @@ public abstract class WheelState
 
     }
 
-    public abstract void StartProcessingState(Wheel wheel);
+    public abstract void ProcessState();
     public abstract void OnDestroy();
     protected abstract WheelState GetThisState();
 }

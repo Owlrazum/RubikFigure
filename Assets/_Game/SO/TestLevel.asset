@@ -12,6 +12,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2caf639ba8b5f4a68b9af161ec839b6d, type: 3}
   m_Name: TestLevel
   m_EditorClassIdentifier: 
+  GenerationParams: {fileID: 11400000, guid: 742513ac5ef65499fb371d4f72c536a9, type: 2}
+  SegmentPrefab: {fileID: 6270584614686746192, guid: c417056fd1f314434bcea4a21b29a82c, type: 3}
+  SegmentPointPrefab: {fileID: 1553978324677776507, guid: dfd0e0cf5893b4c2fb5997fd8f7972bf, type: 3}
+  ShuffleStepsAmount: 5
+  ShufflePauseTime: 0.1
+  ShuffleLerpSpeed: 2
+  MoveLerpSpeed: 1
   ShouldUsePredefinedEmptyPlaces: 0
   PredefinedEmptyPlaces:
   - x: 0
@@ -26,8 +33,4 @@ MonoBehaviour:
     y: 0
   - x: 5
     y: 5
-  EmptyPlacesCount: 4
-  ShuffleStepsAmount: 5
-  ShufflePauseTime: 10
-  ShuffleLerpSpeed: 5
-  MoveLerpSpeed: 1
+  EmptyPlacesCount: 2

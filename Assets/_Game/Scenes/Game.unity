@@ -373,8 +373,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bca9a51fa2ed34b59872a1235629d552, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _wheelGenParams: {fileID: 11400000, guid: 742513ac5ef65499fb371d4f72c536a9, type: 2}
-  _levelDesc: {fileID: 11400000, guid: ebc70fa4699e1421d95bf4fd1a7f7fe6, type: 2}
+  _levelDescription: {fileID: 11400000, guid: ebc70fa4699e1421d95bf4fd1a7f7fe6, type: 2}
 --- !u!1 &666141514
 GameObject:
   m_ObjectHideFlags: 0
@@ -448,7 +447,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f34f1bea2967e42a8ba469e0002352ac, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _swipeThreshold: 0.2
+  _swipeThreshold: 0.05
 --- !u!1 &1090396983
 GameObject:
   m_ObjectHideFlags: 0

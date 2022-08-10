@@ -8,70 +8,55 @@ using static Orazum.Math.MathUtilities;
 public class MoveState : WheelState
 {
     private SwipeCommand _currentSwipeCommand;
+    private SegmentPoint _currentSelectedPoint;
+    private Segment _segmentToMove;
+    private SegmentMove _moveToMake; // we store it once to avoid gc. SegemntToMove presence determines logic.
     private float _moveLerpSpeed;
 
-    public MoveState(WheelGenerationData generationData) : base(generationData)
+    public MoveState(LevelDescriptionSO levelDescription, Wheel wheelArg) : base(levelDescription, wheelArg)
     { 
-        _moveLerpSpeed = generationData.LevelDescriptionSO.MoveLerpSpeed;
+        _moveLerpSpeed = levelDescription.MoveLerpSpeed;
+        _moveToMake = new SegmentMove(SegmentMoveType.Down, int2.zero, int2.zero);
 
         WheelStatesDelegates.MoveState += GetThisState;
     }
 
-    public void AssignSwipeCommand(SwipeCommand swipeCommand)
+    public void PrepareForMove(SwipeCommand swipeCommand, SegmentPoint selectedSegmentPoint)
     {
         _currentSwipeCommand = swipeCommand;
+        _currentSelectedPoint = selectedSegmentPoint;
     }
 
-    public override void OnEnter(Wheel wheel)
+    public override void OnEnter()
     {
         Assert.IsNotNull(_currentSwipeCommand);
+        Assert.IsNotNull(_currentSelectedPoint.Segment);
 
         Camera renderingCamera = GameDelegatesContainer.GetRenderingCamera();
-        Vector3 center = wheel.transform.position;
+        Vector3 center = _wheel.transform.position;
         float planeDistance = (center - renderingCamera.transform.position).magnitude;
-        Vector3 viewStartPos = new Vector3(_currentSwipeCommand.ViewStartPos.x, 
+        Vector3 viewStartPos = new Vector3(_currentSwipeCommand.ViewStartPos.x,
             _currentSwipeCommand.ViewStartPos.y, planeDistance);
-        Vector3 viewEndPos = new Vector3(_currentSwipeCommand.ViewEndPos.x, 
+        Vector3 viewEndPos = new Vector3(_currentSwipeCommand.ViewEndPos.x,
             _currentSwipeCommand.ViewEndPos.y, planeDistance);
 
-        
-       
-            Vector3 worldStartPos = renderingCamera.ViewportToWorldPoint(viewStartPos);
-            Vector3 worldEndPos = renderingCamera.ViewportToWorldPoint(viewEndPos);
-            Vector3 worldDir = (worldEndPos - worldStartPos).normalized;
+        Vector3 worldStartPos = renderingCamera.ViewportToWorldPoint(viewStartPos);
+        Vector3 worldEndPos = renderingCamera.ViewportToWorldPoint(viewEndPos);
+        Vector3 worldDir = (worldEndPos - worldStartPos).normalized;
 
-            int2[] emptyIndices = wheel.GetEmptyIndices();
-
-            int minDistanceIndex = -1;
-            float minDistance = -1;
-            for (int i = 0; i < emptyIndices.Length; i++)
-            {
-                if (!wheel.IsAdjacentToEmpty(emptyIndices[i], segmentPoint.Index))
-                {
-                    continue;
-                }
-
-                Vector3 emptyPoint = wheel.GetEmptySegmentPointPosition(i);
-                float distance = (emptyPoint - worldStartPos).sqrMagnitude;
-                if (minDistance < 0)
-                {
-                    minDistance = distance;
-                    minDistanceIndex = i;
-                }
-                else if (minDistance > distance)
-                {
-                    minDistance = distance;
-                    minDistanceIndex = i;
-                }
-            }
-
-            if (minDistanceIndex >= 0)
-            {
-                int2 closestEmptyPointIndex = emptyIndices[minDistanceIndex];
-                SegmentMoveType moveType = DetermineMoveType(center, worldStartPos, worldDir);
-            }
-
-        _currentSwipeCommand = null;
+        SegmentMoveType moveType = DetermineMoveType(center, worldStartPos, worldDir);
+        _moveToMake.FromIndex = _currentSelectedPoint.Index;
+        _moveToMake.MoveType = moveType;
+        if (_wheel.IsMovePossible(_moveToMake, out int2 toIndex))
+        {
+            _segmentToMove = _currentSelectedPoint.Segment;
+            _moveToMake.ToIndex = toIndex;
+            _wheel.MakeMove(in _moveToMake, _moveLerpSpeed, OnCurrentMoveCompleted);
+        }
+        else
+        {
+            _segmentToMove = null;
+        }
     }
 
     private SegmentMoveType DetermineMoveType(Vector3 circleCenter, Vector3 worldPos, Vector3 worldDir)
@@ -100,9 +85,14 @@ public class MoveState : WheelState
         }
     }
 
+    private void OnCurrentMoveCompleted()
+    {
+        _segmentToMove = null;
+    }
+
     public override WheelState HandleTransitions()
     {
-        if (_currentSwipeCommand == null)
+        if (_segmentToMove == null)
         {
             return WheelStatesDelegates.IdleState();
         }
@@ -112,7 +102,7 @@ public class MoveState : WheelState
         }
     }
 
-    public override void StartProcessingState(Wheel wheel)
+    public override void ProcessState()
     {
     }
 

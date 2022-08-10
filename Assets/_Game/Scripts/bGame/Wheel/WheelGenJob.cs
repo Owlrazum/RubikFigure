@@ -14,7 +14,7 @@ public struct WheelGenJob : IJob
     public float P_OuterCircleRadius;
     public float P_InnerCircleRadius;
     public int P_SideCount;
-    public int P_SegmentsCountInOneSide;
+    public int P_RingCount;
 
     [WriteOnly]
     public NativeArray<VertexData> OutputVertices;
@@ -70,7 +70,7 @@ public struct WheelGenJob : IJob
         }
 #endregion
         
-        float radiusDelta = (P_OuterCircleRadius - P_InnerCircleRadius) / P_SegmentsCountInOneSide;
+        float radiusDelta = (P_OuterCircleRadius - P_InnerCircleRadius) / P_RingCount;
 
         for (int i = 0; i < P_SideCount; i++)
         {
@@ -84,9 +84,9 @@ public struct WheelGenJob : IJob
             _currentRadius = P_InnerCircleRadius;
             _nextRadius = _currentRadius + radiusDelta;
             
-            for (int j = 0; j < P_SegmentsCountInOneSide; j++)
+            for (int j = 0; j < P_RingCount; j++)
             {
-                _segmentIndex = i * P_SegmentsCountInOneSide + j;
+                _segmentIndex = i * P_RingCount + j;
 
                 OutputSegmentPoints[_segmentIndex] = AddSegment(rays[currentRayIndex], rays[nextRayIndex]);
 

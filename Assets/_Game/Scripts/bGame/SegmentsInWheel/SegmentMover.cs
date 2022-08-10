@@ -12,6 +12,7 @@ using UnityEngine.Assertions;
 using Orazum.Collections;
 using static Orazum.Math.MathUtilities;
 
+[RequireComponent(typeof(MeshFilter))]
 public class SegmentMover : MonoBehaviour
 { 
     public const int VERTEX_COUNT = 24;
@@ -21,17 +22,10 @@ public class SegmentMover : MonoBehaviour
     private const float CLOCK_MOVE_BUFFER_LERP_VALUE = 0.4f;
 
     private MeshFilter _meshFilter;
-    private MeshCollider _meshCollider;
-    private MeshRenderer _meshRenderer;
-
 
     public MeshFilter MeshContainer { get { return _meshFilter; } }
-    private int2 _segmentIndex;
-    private int _puzzleColorIndex;
-    public int PuzzleColorIndex{ get { return _puzzleColorIndex; } }
 
     private NativeArray<VertexData> _vertices;
-    private bool _needsDispose;
 
     private SegmentMoveJob _segmentMoveJob;
     private JobHandle _segmentMoveJobHandle;
@@ -40,49 +34,37 @@ public class SegmentMover : MonoBehaviour
     private float _currentSpeed;
     private SegmentMove _currentMove;
 
-    private bool wasJobCompleted;
+    private bool _wasJobScheduled;
+    private bool _wasMoveCompleted;
+    private Action<int2> _moveCompleteAction;
 
     private void Awake()
     {
         TryGetComponent(out _meshFilter);
-        TryGetComponent(out _meshRenderer);
-        TryGetComponent(out _meshCollider);
     }
 
-    public void Initialize(
-        Material materialArg, 
-        NativeArray<VertexData> verticesArg, 
-        int2 segmentIndexArg, 
-        int colorIndexArg)
+    public void Initialize(NativeArray<VertexData> verticesArg)
     {
-        _meshRenderer.sharedMaterial = materialArg;
-
         _vertices = verticesArg;
-        _needsDispose = true;
 
         _currentVertices =
             new NativeArray<VertexData>(_vertices.Length, Allocator.Persistent);
-
-        _segmentIndex = segmentIndexArg;
-        _puzzleColorIndex = colorIndexArg;
-
-        wasJobCompleted = true;
-
-        _meshCollider.sharedMesh = _meshFilter.mesh;
     }
 
     public void StartMove(
         SegmentMove move,
         float speed,
-        Action<SegmentMove> OnSegmentCompletedMove)
+        Action<int2> OnMoveToDestinationCompleted)
     {
         _currentMove = move;
         _currentSpeed = speed;
+        _wasMoveCompleted = false;
+        _moveCompleteAction = OnMoveToDestinationCompleted;
 
-        StartCoroutine(MoveSequence(OnSegmentCompletedMove));
+        StartCoroutine(MoveSequence());
     }
 
-    private IEnumerator MoveSequence(Action<SegmentMove> OnSegmentCompletedMove)
+    private IEnumerator MoveSequence()
     {
         float lerpParam = 0;
         while (lerpParam < 1)
@@ -104,29 +86,18 @@ public class SegmentMover : MonoBehaviour
                 InputVertices = _vertices,
                 OutputVertices = _currentVertices
             };
-            
-            // try
-            // { 
-                Assert.IsTrue(wasJobCompleted);
-            // } catch (AssertionException assertion)
-            // {
-            //     Debug.Log("The lerp param is " + lerpParam + " " +_currentSpeed * Time.deltaTime);
-            //     Debug.Break();
-            // }
-
-            wasJobCompleted = false;
             _segmentMoveJobHandle = _segmentMoveJob.Schedule(_segmentMoveJobHandle);
+            _wasJobScheduled = true;
             yield return null;
         }
 
-        OnSegmentCompletedMove.Invoke(_currentMove);
+        _wasMoveCompleted = true;
     }
 
     public void LateUpdate()
     {
-        if (!_segmentMoveJobHandle.IsCompleted)
-        { 
-            wasJobCompleted = true;
+        if (_wasMoveCompleted)
+        {
             _segmentMoveJobHandle.Complete();
             Mesh newMesh = _meshFilter.mesh;
             _currentVertices = _segmentMoveJob.OutputVertices;
@@ -137,16 +108,29 @@ public class SegmentMover : MonoBehaviour
 
             newMesh.RecalculateNormals();
             _meshFilter.mesh = newMesh;
-        }
-    }
 
-    public void OnMoveComplete()
-    {
-        for (int i = 0; i < _vertices.Length; i++)
-        {
-            _vertices[i] = _currentVertices[i];
+            for (int i = 0; i < _vertices.Length; i++)
+            {
+                _vertices[i] = _currentVertices[i];
+            }
+            _moveCompleteAction.Invoke(_currentMove.ToIndex);
+            _wasMoveCompleted = false;
         }
-        _meshCollider.sharedMesh = _meshFilter.mesh;
+        else if (_wasJobScheduled)
+        {
+            _segmentMoveJobHandle.Complete();
+            Mesh newMesh = _meshFilter.mesh;
+            _currentVertices = _segmentMoveJob.OutputVertices;
+            newMesh.SetVertexBufferData(_currentVertices, 0, 0,
+                VERTEX_COUNT, 0,
+                MESH_UPDATE_FLAGS
+            );
+
+            newMesh.RecalculateNormals();
+            _meshFilter.mesh = newMesh;
+            
+            _wasJobScheduled = false;
+        }
     }
 
     private void OnDestroy()

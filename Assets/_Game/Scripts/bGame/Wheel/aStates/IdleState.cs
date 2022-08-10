@@ -4,12 +4,13 @@ using UnityEngine.Assertions;
 public class IdleState : WheelState
 {
     private SwipeCommand _currentSwipeCommand;
-    public IdleState(WheelGenerationData generationData) : base(generationData)
-    { 
+    private SegmentPoint _currentSelectedPoint;
+    public IdleState(LevelDescriptionSO levelDescription, Wheel wheelArg) : base(levelDescription, wheelArg)
+    {
         WheelStatesDelegates.IdleState += GetThisState;
     }
 
-    public override void OnEnter(Wheel notUsed)
+    public override void OnEnter()
     {
         InputDelegatesContainer.SelectSegmentCommand += OnSelectSegmentCommand;
         InputDelegatesContainer.DeselectSegmentCommand += OnDeselectSegmentCommand;
@@ -25,16 +26,27 @@ public class IdleState : WheelState
         InputDelegatesContainer.SetShouldRespond(false);
     }
 
-    private void OnSelectSegmentCommand(Collider collider)
+    private void OnSelectSegmentCommand(Collider segmentPointCollider)
     {
-        bool isFound = collider.TryGetComponent(out SegmentPoint segmentPoint);
+        bool isFound = segmentPointCollider.TryGetComponent(out SegmentPoint segmentPoint);
         Assert.IsTrue(isFound);
-        segmentPoint.Highlight();
+        if (segmentPoint.Segment == null)
+        {
+            return;
+        }
+
+        if (!_wheel.DoesIndexHaveAdjacentEmptyIndex(segmentPoint.Index))
+        {
+            return;
+        }
+
+        _currentSelectedPoint = segmentPoint;
+        _currentSelectedPoint.Segment.HighlightRender();
     }
 
     private void OnDeselectSegmentCommand()
-    { 
-        
+    {
+        _currentSelectedPoint.Segment.DefaultRender();
     }
 
     private void OnSwipeCommand(SwipeCommand swipeCommand)
@@ -51,13 +63,14 @@ public class IdleState : WheelState
         else
         {
             MoveState moveState = WheelStatesDelegates.MoveState() as MoveState;
-            moveState.AssignSwipeCommand(_currentSwipeCommand);
+            Assert.IsTrue(_currentSwipeCommand != null && _currentSelectedPoint != null);
+            moveState.PrepareForMove(_currentSwipeCommand, _currentSelectedPoint);
             _currentSwipeCommand = null;
             return moveState;
         }
     }
 
-    public override void StartProcessingState(Wheel wheel)
+    public override void ProcessState()
     {
 
     }

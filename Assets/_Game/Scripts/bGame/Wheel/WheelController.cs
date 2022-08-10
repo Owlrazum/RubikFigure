@@ -11,9 +11,10 @@ public class WheelController : MonoBehaviour
     {
         _wheel = wheelArg;
 
-        IdleState idleState = new IdleState(generationData);
-        MoveState moveState = new MoveState(generationData);
-        ShuffleState shuffleState = new ShuffleState(generationData);
+        IdleState idleState = new IdleState(generationData.LevelDescription, _wheel);
+        MoveState moveState = new MoveState(generationData.LevelDescription, _wheel);
+        ShuffleState shuffleState = new ShuffleState(generationData.LevelDescription, _wheel);
+        shuffleState.PrepareForShuffle(generationData.EmtpySegmentPointIndicesForShuffle);
 
         _currentState = shuffleState;
 
@@ -30,12 +31,12 @@ public class WheelController : MonoBehaviour
                 do
                 {
                     _currentState = newState;
-                    newState.OnEnter(_wheel);
+                    newState.OnEnter();
                     newState = newState.HandleTransitions();
                 } while (newState != null);
             }
             
-            _currentState.StartProcessingState(_wheel);
+            _currentState.ProcessState();
             yield return null;
         }
     }

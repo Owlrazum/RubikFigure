@@ -3,22 +3,16 @@ using Unity.Mathematics;
 
 public class SegmentMove
 {
-    public SegmentMoveType MoveType { get; private set; }
-    public int2 FromIndex { get; private set; }
-    public int2 ToIndex { get; private set; }
+    public SegmentMoveType MoveType { get; set; }
+    public int2 FromIndex { get; set; }
+    public int2 ToIndex { get; set; }
 
     public SegmentMove(SegmentMoveType typeArg, int2 fromIndexArg, int2 toIndexArg)
     {
         MoveType = typeArg;
         FromIndex = fromIndexArg;
         ToIndex = toIndexArg;
-
-        IsValid = false;
-        EmtpyPointIndex = -1;
     }
-
-    public bool IsValid { get; set; }
-    public int EmtpyPointIndex { get; set; }
 
     private SegmentPoint _target;
     public SegmentPointCornerPositions GetTargetCornerPositions()
@@ -33,12 +27,7 @@ public class SegmentMove
 
     public override string ToString()
     {
-        if (!IsValid)
-        {
-            return "Not valid";
-        }
-
-        return MoveType + " " + FromIndex + " " + ToIndex + " " + EmtpyPointIndex;
+        return MoveType + " " + FromIndex + " " + ToIndex;
     }
 
     public override bool Equals(object obj)

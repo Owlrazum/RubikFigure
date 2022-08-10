@@ -11,8 +11,8 @@ public class SegmentPoint : MonoBehaviour
     private MeshCollider _meshCollider;
     private MeshRenderer _meshRenderer;
 
+    [SerializeField]
     private Material _emptyMaterial;
-    private Material _highlightMaterial;
 
     private void Awake()
     {
@@ -24,21 +24,21 @@ public class SegmentPoint : MonoBehaviour
     public SegmentPointCornerPositions CornerPositions { get; private set; }
     public Vector3 Position { get; private set; }
     public int2 Index { get; private set; }
-    public void Initialize(SegmentPointCornerPositions cornerPositionsArg, 
-        Material emptyMaterialArg, Material highlightMaterialArg, int2 indexArg)
+    public void InitializeAfterMeshesGenerated(SegmentPointCornerPositions cornerPositionsArg, 
+        Segment segmentArg, int2 indexArg)
     {
-        Assert.IsNotNull(Segment);
+        Assert.IsNotNull(segmentArg.MeshContainer.mesh);
         CornerPositions = cornerPositionsArg;
+        Segment = segmentArg;
+        Index = indexArg;
+
         float3 center = (CornerPositions.BBL + CornerPositions.FTR) / 2;
         Position = center;
-        Index = indexArg;
 
         _meshFilter.mesh = Instantiate(Segment.MeshContainer.mesh);
         _meshCollider.sharedMesh = Instantiate(Segment.MeshContainer.mesh);
         _meshCollider.isTrigger = true;
 
-        _emptyMaterial = emptyMaterialArg;
-        _highlightMaterial = highlightMaterialArg;
         _meshRenderer.sharedMaterial = _emptyMaterial;
     }
 
