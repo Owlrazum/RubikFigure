@@ -19,6 +19,19 @@ public class Wheel : MonoBehaviour
     private HashSet<int2> _currentMovesDestinations; // used by shuffleState
     private Action _currentMoveCompleteAction; // used by moveState
 
+    private void Awake()
+    {
+        WheelDelegates.GetCurrentWheel += GetThis;
+    }
+    private void OnDestroy()
+    { 
+        WheelDelegates.GetCurrentWheel -= GetThis;
+    }
+    private Wheel GetThis()
+    {
+        return this;
+    }
+
     public void GenerationInitialization(WheelGenerationData generationData)
     {
         _segmentCountInOneSide = generationData.RingCount;
@@ -39,12 +52,15 @@ public class Wheel : MonoBehaviour
                 GenerateRandomEmptyPoints(generationData.LevelDescription.EmptyPlacesCount);
         }
 
+        Segment[] emptySegments = new Segment[emptySegmentPointIndices.Length];
         for (int i = 0; i < emptySegmentPointIndices.Length; i++)
         {
             int2 index = emptySegmentPointIndices[i];
+            emptySegments[i] = _segmentPoints[index].Segment;
             _segmentPoints[index].Segment.Dissappear();
             _segmentPoints[index].Segment = null;
         }
+        WheelDelegates.EventSegmentsWereEmptied?.Invoke(emptySegments);
 
         _currentMovesDestinations = new HashSet<int2>(emptySegmentPointIndices.Length);
 
@@ -102,16 +118,20 @@ public class Wheel : MonoBehaviour
         _currentMoveCompleteAction?.Invoke();
     }
 
-    // public int2[] GetCurrentEmptySegmentPoints()
-    // {
-    //     int2[] emptySegmentPoints = new int2[];
-    // }
+    public Array2D<SegmentPoint> GetSegmentPointsForCompletionCheck()
+    {
+        return _segmentPoints;
+    }
 
     public Vector3 GetEmptySegmentPointPosition(int2 emptyIndex)
     {
         return _segmentPoints[emptyIndex].transform.position;
     }
-    
+    public SegmentPoint GetSegmentPointForTeleport(int2 index)
+    {
+        return _segmentPoints[index];
+    }
+
     public bool IsIndexAdjacentTo(int2 lhs, int2 rhs)
     {
         Assert.IsTrue(math.any(lhs != rhs));
@@ -365,7 +385,6 @@ public class Wheel : MonoBehaviour
         Debug.Log(_segmentPoints);
         LogCurrentMoves();
     }
-
     private void LogCurrentMoves()
     { 
         string log = "";

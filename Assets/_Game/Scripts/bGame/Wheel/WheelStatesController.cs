@@ -2,7 +2,7 @@ using System.Collections;
 
 using UnityEngine;
 
-public class WheelController : MonoBehaviour
+public class WheelStatesController : MonoBehaviour
 {
     private WheelState _currentState;
     private Wheel _wheel;

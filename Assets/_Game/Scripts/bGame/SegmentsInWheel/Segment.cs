@@ -16,8 +16,8 @@ public class Segment : MonoBehaviour
     // private SegmentSelectionRespond _selectionRespond;
 
     public MeshFilter MeshContainer { get { return _segmentMover.MeshContainer; } }
-    private int _puzzleColorIndex;
-    public int PuzzleColorIndex{ get { return _puzzleColorIndex; } }
+    private int _puzzleIndex;
+    public int PuzzleIndex{ get { return _puzzleIndex; } }
 
     private int2 _segmentIndex;
 
@@ -30,7 +30,7 @@ public class Segment : MonoBehaviour
     public void Initialize(NativeArray<VertexData> verticesArg, int puzzleColorIndexArg)
     { 
         _segmentMover.Initialize(verticesArg);
-        _puzzleColorIndex = puzzleColorIndexArg;
+        _puzzleIndex = puzzleColorIndexArg;
     }
 
     public void StartMove(
@@ -39,6 +39,11 @@ public class Segment : MonoBehaviour
         Action<int2> OnMoveToDestinationCompleted)
     {
         _segmentMover.StartMove(move, lerpSpeed, OnMoveToDestinationCompleted);
+    }
+
+    public void TeleportTo(SegmentPoint destination)
+    {
+        _segmentMover.TeleportTo(destination);
     }
 
     public void HighlightRender()
@@ -53,6 +58,12 @@ public class Segment : MonoBehaviour
 
     public void Dissappear()
     {
-        Destroy(gameObject);
+        gameObject.SetActive(false);
+    }
+
+    public void Appear()
+    {
+        print("hi");
+        gameObject.SetActive(true);
     }
 }

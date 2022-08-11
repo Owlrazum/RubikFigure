@@ -52,7 +52,7 @@ public class ShuffleState : WheelState
     {
         if (_currentStep >= _shuffleStepsAmount)
         {
-            return WheelStatesDelegates.IdleState();
+            return WheelDelegates.IdleState();
         }
         
         return null;
@@ -110,12 +110,12 @@ public class ShuffleState : WheelState
 
     private void Subscribe()
     {
-        WheelStatesDelegates.ShuffleState += GetThisState;
+        WheelDelegates.ShuffleState += GetThisState;
     }
 
     public override void OnDestroy()
     {
-        WheelStatesDelegates.ShuffleState -= GetThisState;
+        WheelDelegates.ShuffleState -= GetThisState;
     }
 
     protected override WheelState GetThisState()

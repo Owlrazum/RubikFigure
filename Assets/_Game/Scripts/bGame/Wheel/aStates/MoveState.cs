@@ -18,7 +18,7 @@ public class MoveState : WheelState
         _moveLerpSpeed = levelDescription.MoveLerpSpeed;
         _moveToMake = new SegmentMove(SegmentMoveType.Down, int2.zero, int2.zero);
 
-        WheelStatesDelegates.MoveState += GetThisState;
+        WheelDelegates.MoveState += GetThisState;
     }
 
     public void PrepareForMove(SwipeCommand swipeCommand, SegmentPoint selectedSegmentPoint)
@@ -88,13 +88,14 @@ public class MoveState : WheelState
     private void OnCurrentMoveCompleted()
     {
         _segmentToMove = null;
+        WheelDelegates.ActionCheckWheelCompletion();
     }
 
     public override WheelState HandleTransitions()
     {
         if (_segmentToMove == null)
         {
-            return WheelStatesDelegates.IdleState();
+            return WheelDelegates.IdleState();
         }
         else
         { 
@@ -108,7 +109,7 @@ public class MoveState : WheelState
 
     public override void OnDestroy()
     {
-        WheelStatesDelegates.MoveState -= GetThisState;
+        WheelDelegates.MoveState -= GetThisState;
     }
 
     protected override WheelState GetThisState()

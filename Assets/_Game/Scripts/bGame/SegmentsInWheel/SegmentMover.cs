@@ -99,15 +99,8 @@ public class SegmentMover : MonoBehaviour
         if (_wasMoveCompleted)
         {
             _segmentMoveJobHandle.Complete();
-            Mesh newMesh = _meshFilter.mesh;
             _currentVertices = _segmentMoveJob.OutputVertices;
-            newMesh.SetVertexBufferData(_currentVertices, 0, 0,
-                VERTEX_COUNT, 0,
-                MESH_UPDATE_FLAGS
-            );
-
-            newMesh.RecalculateNormals();
-            _meshFilter.mesh = newMesh;
+            AssignVertices(_currentVertices);
 
             for (int i = 0; i < _vertices.Length; i++)
             {
@@ -119,18 +112,46 @@ public class SegmentMover : MonoBehaviour
         else if (_wasJobScheduled)
         {
             _segmentMoveJobHandle.Complete();
-            Mesh newMesh = _meshFilter.mesh;
-            _currentVertices = _segmentMoveJob.OutputVertices;
-            newMesh.SetVertexBufferData(_currentVertices, 0, 0,
-                VERTEX_COUNT, 0,
-                MESH_UPDATE_FLAGS
-            );
-
-            newMesh.RecalculateNormals();
-            _meshFilter.mesh = newMesh;
+            AssignVertices(_currentVertices);
             
             _wasJobScheduled = false;
         }
+    }
+
+    public void TeleportTo(SegmentPoint destination)
+    {
+        VertexData data;
+        for (int corner = 0; corner < 8; corner++)
+        {
+            int3 meshCorner = WheelLookUpTable.GetCornerIndices(corner);
+            float3 cornerPos = destination.CornerPositions.GetCornerPosition(corner);
+
+            data = _vertices[meshCorner.x];
+            data.position = cornerPos;
+            _vertices[meshCorner.x] = data;
+
+            data = _vertices[meshCorner.y];
+            data.position = cornerPos;
+            _vertices[meshCorner.y] = data;
+
+            data = _vertices[meshCorner.z];
+            data.position = cornerPos;
+            _vertices[meshCorner.z] = data;
+        }
+
+        AssignVertices(_vertices);
+    }
+
+    private void AssignVertices(NativeArray<VertexData> toAssign)
+    {
+        Mesh newMesh = _meshFilter.mesh;
+        newMesh.SetVertexBufferData(toAssign, 0, 0,
+            VERTEX_COUNT, 0,
+            MESH_UPDATE_FLAGS
+        );
+
+        newMesh.RecalculateNormals();
+        _meshFilter.mesh = newMesh;
     }
 
     private void OnDestroy()

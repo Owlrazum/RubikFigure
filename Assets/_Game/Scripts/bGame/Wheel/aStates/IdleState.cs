@@ -9,7 +9,7 @@ public class IdleState : WheelState
 
     public IdleState(LevelDescriptionSO levelDescription, Wheel wheelArg) : base(levelDescription, wheelArg)
     {
-        WheelStatesDelegates.IdleState += GetThisState;
+        WheelDelegates.IdleState += GetThisState;
     }
 
     public override void OnEnter()
@@ -79,7 +79,7 @@ public class IdleState : WheelState
         }
         else
         {
-            MoveState moveState = WheelStatesDelegates.MoveState() as MoveState;
+            MoveState moveState = WheelDelegates.MoveState() as MoveState;
             Assert.IsTrue(_currentSwipeCommand != null && _currentSelectedPoint != null);
             moveState.PrepareForMove(_currentSwipeCommand, _currentSelectedPoint);
             _currentSwipeCommand = null;
@@ -94,7 +94,7 @@ public class IdleState : WheelState
 
     public override void OnDestroy()
     {
-        WheelStatesDelegates.IdleState -= GetThisState;
+        WheelDelegates.IdleState -= GetThisState;
         if (InputDelegatesContainer.SwipeCommand != null)
         { 
             InputDelegatesContainer.SwipeCommand -= OnSwipeCommand;

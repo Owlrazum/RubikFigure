@@ -46,7 +46,7 @@ public class WheelGenerator : MonoBehaviour
     private int _ringCount;
 
     private Wheel _wheel;
-    private WheelController _wheelController;
+    private WheelStatesController _wheelController;
     private Array2D<Segment> _segments;
     private Array2D<SegmentPoint> _segmentPoints;
 
@@ -79,7 +79,7 @@ public class WheelGenerator : MonoBehaviour
 
         JobHandle.ScheduleBatchedJobs();
 
-        GameObject wheelGb = new GameObject("Wheel", typeof(Wheel), typeof(WheelController));
+        GameObject wheelGb = new GameObject("Wheel", typeof(Wheel), typeof(WheelStatesController));
         Transform parentWheel = wheelGb.transform;
 
         GameObject segmentPointsParentGb = new GameObject("SegmentPoints");
@@ -116,7 +116,7 @@ public class WheelGenerator : MonoBehaviour
         }
 
         _wheel = wheelGb.GetComponent<Wheel>();
-        _wheelController = _wheel.GetComponent<WheelController>();
+        _wheelController = _wheel.GetComponent<WheelStatesController>();
     }
 
     private void Start()
