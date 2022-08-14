@@ -106,7 +106,7 @@ public class SegmentMover : MonoBehaviour
             {
                 _vertices[i] = _currentVertices[i];
             }
-            _moveCompleteAction.Invoke(_currentMove.ToIndex);
+            _moveCompleteAction?.Invoke(_currentMove.ToIndex);
             _wasMoveCompleted = false;
         }
         else if (_wasJobScheduled)

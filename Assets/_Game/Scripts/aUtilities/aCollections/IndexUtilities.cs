@@ -25,6 +25,16 @@ namespace Orazum.Collections
             return new int2(index % columnCount, index / columnCount);
         }
 
+        public static int IndexToX(int index, int columnCount)
+        {
+            return index % columnCount;
+        }
+
+        public static int IndexToY(int index, int columnCount)
+        {
+            return index / columnCount;
+        }
+
         public static int XyToIndex(int2 xy, int columnCount)
         {
             return xy.y * columnCount + xy.x;

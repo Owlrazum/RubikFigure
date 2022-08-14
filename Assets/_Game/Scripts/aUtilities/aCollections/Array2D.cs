@@ -4,8 +4,6 @@ using System.Collections.Generic;
 using Unity.Mathematics;
 using UnityEngine.Assertions;
 
-using Orazum.Utilities;
-
 namespace Orazum.Collections
 {
     public class Array2D<T> : IEnumerable<T>
@@ -40,6 +38,12 @@ namespace Orazum.Collections
             set { _array[col, row] = value; }
         }
 
+        public T this[int index]
+        {
+            get { return _array[IndexUtilities.IndexToX(index, ColCount), IndexUtilities.IndexToY(index, ColCount)]; }
+            set { _array[IndexUtilities.IndexToX(index, ColCount), IndexUtilities.IndexToY(index, ColCount)] = value; }
+        }
+
         public int GetIndex1D(int2 index)
         {
             Assert.IsTrue(index.x >= 0 && index.x < _gridSize.x && index.y >= 0 && index.y < _gridSize.y);
@@ -50,6 +54,13 @@ namespace Orazum.Collections
         {
             Assert.IsTrue(col >= 0 && col < _gridSize.x && row >= 0 && row < _gridSize.y);
             return IndexUtilities.XyToIndex(col, row, _gridSize.x);
+        }
+
+        public void Swap(int2 lhs, int2 rhs)
+        {
+            T value = this[rhs];
+            this[rhs] = this[lhs];
+            this[lhs] = value;
         }
 
         public IEnumerator<T> GetEnumerator()

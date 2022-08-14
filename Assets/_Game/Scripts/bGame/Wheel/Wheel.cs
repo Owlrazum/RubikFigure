@@ -12,7 +12,10 @@ using Orazum.Utilities.ConstContainers;
 public class Wheel : MonoBehaviour
 {
     private int _sideCount;
-    private int _segmentCountInOneSide;
+    private int _ringCount;
+
+    public int SideCount { get { return _sideCount; } }
+    public int RingCount { get { return _ringCount; } }
 
     private Array2D<SegmentPoint> _segmentPoints;
 
@@ -34,7 +37,7 @@ public class Wheel : MonoBehaviour
 
     public void GenerationInitialization(WheelGenerationData generationData)
     {
-        _segmentCountInOneSide = generationData.RingCount;
+        _ringCount = generationData.RingCount;
         _sideCount = generationData.SideCount;
         _segmentPoints = generationData.SegmentPoints;
 
@@ -59,6 +62,7 @@ public class Wheel : MonoBehaviour
             emptySegments[i] = _segmentPoints[index].Segment;
             _segmentPoints[index].Segment.Dissappear();
             _segmentPoints[index].Segment = null;
+            print(index);
         }
         WheelDelegates.EventSegmentsWereEmptied?.Invoke(emptySegments);
 
@@ -70,16 +74,17 @@ public class Wheel : MonoBehaviour
     {
         var randomGenerator = Unity.Mathematics.Random.CreateFromIndex(15);
         int2[] emptySegmentPointIndices = new int2[emptyPlacesCount];
-        Assert.IsTrue(emptySegmentPointIndices.Length < _sideCount * _segmentCountInOneSide / 2);
+        print(emptyPlacesCount + " " + _sideCount * _ringCount);
+        Assert.IsTrue(emptySegmentPointIndices.Length <= (_sideCount * _ringCount) / 2);
         HashSet<int2> _emptiedSet = new HashSet<int2>();
         for (int i = 0; i < emptySegmentPointIndices.Length; i++)
         {
             int2 rndIndex = randomGenerator.
-                NextInt2(int2.zero, new int2(_sideCount, _segmentCountInOneSide));
+                NextInt2(int2.zero, new int2(_sideCount, _ringCount));
             while (_emptiedSet.Contains(rndIndex))
             {
                 rndIndex = randomGenerator.
-                    NextInt2(int2.zero, new int2(_sideCount, _segmentCountInOneSide));
+                    NextInt2(int2.zero, new int2(_sideCount, _ringCount));
             }
 
             _emptiedSet.Add(rndIndex);
@@ -89,17 +94,18 @@ public class Wheel : MonoBehaviour
         return emptySegmentPointIndices;
     }
 
-    public void MakeMove(in SegmentMove move, float lerpSpeed, Action moveStateMoveCompletedAction = null)
+    public void MakeMove(in SegmentMove move, float lerpSpeed, Action moveCompleteAction = null)
     {
-        _currentMoveCompleteAction = moveStateMoveCompletedAction;
+        _currentMoveCompleteAction = moveCompleteAction;
 
         print("Making move " + move);
         Segment movedSegment = _segmentPoints[move.FromIndex].Segment;
+        print(move.FromIndex + " " + movedSegment);
         Assert.IsNotNull(movedSegment);
         _segmentPoints[move.FromIndex].Segment = null;
 
         SegmentPoint target = _segmentPoints[move.ToIndex];
-        Assert.IsTrue(target.Segment == null);
+//        Assert.IsTrue(target.Segment == null);
         target.Segment = movedSegment;
         move.AssignTarget(target);
 
@@ -109,6 +115,39 @@ public class Wheel : MonoBehaviour
             OnSegmentCompletedMove
         );
         _currentMovesDestinations.Add(move.ToIndex);
+    }
+
+    public void MakeMoveCollection(SegmentMove[] moves, float lerpSpeed, Action moveCompleteAction = null)
+    {
+        Segment[] movedSegments = new Segment[moves.Length];
+        for (int i = 0; i < moves.Length; i++)
+        {
+            SegmentMove move = moves[i];
+            Segment movedSegment = _segmentPoints[move.FromIndex].Segment;
+            if (movedSegment == null)
+            {
+                continue;
+            }
+            move.AssignTarget(_segmentPoints[move.ToIndex]);
+            movedSegment.StartMove(
+                move,
+                lerpSpeed,
+                null
+            );
+
+            movedSegments[i] = movedSegment;
+            _segmentPoints[move.FromIndex].Segment = null;
+        }
+
+        for (int i = 0; i < moves.Length; i++)
+        {
+            if (movedSegments[i] == null)
+            {
+                continue;
+            }
+            SegmentMove move = moves[i];
+            _segmentPoints[move.ToIndex].Segment = movedSegments[i];
+        }
     }
 
     private void OnSegmentCompletedMove(int2 destination)
@@ -153,28 +192,32 @@ public class Wheel : MonoBehaviour
         
         return false;
     }
+    public bool IsPointEmpty(int2 index)
+    {
+        return _segmentPoints[index].Segment == null;
+    }
     public bool DoesIndexHaveAdjacentEmptyIndex(int2 index)
     {
         int2 check = MoveIndexClockwise(index);
-        if (_segmentPoints[check].Segment == null)
+        if (IsPointEmpty(check))
         {
             return true;
         }
 
         check = MoveIndexCounterClockwise(index);
-        if (_segmentPoints[check].Segment == null)
+        if (IsPointEmpty(check))
         {
             return true;
         }
 
         check = MoveIndexDown(index);
-        if (check.y >= 0 && _segmentPoints[check].Segment == null)
+        if (check.y >= 0 && IsPointEmpty(check))
         {
             return true;
         }
 
         check = MoveIndexUp(index);
-        if(check.y < _segmentCountInOneSide && _segmentPoints[check].Segment == null)
+        if(check.y < _ringCount && IsPointEmpty(check))
         {
             return true;
         }
@@ -358,7 +401,7 @@ public class Wheel : MonoBehaviour
     }
     private bool IsValidIndexForMoveUp(int2 index)
     {   
-        if (index.y + 1 < _segmentCountInOneSide)
+        if (index.y + 1 < _ringCount)
         {
             return true;
         }
@@ -369,14 +412,10 @@ public class Wheel : MonoBehaviour
     {
         return IsPointEmpty(pointIndex) || _currentMovesDestinations.Contains(pointIndex);
     }
-    private bool IsPointEmpty(int2 pointIndex)
-    {
-        return _segmentPoints[pointIndex].Segment == null;
-    }
 
     private int XyToIndex(int x, int y)
     {
-        return IndexUtilities.XyToIndex(y, x, _segmentCountInOneSide);
+        return IndexUtilities.XyToIndex(y, x, _ringCount);
     }
 
     [ContextMenu("Print")]

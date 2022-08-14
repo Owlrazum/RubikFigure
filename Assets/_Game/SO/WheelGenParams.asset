@@ -16,4 +16,4 @@ MonoBehaviour:
   _outerRadius: 5
   _innerRadius: 0.6
   _sideCount: 6
-  _segmentCountInOneSide: 4
+  _ringCount: 4

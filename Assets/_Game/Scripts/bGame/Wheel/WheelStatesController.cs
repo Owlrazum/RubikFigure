@@ -17,6 +17,7 @@ public class WheelStatesController : MonoBehaviour
         shuffleState.PrepareForShuffle(generationData.EmtpySegmentPointIndicesForShuffle);
 
         _currentState = shuffleState;
+        _currentState.OnEnter();
 
         StartCoroutine(StateSwitchSequence());
     }

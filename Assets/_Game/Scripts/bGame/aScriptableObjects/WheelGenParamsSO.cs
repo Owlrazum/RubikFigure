@@ -20,6 +20,6 @@ public class WheelGenParamsSO : ScriptableObject
     public int SideCount { get { return _sideCount; } }
 
     [SerializeField]
-    private int _segmentCountInOneSide;
-    public int RingCount { get { return _segmentCountInOneSide; } }
+    private int _ringCount;
+    public int RingCount { get { return _ringCount; } }
 }

@@ -6,6 +6,7 @@ public class SegmentMove
     public SegmentMoveType MoveType { get; set; }
     public int2 FromIndex { get; set; }
     public int2 ToIndex { get; set; }
+    private SegmentPoint _target;
 
     public SegmentMove(SegmentMoveType typeArg, int2 fromIndexArg, int2 toIndexArg)
     {
@@ -14,7 +15,6 @@ public class SegmentMove
         ToIndex = toIndexArg;
     }
 
-    private SegmentPoint _target;
     public SegmentPointCornerPositions GetTargetCornerPositions()
     {
         return _target.CornerPositions;
