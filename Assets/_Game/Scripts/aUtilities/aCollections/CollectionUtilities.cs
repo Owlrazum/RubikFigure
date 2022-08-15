@@ -49,43 +49,16 @@ namespace Orazum.Collections
             list[rhs] = element;
         }
 
-        public static float SubFactorial(int n)
+        public static bool Contains<T>(List<T> list, T value) where T : System.IEquatable<T>
         {
-            if (n < 2)
+            for (int i = 0; i < list.Count; i++)
             {
-                return 1;
+                if (list[i].Equals(value))
+                {
+                    return true;
+                }
             }
-            return (float)( (Factorial(n) + 1) / System.Math.E);
-        }
-
-        public static int Factorial(int n)
-        {
-            if (n < 2)
-            {
-                return 1;
-            }
-            if (n == 2)
-            {
-                return 2;
-            }
-            return n * Factorial(n - 1);
-        }
-
-        public static int SubFactorialRecursive(int n, int recDepth = 0)
-        {
-            if (n < 0 || recDepth > 10000)
-            {
-                throw new System.ArgumentException("SubFactorial n negative");
-            }
-            if (n == 0)
-            {
-                return 1;
-            }
-            if (n == 1)
-            {
-                return 0;
-            }
-            return (n - 1) * (SubFactorialRecursive(n - 2, recDepth + 1) + SubFactorialRecursive(n - 1, recDepth + 1));
+            return false;
         }
     }
 }
