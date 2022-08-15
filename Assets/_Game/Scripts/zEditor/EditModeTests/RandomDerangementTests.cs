@@ -10,16 +10,14 @@ public class RandomDerangementTests
     {
         int count = 100;
         int[] original = new int[count];
-        int[] deranged = new int[count];
         for (int i = 0; i < count; i++)
         {
             original[i] = i;
-            deranged[i] = i;
         }
 
         for (int i = 0; i < 5; i++)
         { 
-            Algorithms.RandomDerangement(deranged);
+            int[] deranged = Algorithms.RandomDerangement(in original);
             ValidateDerangement(original, deranged);
             ResetDerangement(deranged);
         }
@@ -29,7 +27,7 @@ public class RandomDerangementTests
     {
         for (int i = 0; i < deranged.Length; i++)
         { 
-            Assert.AreNotEqual(original[i], deranged[i]);
+            Assert.AreNotEqual(deranged[i], original[i]);
         }
     }
 

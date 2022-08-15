@@ -15,8 +15,6 @@ using static Orazum.Math.MathUtilities;
 [RequireComponent(typeof(MeshFilter))]
 public class SegmentMover : MonoBehaviour
 { 
-    public const int VERTEX_COUNT = 24;
-    public const int INDEX_COUNT = 36;
     public const MeshUpdateFlags MESH_UPDATE_FLAGS = MeshUpdateFlags.Default;
 
     private const float CLOCK_MOVE_BUFFER_LERP_VALUE = 0.4f;
@@ -24,6 +22,8 @@ public class SegmentMover : MonoBehaviour
     private MeshFilter _meshFilter;
 
     public MeshFilter MeshContainer { get { return _meshFilter; } }
+
+    private float _currentAngle;
 
     private NativeArray<VertexData> _vertices;
 
@@ -40,6 +40,7 @@ public class SegmentMover : MonoBehaviour
 
     private void Awake()
     {
+        _currentAngle = 0;
         TryGetComponent(out _meshFilter);
     }
 
@@ -61,12 +62,50 @@ public class SegmentMover : MonoBehaviour
         _wasMoveCompleted = false;
         _moveCompleteAction = OnMoveToDestinationCompleted;
 
-        StartCoroutine(MoveSequence());
+        switch (_currentMove.Type)
+        { 
+            case SegmentMoveType.Down:
+            case SegmentMoveType.Up:
+                StartCoroutine(MoveSequence());
+                break;
+            case SegmentMoveType.Clockwise:
+            case SegmentMoveType.CounterClockwise:
+                StartCoroutine(RotateSequence());
+                break;
+        }
+    }
+
+    private IEnumerator RotateSequence()
+    {
+        yield break;
+        // float lerpParam = 0;
+        // float angleDelta = _currentMove.MoveType;
+        // while (lerpParam < 1)
+        // {
+        //     transform.localRotation = Quaternion.AngleAxis(Vector3.up, _currentAngle);
+        //     yield return null;
+        // }
     }
 
     private IEnumerator MoveSequence()
     {
         float lerpParam = 0;
+        _segmentMoveJob = new SegmentMoveJob()
+        {
+            P_ClockMoveBufferLerpValue = CLOCK_MOVE_BUFFER_LERP_VALUE,
+            P_SegmentMoveType = _currentMove.Type,
+            P_VertexPositions = _currentMove.VertexPositions,
+            P_VertexCountInOneSegment = Segment.VertexCount,
+
+            InputVertices = _vertices,
+            OutputVertices = _currentVertices
+        };
+
+        if (_currentMove.Type == SegmentMoveType.Down || _currentMove.Type == SegmentMoveType.Up)
+        {
+            _segmentMoveJob.P_VertexPositions = _currentMove.VertexPositions;
+        }
+
         while (lerpParam < 1)
         {
             lerpParam += _currentSpeed * Time.deltaTime;
@@ -74,18 +113,7 @@ public class SegmentMover : MonoBehaviour
             {
                 lerpParam = 1;
             }
-
-            _segmentMoveJob = new SegmentMoveJob()
-            {
-                P_ClockMoveBufferLerpValue = CLOCK_MOVE_BUFFER_LERP_VALUE,
-                P_LerpParam = EaseInOut(lerpParam),
-                P_SegmentMoveType = _currentMove.MoveType,
-                P_SegmentPoint = _currentMove.GetTargetCornerPositions(),
-                P_VertexCountInOneSegment = VERTEX_COUNT,
-
-                InputVertices = _vertices,
-                OutputVertices = _currentVertices
-            };
+            _segmentMoveJob.P_LerpParam = EaseInOut(lerpParam);
             _segmentMoveJobHandle = _segmentMoveJob.Schedule(_segmentMoveJobHandle);
             _wasJobScheduled = true;
             yield return null;
@@ -124,7 +152,7 @@ public class SegmentMover : MonoBehaviour
         for (int corner = 0; corner < 8; corner++)
         {
             int3 meshCorner = WheelLookUpTable.GetCornerIndices(corner);
-            float3 cornerPos = destination.CornerPositions.GetCornerPosition(corner);
+            float3 cornerPos = float3.zero;//destination.CornerPositions.GetCornerPosition(corner);
 
             data = _vertices[meshCorner.x];
             data.position = cornerPos;
@@ -145,10 +173,10 @@ public class SegmentMover : MonoBehaviour
     private void AssignVertices(NativeArray<VertexData> toAssign)
     {
         Mesh newMesh = _meshFilter.mesh;
-        newMesh.SetVertexBufferData(toAssign, 0, 0,
-            VERTEX_COUNT, 0,
-            MESH_UPDATE_FLAGS
-        );
+        // newMesh.SetVertexBufferData(toAssign, 0, 0,
+        //     VERTEX_COUNT, 0,
+        //     MESH_UPDATE_FLAGS
+        // );
 
         newMesh.RecalculateNormals();
         _meshFilter.mesh = newMesh;

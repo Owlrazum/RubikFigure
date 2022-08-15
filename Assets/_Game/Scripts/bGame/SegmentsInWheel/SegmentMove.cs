@@ -1,33 +1,39 @@
 using System;
 using Unity.Mathematics;
+using UnityEngine.Assertions;
+
+public enum SegmentMoveType
+{ 
+    Down,
+    Up,
+    CounterClockwise,
+    Clockwise
+}
 
 public class SegmentMove
 {
-    public SegmentMoveType MoveType { get; set; }
+    public SegmentMoveType Type { get; set; }
     public int2 FromIndex { get; set; }
     public int2 ToIndex { get; set; }
     private SegmentPoint _target;
 
     public SegmentMove(SegmentMoveType typeArg, int2 fromIndexArg, int2 toIndexArg)
     {
-        MoveType = typeArg;
+        Type = typeArg;
         FromIndex = fromIndexArg;
         ToIndex = toIndexArg;
     }
 
-    public SegmentPointCornerPositions GetTargetCornerPositions()
+    public SegmentVertexPositions VertexPositions { get; private set; }
+    public void AssignVertexPositions(SegmentVertexPositions vertexPositionsArg)
     {
-        return _target.CornerPositions;
-    }
-
-    public void AssignTarget(SegmentPoint targetArg)
-    {
-        _target = targetArg;
+        Assert.IsTrue(Type == SegmentMoveType.Down || Type == SegmentMoveType.Up);
+        VertexPositions = vertexPositionsArg;
     }
 
     public override string ToString()
     {
-        return MoveType + " " + FromIndex + " " + ToIndex;
+        return Type + " " + FromIndex + " " + ToIndex;
     }
 
     public override bool Equals(object obj)
@@ -39,7 +45,7 @@ public class SegmentMove
 
         if (math.all(this.FromIndex == move.FromIndex)
             && math.all(this.ToIndex == move.ToIndex)
-            && this.MoveType == move.MoveType)
+            && this.Type == move.Type)
         {
             return true;
         }
@@ -49,6 +55,6 @@ public class SegmentMove
 
     public override int GetHashCode()
     {
-        return HashCode.Combine(FromIndex, ToIndex, MoveType);
+        return HashCode.Combine(FromIndex, ToIndex, Type);
     }
 }

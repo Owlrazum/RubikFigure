@@ -14,12 +14,12 @@ public class WheelStatesController : MonoBehaviour
         IdleState idleState = new IdleState(generationData.LevelDescription, _wheel);
         MoveState moveState = new MoveState(generationData.LevelDescription, _wheel);
         ShuffleState shuffleState = new ShuffleState(generationData.LevelDescription, _wheel);
-        shuffleState.PrepareForShuffle(generationData.EmtpySegmentPointIndicesForShuffle);
+        // shuffleState.PrepareForShuffle(generationData.EmtpySegmentPointIndicesForShuffle);
 
-        _currentState = shuffleState;
-        _currentState.OnEnter();
+        // _currentState = shuffleState;
+        // _currentState.OnEnter();
 
-        StartCoroutine(StateSwitchSequence());
+        // StartCoroutine(StateSwitchSequence());
     }
 
     private IEnumerator StateSwitchSequence()

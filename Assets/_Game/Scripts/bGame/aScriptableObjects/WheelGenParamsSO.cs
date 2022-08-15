@@ -22,4 +22,8 @@ public class WheelGenParamsSO : ScriptableObject
     [SerializeField]
     private int _ringCount;
     public int RingCount { get { return _ringCount; } }
+
+    [SerializeField]
+    private int _segmentResolution;
+    public int SegmentResolution { get { return _segmentResolution; } }
 }

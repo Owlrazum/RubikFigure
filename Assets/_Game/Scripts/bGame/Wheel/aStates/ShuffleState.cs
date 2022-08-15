@@ -102,7 +102,7 @@ public class ShuffleState : WheelState
             {
                 int2 fromIndex = new int2(side, ring);
                 int2 toIndex = _shuffleIndices[ring][side];
-                SegmentMove move = new SegmentMove(SegmentMoveType.Down, fromIndex, toIndex);
+                SegmentMove move = new SegmentMove(SegmentMoveType.Clockwise, fromIndex, toIndex);
                 moves[moveIndex++] = move;
             }
         }
@@ -121,7 +121,7 @@ public class ShuffleState : WheelState
 
         for (int ring = 0; ring < _wheel.RingCount; ring++)
         {
-            _shuffleIndices[ring] = Algorithms.RandomDerangement(_shuffleIndices[ring]);
+            _shuffleIndices[ring] = Algorithms.RandomDerangement(in _shuffleIndices[ring]);
             string log = "";
             for (int side = 0; side < _wheel.SideCount; side++)
             {

@@ -21,19 +21,13 @@ public class SegmentPoint : MonoBehaviour
         TryGetComponent(out _meshRenderer);
     }
 
-    public SegmentPointCornerPositions CornerPositions { get; private set; }
-    public Vector3 Position { get; private set; }
+    public Segment Segment { get; set; }
     public int2 Index { get; private set; }
-    public void InitializeAfterMeshesGenerated(SegmentPointCornerPositions cornerPositionsArg, 
-        Segment segmentArg, int2 indexArg)
+    public void InitializeAfterMeshesGenerated(Segment segment, int2 index)
     {
-        Assert.IsNotNull(segmentArg.MeshContainer.mesh);
-        CornerPositions = cornerPositionsArg;
-        Segment = segmentArg;
-        Index = indexArg;
-
-        float3 center = (CornerPositions.BBL + CornerPositions.FTR) / 2;
-        Position = center;
+        Assert.IsNotNull(segment.MeshContainer.mesh);
+        Segment = segment;
+        Index = index;
 
         _meshFilter.mesh = Instantiate(Segment.MeshContainer.mesh);
         _meshCollider.sharedMesh = Instantiate(Segment.MeshContainer.mesh);
@@ -41,8 +35,6 @@ public class SegmentPoint : MonoBehaviour
 
         _meshRenderer.sharedMaterial = _emptyMaterial;
     }
-
-    public Segment Segment { get; set; }
 
     public override string ToString()
     {

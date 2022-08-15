@@ -8,6 +8,7 @@ using UnityEngine.Assertions;
 
 using Orazum.Collections;
 using Orazum.Utilities.ConstContainers;
+using static Orazum.Math.MathUtilities;
 
 public class Wheel : MonoBehaviour
 {
@@ -18,6 +19,7 @@ public class Wheel : MonoBehaviour
     public int RingCount { get { return _ringCount; } }
 
     private Array2D<SegmentPoint> _segmentPoints;
+    private SegmentVertexPositions[] _segmentVertexPositions;
 
     private HashSet<int2> _currentMovesDestinations; // used by shuffleState
     private Action _currentMoveCompleteAction; // used by moveState
@@ -40,7 +42,9 @@ public class Wheel : MonoBehaviour
         _ringCount = generationData.RingCount;
         _sideCount = generationData.SideCount;
         _segmentPoints = generationData.SegmentPoints;
+        _segmentVertexPositions = generationData.SegmentVertexPositions;
 
+        RotateSegmentOnGeneration();
 
         int2[] emptySegmentPointIndices = null;
 
@@ -62,7 +66,6 @@ public class Wheel : MonoBehaviour
             emptySegments[i] = _segmentPoints[index].Segment;
             _segmentPoints[index].Segment.Dissappear();
             _segmentPoints[index].Segment = null;
-            print(index);
         }
         WheelDelegates.EventSegmentsWereEmptied?.Invoke(emptySegments);
 
@@ -70,11 +73,26 @@ public class Wheel : MonoBehaviour
 
         generationData.EmtpySegmentPointIndicesForShuffle = emptySegmentPointIndices;
     }
+
+    private void RotateSegmentOnGeneration()
+    {
+        for (int side = 0; side < _sideCount; side++)
+        {
+            float rotationAngle = side * TAU / _sideCount * Mathf.Rad2Deg;
+            Quaternion rotation = Quaternion.AngleAxis(rotationAngle, Vector3.up);
+            for (int ring = 0; ring < _ringCount; ring++)
+            {
+                int2 index = new int2(side, ring);
+                _segmentPoints[index].Segment.transform.localRotation = rotation;
+                _segmentPoints[index].transform.localRotation = rotation;
+            }
+        }
+    }
+    
     private int2[] GenerateRandomEmptyPoints(int emptyPlacesCount)
     {
         var randomGenerator = Unity.Mathematics.Random.CreateFromIndex(15);
         int2[] emptySegmentPointIndices = new int2[emptyPlacesCount];
-        print(emptyPlacesCount + " " + _sideCount * _ringCount);
         Assert.IsTrue(emptySegmentPointIndices.Length <= (_sideCount * _ringCount) / 2);
         HashSet<int2> _emptiedSet = new HashSet<int2>();
         for (int i = 0; i < emptySegmentPointIndices.Length; i++)
@@ -105,9 +123,11 @@ public class Wheel : MonoBehaviour
         _segmentPoints[move.FromIndex].Segment = null;
 
         SegmentPoint target = _segmentPoints[move.ToIndex];
-//        Assert.IsTrue(target.Segment == null);
         target.Segment = movedSegment;
-        move.AssignTarget(target);
+        if (move.Type == SegmentMoveType.Down || move.Type == SegmentMoveType.Up)
+        { 
+            move.AssignVertexPositions(_segmentVertexPositions[move.ToIndex.y]);
+        }
 
         movedSegment.StartMove(
             move,
@@ -128,7 +148,7 @@ public class Wheel : MonoBehaviour
             {
                 continue;
             }
-            move.AssignTarget(_segmentPoints[move.ToIndex]);
+            Assert.IsTrue(move.Type != SegmentMoveType.Down && move.Type != SegmentMoveType.Up);
             movedSegment.StartMove(
                 move,
                 lerpSpeed,
@@ -253,7 +273,7 @@ public class Wheel : MonoBehaviour
     {
         Assert.IsNotNull(_segmentPoints[move.FromIndex].Segment);
         toIndex = int2.zero;
-        switch (move.MoveType)
+        switch (move.Type)
         {
             case SegmentMoveType.Down:
                 if (CanMoveDown(move.FromIndex))

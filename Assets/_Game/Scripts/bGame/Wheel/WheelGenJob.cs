@@ -1,13 +1,13 @@
-using System;
-
 using Unity.Burst;
 using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Collections;
 
-using UnityEngine.Assertions;
+using static Orazum.Math.MathUtilities;
 
-// [BurstCompile]
+using UnityEngine;
+
+[BurstCompile]
 public struct WheelGenJob : IJob
 {
     public float P_WheelHeight;
@@ -15,6 +15,7 @@ public struct WheelGenJob : IJob
     public float P_InnerCircleRadius;
     public int P_SideCount;
     public int P_RingCount;
+    public int P_SegmentResolution;
 
     [WriteOnly]
     public NativeArray<VertexData> OutputVertices;
@@ -23,167 +24,95 @@ public struct WheelGenJob : IJob
     public NativeArray<short> OutputIndices;
 
     [WriteOnly]
-    public NativeArray<SegmentPointCornerPositions> OutputSegmentPoints;
+    public NativeArray<SegmentVertexPositions> OutputSegmentsVertexPositions; // one for each ring
 
     private short _totalVertexCount;
     private short _totalIndexCount;
 
-    private short _currentVertexCount;
-    private short _currentIndexCount;
+    private short _segmentVertexCount;
+    private short _segmentIndexCount;
 
     private float2 _uv;
     private int _segmentIndex;
     private float _currentRadius;
     private float _nextRadius;
 
+    private float3 _startRay;
+
+    private float _startAngle; 
+    private float _angleResolutionDelta;
+
     public void Execute()
     {
-        Assert.IsTrue(P_SideCount >= 3 && P_SideCount <= 6);
-
-        CircleRays rays = new CircleRays();
-#region RaysInit
-        float angleDelta = 2 * math.PI / P_SideCount;
-        float currentAngle = math.PI / 2;
+        _startAngle = TAU / 4;
         // we subtract so the positive would be clockwiseOrder,
         // with addition it will be counter-clockwise;
-        rays[0] = new float3(math.cos(currentAngle), 0, math.sin(currentAngle));
-        currentAngle -= angleDelta;
-        rays[1] = new float3(math.cos(currentAngle), 0, math.sin(currentAngle));
-        currentAngle -= angleDelta;
-        rays[2] = new float3(math.cos(currentAngle), 0, math.sin(currentAngle));
-        currentAngle -= angleDelta;
+        _angleResolutionDelta = TAU / P_SideCount;
+        _angleResolutionDelta = _angleResolutionDelta / P_SegmentResolution;
 
-        if (P_SideCount >= 4)
-        { 
-            rays[3] = new float3(math.cos(currentAngle), 0, math.sin(currentAngle));
-            currentAngle -= angleDelta;
-        }
-        if (P_SideCount >= 5)
-        { 
-            rays[4] = new float3(math.cos(currentAngle), 0, math.sin(currentAngle));
-            currentAngle -= angleDelta;
-        }
-        if (P_SideCount >= 6)
-        { 
-            rays[5] = new float3(math.cos(currentAngle), 0, math.sin(currentAngle));
-            currentAngle -= angleDelta;
-        }
-#endregion
-        
+        _startRay = new float3(math.cos(_startAngle), 0, math.sin(_startAngle));
+
         float radiusDelta = (P_OuterCircleRadius - P_InnerCircleRadius) / P_RingCount;
+        float lerpDeltaToResolution = 1 / P_SegmentResolution;
+        bool isInitializedSegmentVertexPositions = false;
+        float4 positionsData = new float4(-1, -1,
+            TAU / P_SideCount, 1 / lerpDeltaToResolution);
 
-        for (int i = 0; i < P_SideCount; i++)
+        for (int side = 0; side < P_SideCount; side++)
         {
-            int currentRayIndex = i;
-            int nextRayIndex = i + 1 >= P_SideCount ? 0 : i + 1;
-
             float deltaUV = 1.0f / P_SideCount;
             float startUV = 1 - deltaUV / 2;
-            _uv = new float2(0, startUV - i * deltaUV);
+            _uv = new float2(0, startUV - side * deltaUV);
 
             _currentRadius = P_InnerCircleRadius;
             _nextRadius = _currentRadius + radiusDelta;
-            
-            for (int j = 0; j < P_RingCount; j++)
+
+
+            for (int ring = 0; ring < P_RingCount; ring++)
             {
-                _segmentIndex = i * P_RingCount + j;
+                _segmentIndex = side * P_RingCount + ring;
 
-                OutputSegmentPoints[_segmentIndex] = AddSegment(rays[currentRayIndex], rays[nextRayIndex]);
+                AddSegment();
 
+                if (!isInitializedSegmentVertexPositions)
+                {
+                    positionsData.x = _currentRadius;
+                    positionsData.y = _nextRadius;
+                    OutputSegmentsVertexPositions[ring] = new SegmentVertexPositions(_startRay, positionsData, P_SegmentResolution);
+                } 
                 _currentRadius = _nextRadius;
                 _nextRadius += radiusDelta;
+            }
+            if (!isInitializedSegmentVertexPositions)
+            {
+                isInitializedSegmentVertexPositions = true;
             }
         }
     }
 
-    private SegmentPointCornerPositions AddSegment(float3 currentRay, float3 nextRay)
+    private void AddSegment()
     {
-        _currentVertexCount = 0;
-        _currentIndexCount = 0;
+        _segmentVertexCount = 0;
+        _segmentIndexCount = 0;
 
-        float3 left = math.rotate(quaternion.AxisAngle(math.up(), -90), currentRay);
-        float3 right = math.rotate(quaternion.AxisAngle(math.up(), 90), nextRay);
+        float3 currentRay = _startRay;
+        quaternion q = quaternion.AxisAngle(math.up(), _angleResolutionDelta);
+        float3 nextRay =  math.rotate(q, currentRay);
 
-        float3 back    = -(currentRay + nextRay) / 2;
-        float3 forward = -back;
-
-        float3x4 posBot = new float3x4(
-            currentRay * _currentRadius,
-            currentRay * _nextRadius,
-            nextRay * _currentRadius,
-            nextRay * _nextRadius
-        );
-        float3x4 posTop = new float3x4(
-            posBot[0] + math.up() * P_WheelHeight,
-            posBot[1] + math.up() * P_WheelHeight,
-            posBot[2] + math.up() * P_WheelHeight,
-            posBot[3] + math.up() * P_WheelHeight
-        );
-
-        float3x4 posQuadBot = new float3x4(
-            posBot[2],
-            posBot[3],
-            posBot[1],
-            posBot[0]
-        );
-        AddQuad(posQuadBot, math.down());
-        
-        float3x4 posQuadTop = new float3x4(
-            posTop[0],
-            posTop[1],
-            posTop[3],
-            posTop[2]
-        );
-        AddQuad(posQuadTop, math.up());
-
-
-        float3x4 posLeft = new float3x4(
-            posBot[1],
-            posTop[1],
-            posTop[0],
-            posBot[0]
-        );
-        AddQuad(posLeft, left);
-
-        float3x4 posRight = new float3x4(
-            posBot[2],
-            posTop[2],
-            posTop[3],
-            posBot[3]
-        );
-        AddQuad(posRight, right);
-
-
-        float3x4 posBack = new float3x4(
-            posBot[0],
-            posTop[0],
-            posTop[2],
-            posBot[2]
-        );
-        AddQuad(posBack, back);
-
-        float3x4 posForward = new float3x4(
-            posBot[3],
-            posTop[3],
-            posTop[1],
-            posBot[1]
-        );
-        AddQuad(posForward, forward);
-
-        SegmentPointCornerPositions segmentPoint = new SegmentPointCornerPositions
+        for (int i = 0; i < P_SegmentResolution; i++)
         {
-            BBL = posBot[0],
-            BTL = posTop[0],
-            FBL = posBot[1],
-            FTL = posTop[1],
+            float3x4 quadPoses = new float3x4(
+                currentRay * _currentRadius,
+                currentRay * _nextRadius,
+                nextRay * _nextRadius,
+                nextRay * _currentRadius
+            );
 
-            BBR = posBot[2],
-            BTR = posTop[2],
-            FBR = posBot[3],
-            FTR = posTop[3]
-        };
+            AddQuad(quadPoses, math.up());
 
-        return segmentPoint;
+            currentRay = nextRay;
+            nextRay = math.rotate(q, nextRay);
+        }
     }
 
     private void AddQuad(float3x4 positions, float3 normal)
@@ -205,70 +134,18 @@ public struct WheelGenJob : IJob
         vertex.uv = _uv;
         
         OutputVertices[_totalVertexCount++] = vertex;
-        short addedVertexIndex = _currentVertexCount;
-        _currentVertexCount++;
+        short addedVertexIndex = _segmentVertexCount;
+        _segmentVertexCount++;
 
         OutputIndices[_totalIndexCount++] = addedVertexIndex;
-        _currentIndexCount++;
+        _segmentIndexCount++;
 
         return addedVertexIndex;
     }
 
     private void AddIndex(short vertexIndex)
     {
-        _currentIndexCount++;
+        _segmentIndexCount++;
         OutputIndices[_totalIndexCount++] = vertexIndex;
-    }
-
-    private struct CircleRays
-    {
-        private float3 _r1;
-        private float3 _r2;
-        private float3 _r3;
-        private float3 _r4;
-        private float3 _r5;
-        private float3 _r6;
-
-        public float3 this[int index]
-        {
-            get
-            {
-                switch (index)
-                {
-                    case 0: return _r1;
-                    case 1: return _r2;
-                    case 2: return _r3;
-                    case 3: return _r4;
-                    case 4: return _r5;
-                    case 5: return _r6;
-                    default: throw new ArgumentOutOfRangeException($"There are only 12 vertices! You tried to access the vertex at index {index}");
-                }
-            }
-            set
-            {
-                switch (index)
-                {
-                    case 0:
-                        _r1 = value;
-                        break;
-                    case 1:
-                        _r2 = value;
-                        break;
-                    case 2:
-                        _r3 = value;
-                        break;
-                    case 3:
-                        _r4 = value;
-                        break;
-                    case 4:
-                        _r5 = value;
-                        break;
-                    case 5:
-                        _r6 = value;
-                        break;
-                    default: throw new ArgumentOutOfRangeException($"There are only 12 vertices! You tried to access the vertex at index {index}");
-                }
-            }
-        }
     }
 }

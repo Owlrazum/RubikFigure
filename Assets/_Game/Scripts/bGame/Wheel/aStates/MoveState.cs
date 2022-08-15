@@ -47,7 +47,7 @@ public class MoveState : WheelState
         SegmentMoveType moveType = DetermineMoveType(center, worldStartPos, worldDir);
         Debug.Log(moveType);
         _moveToMake.FromIndex = _currentSelectedPoint.Index;
-        _moveToMake.MoveType = moveType;
+        _moveToMake.Type = moveType;
         if (_wheel.IsMovePossible(_moveToMake, out int2 toIndex))
         {
             _segmentToMove = _currentSelectedPoint.Segment;

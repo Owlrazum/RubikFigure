@@ -25,7 +25,7 @@ namespace Orazum.Collections
             }
         }
 
-        public static T[] RandomDerangement<T>(T[] list)
+        public static T[] RandomDerangement<T>(in T[] list)
         {
             List<int> marks = new List<int>(list.Length - 1);
             List<int> possible = new List<int>(list.Length - 1);

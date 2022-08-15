@@ -11,6 +11,12 @@ using UnityEngine;
 [RequireComponent(typeof(SegmentMover), typeof(SegmentRenderer))]
 public class Segment : MonoBehaviour
 {
+    public static int VertexCount { get; private set; }
+    public static void InitializeVertexCount(int vertexCount)
+    {
+        VertexCount = vertexCount;
+    }
+
     private SegmentMover _segmentMover;
     private SegmentRenderer _segmentRenderer;
     // private SegmentSelectionRespond _selectionRespond;
