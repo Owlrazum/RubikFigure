@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Unity.Mathematics;
 
 using UnityEngine;
@@ -47,17 +48,25 @@ public class MoveState : WheelState
         Vector3 worldDir = (worldEndPos - worldStartPos).normalized;
 
         SegmentMove _moveToMake = DetermineMoveFromInput(center, worldStartPos, worldDir);
-        _moveToMake.AssignFromIndex(_currentSelectedPoint.Index);
-        if (_wheel.IsMovePossibleFromIndex(_moveToMake, out int2 toIndex))
+        Debug.Log("Make Rotation moves " + _moveToMake);
+        if (_moveToMake is RotationMove rotationMove)
         {
-            _moveToMake.AssignToIndex(toIndex);
-            _wheel.MakeMove(in _moveToMake, _moveLerpSpeed, OnCurrentMoveCompleted);
-            _segmentToMove = _currentSelectedPoint.Segment;
+            MakeRotationMoves(_currentSelectedPoint.Index.y, rotationMove.Type);
+            return;
         }
-        else
+        else if (_moveToMake is VerticesMove verticesMove)
         {
-            _segmentToMove = null;
+            _moveToMake.AssignFromIndex(_currentSelectedPoint.Index);
+            if (_wheel.IsMovePossibleFromIndex(verticesMove, out int2 toIndex))
+            {
+                _moveToMake.AssignToIndex(toIndex);
+                _wheel.MakeVerticesMove(in verticesMove, _moveLerpSpeed, OnCurrentMoveCompleted);
+                _segmentToMove = _currentSelectedPoint.Segment;
+            }
+            return;
         }
+        
+        _segmentToMove = null;
     }
 
     private SegmentMove DetermineMoveFromInput(Vector3 circleCenter, Vector3 worldPos, Vector3 worldDir)
@@ -87,6 +96,45 @@ public class MoveState : WheelState
             _verticesMove.AssignType(VerticesMove.TypeType.Up);
             return _verticesMove;
         }
+    }
+
+    private void MakeRotationMoves(int ringIndex, RotationMove.TypeType type)
+    {
+        int2 index = new int2(0, ringIndex);
+        int2 nextIndex = int2.zero; 
+        if (type == RotationMove.TypeType.Clockwise)
+        { 
+            nextIndex = _wheel.MoveIndexClockwise(index);
+        }
+        else if (type == RotationMove.TypeType.CounterClockwise)
+        { 
+            nextIndex = _wheel.MoveIndexCounterClockwise(index);
+        }
+        List<RotationMove> rotationMoves = new List<RotationMove>(_wheel.SideCount);
+        for (int i = 0; i < _wheel.SideCount; i++)
+        {
+            index = nextIndex;
+            if (type == RotationMove.TypeType.Clockwise)
+            {
+                nextIndex = _wheel.MoveIndexClockwise(index);
+            }
+            else if (type == RotationMove.TypeType.CounterClockwise)
+            {
+                nextIndex = _wheel.MoveIndexCounterClockwise(index);
+            }
+            if (_wheel.IsPointEmpty(index))
+            {
+                continue;
+            }
+            RotationMove rotationMove = new RotationMove();
+            rotationMove.AssignType(type);
+            rotationMove.AssignFromIndex(index);
+            rotationMove.AssignToIndex(nextIndex);
+
+            rotationMoves.Add(rotationMove);
+        }
+
+        _wheel.MakeRotationMoves(rotationMoves, _moveLerpSpeed);
     }
 
     private void OnCurrentMoveCompleted()

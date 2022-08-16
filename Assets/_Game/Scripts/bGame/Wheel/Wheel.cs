@@ -121,7 +121,7 @@ public class Wheel : MonoBehaviour
         return emptySegmentPointIndices;
     }
 
-    public void MakeMove(in SegmentMove move, float lerpSpeed, Action moveCompleteAction = null)
+    public void MakeVerticesMove(in VerticesMove move, float lerpSpeed, Action moveCompleteAction = null)
     {
         _currentMoveCompleteAction = moveCompleteAction;
 
@@ -132,19 +132,7 @@ public class Wheel : MonoBehaviour
         _segmentPoints[move.ToIndex].Segment = movedSegment;
         Debug.Log($"Swapped segmentPoint contents {move.FromIndex} {move.ToIndex}");
 
-        if (move is VerticesMove verticesMove)
-        {
-            verticesMove.AssignVertexPositions(GetVertexPositions(move.ToIndex));
-        }
-        else if (move is RotationMove rotationMove)
-        { 
-            float rotationAngle = TAU / _sideCount * Mathf.Rad2Deg;
-            if (rotationMove.Type == RotationMove.TypeType.CounterClockwise)
-            {
-                rotationAngle = -rotationAngle;
-            }
-            rotationMove.AssignRotation(Quaternion.AngleAxis(rotationAngle, Vector3.up));
-        }
+        move.AssignVertexPositions(GetVertexPositions(move.ToIndex));
 
         movedSegment.StartMove(
             move,
@@ -158,6 +146,42 @@ public class Wheel : MonoBehaviour
         Assert.IsTrue(_currentMovesDestinations.Contains(destination));
         _currentMovesDestinations.Remove(destination);
         _currentMoveCompleteAction?.Invoke();
+    }
+
+    public void MakeRotationMoves(List<RotationMove> moves, float lerpSpeed)
+    {
+        Segment[] movedSegments = new Segment[moves.Count];
+        for (int i = 0; i < moves.Count; i++)
+        {
+            RotationMove rotationMove = moves[i];
+            Assert.IsTrue(IsValidIndex(rotationMove.FromIndex) && IsValidIndex(rotationMove.ToIndex));
+            float rotationAngle = TAU / _sideCount * Mathf.Rad2Deg;
+            if (rotationMove.Type == RotationMove.TypeType.CounterClockwise)
+            {
+                rotationAngle = -rotationAngle;
+            }
+            rotationMove.AssignRotation(Quaternion.AngleAxis(rotationAngle, Vector3.up));
+            Segment movedSegment = _segmentPoints[rotationMove.FromIndex].Segment;
+            Assert.IsNotNull(movedSegment);
+            movedSegment.StartMove(
+                rotationMove,
+                lerpSpeed,
+                null
+            );
+
+            movedSegments[i] = movedSegment;
+            _segmentPoints[rotationMove.FromIndex].Segment = null;   
+        }
+
+        for (int i = 0; i < moves.Count; i++)
+        {
+            if (movedSegments[i] == null)
+            {
+                continue;
+            }
+            RotationMove move = moves[i];
+            _segmentPoints[move.ToIndex].Segment = movedSegments[i];
+        }
     }
 
     public void MakeShuffleMoves(RotationMove[] moves, float lerpSpeed)
@@ -360,50 +384,27 @@ public class Wheel : MonoBehaviour
         return true;
     }
 
-    public bool IsMovePossibleFromIndex(SegmentMove move, out int2 toIndex)
+    public bool IsMovePossibleFromIndex(VerticesMove verticesMove, out int2 toIndex)
     {
-        Assert.IsNotNull(_segmentPoints[move.FromIndex].Segment);
-        Assert.IsTrue(IsValidIndex(move.FromIndex));
+        Assert.IsNotNull(_segmentPoints[verticesMove.FromIndex].Segment);
+        Assert.IsTrue(IsValidIndex(verticesMove.FromIndex));
         toIndex = int2.zero;
-        if (move is VerticesMove verticesMove)
+        switch (verticesMove.Type)
         {
-            switch (verticesMove.Type)
-            { 
-                case VerticesMove.TypeType.Down:
-                    if (CanMoveDown(move.FromIndex))
-                    {
-                        toIndex = MoveIndexDown(move.FromIndex);
-                        return true;
-                    }
-                    break;
-                case VerticesMove.TypeType.Up:
-                    if (CanMoveUp(move.FromIndex))
-                    {
-                        toIndex = MoveIndexUp(move.FromIndex);
-                        return true;
-                    }
-                    break;
-            }
-        }
-        else if (move is RotationMove rotationMove)
-        {
-            switch (rotationMove.Type)
-            {
-                case RotationMove.TypeType.CounterClockwise:
-                    if (CanMoveCounterClockwise(move.FromIndex))
-                    {
-                        toIndex = MoveIndexCounterClockwise(move.FromIndex);
-                        return true;
-                    }
-                    break;
-                case RotationMove.TypeType.Clockwise:
-                    if (CanMoveClockwise(move.FromIndex))
-                    {
-                        toIndex = MoveIndexClockwise(move.FromIndex);
-                        return true;
-                    }
-                    break;
-            }
+            case VerticesMove.TypeType.Down:
+                if (CanMoveDown(verticesMove.FromIndex))
+                {
+                    toIndex = MoveIndexDown(verticesMove.FromIndex);
+                    return true;
+                }
+                break;
+            case VerticesMove.TypeType.Up:
+                if (CanMoveUp(verticesMove.FromIndex))
+                {
+                    toIndex = MoveIndexUp(verticesMove.FromIndex);
+                    return true;
+                }
+                break;
         }
         return false;
     }
@@ -454,12 +455,12 @@ public class Wheel : MonoBehaviour
         index.y++;
         return index;
     }
-    private int2 MoveIndexCounterClockwise(int2 index)
+    public int2 MoveIndexCounterClockwise(int2 index)
     {
         index.x = index.x - 1 >= 0 ? index.x - 1 : _sideCount - 1;
         return index;
     }
-    private int2 MoveIndexClockwise(int2 index)
+    public int2 MoveIndexClockwise(int2 index)
     {
         index.x = index.x + 1 < _sideCount ? index.x + 1 : 0;
         return index;

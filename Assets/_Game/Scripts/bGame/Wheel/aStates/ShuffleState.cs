@@ -129,7 +129,6 @@ public class ShuffleState : WheelState
                         rotationMove.AssignType(RotationMove.TypeType.CounterClockwise);
                     }
                 }
-                Debug.Log($"rotation angel {rotationAngle}");
                 rotationMove.AssignRotation(Quaternion.AngleAxis(rotationAngle, Vector3.up));
                 moves[moveIndex++] = rotationMove;
             }

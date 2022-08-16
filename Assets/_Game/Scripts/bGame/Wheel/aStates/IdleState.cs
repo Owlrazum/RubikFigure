@@ -43,6 +43,7 @@ public class IdleState : WheelState
 
         if (!_wheel.DoesIndexHaveAdjacentEmptyIndex(segmentPoint.Index))
         {
+            Debug.LogWarning($"No empty indexes nearby selection {segmentPoint.Index}");
             return;
         }
 
@@ -57,6 +58,7 @@ public class IdleState : WheelState
 
     private void OnSwipeCommand(SwipeCommand swipeCommand)
     {
+        Debug.Log("Swipe");
         _currentSwipeCommand = swipeCommand;
     }
 

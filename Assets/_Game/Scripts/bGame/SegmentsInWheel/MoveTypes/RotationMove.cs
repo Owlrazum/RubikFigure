@@ -19,4 +19,9 @@ public class RotationMove : SegmentMove
     {
         Rotation = rotation;
     }
+
+    public override string ToString()
+    {
+        return $"Rotation move {Type} " + base.ToString();
+    }
 }
