@@ -15,7 +15,7 @@ MonoBehaviour:
   GenerationParams: {fileID: 11400000, guid: 742513ac5ef65499fb371d4f72c536a9, type: 2}
   SegmentPrefab: {fileID: 6270584614686746192, guid: c417056fd1f314434bcea4a21b29a82c, type: 3}
   SegmentPointPrefab: {fileID: 1553978324677776507, guid: dfd0e0cf5893b4c2fb5997fd8f7972bf, type: 3}
-  ShuffleStepsAmount: 4
+  ShuffleStepsAmount: 1
   ShufflePauseTime: 0.5
   ShuffleLerpSpeed: 1
   MoveLerpSpeed: 1

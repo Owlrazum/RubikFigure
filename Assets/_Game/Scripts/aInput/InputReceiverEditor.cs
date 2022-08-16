@@ -69,7 +69,6 @@ public class InputReceiverEditor : MonoBehaviour
         {
             if (_isSegmentSelected)
             {
-                InputDelegatesContainer.DeselectSegmentCommand?.Invoke();
                 _isSegmentSelected = false;
 
                 Vector2 viewStartPos = _renderingCamera.ScreenToViewportPoint(_pressPos);
@@ -81,8 +80,10 @@ public class InputReceiverEditor : MonoBehaviour
                     _swipeCommand.SetViewStartPos(viewStartPos);
                     _swipeCommand.SetViewEndPos(viewEndPos);
                     InputDelegatesContainer.SwipeCommand?.Invoke(_swipeCommand);
+                    return;
                 }
             }
+            InputDelegatesContainer.DeselectSegmentCommand?.Invoke();
         }
     }
 #endif

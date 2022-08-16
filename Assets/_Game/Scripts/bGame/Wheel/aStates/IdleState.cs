@@ -5,7 +5,6 @@ public class IdleState : WheelState
 {
     private SwipeCommand _currentSwipeCommand;
     private SegmentPoint _currentSelectedPoint;
-    private bool _isShuffleCommandTriggered;
 
     public IdleState(LevelDescriptionSO levelDescription, Wheel wheelArg) : base(levelDescription, wheelArg)
     {
@@ -17,7 +16,6 @@ public class IdleState : WheelState
         InputDelegatesContainer.SelectSegmentCommand += OnSelectSegmentCommand;
         InputDelegatesContainer.DeselectSegmentCommand += OnDeselectSegmentCommand;
         InputDelegatesContainer.SwipeCommand += OnSwipeCommand;
-        InputDelegatesContainer.ShuffleCommand += OnShuffleCommand;
         InputDelegatesContainer.SetShouldRespond(true);
     }
 
@@ -26,7 +24,6 @@ public class IdleState : WheelState
         InputDelegatesContainer.SelectSegmentCommand -= OnSelectSegmentCommand;
         InputDelegatesContainer.DeselectSegmentCommand -= OnDeselectSegmentCommand;
         InputDelegatesContainer.SwipeCommand -= OnSwipeCommand;
-        InputDelegatesContainer.ShuffleCommand -= OnShuffleCommand;
         InputDelegatesContainer.SetShouldRespond(false);
     }
 
@@ -41,12 +38,6 @@ public class IdleState : WheelState
             return;
         }
 
-        if (!_wheel.DoesIndexHaveAdjacentEmptyIndex(segmentPoint.Index))
-        {
-            Debug.LogWarning($"No empty indexes nearby selection {segmentPoint.Index}");
-            return;
-        }
-
         _currentSelectedPoint = segmentPoint;
         _currentSelectedPoint.Segment.HighlightRender();
     }
@@ -54,6 +45,7 @@ public class IdleState : WheelState
     private void OnDeselectSegmentCommand()
     {
         _currentSelectedPoint?.Segment.DefaultRender();
+        _currentSelectedPoint = null;
     }
 
     private void OnSwipeCommand(SwipeCommand swipeCommand)
@@ -62,31 +54,19 @@ public class IdleState : WheelState
         _currentSwipeCommand = swipeCommand;
     }
 
-    private void OnShuffleCommand()
-    {
-        _isShuffleCommandTriggered = true;
-    }
-
     public override WheelState HandleTransitions()
     {
-        if (_isShuffleCommandTriggered)
+        if (_currentSwipeCommand == null || _currentSelectedPoint == null)
         {
-            // _isShuffleCommandTriggered = false;
-            // ShuffleState shuffleState = WheelStatesDelegates.ShuffleState() as ShuffleState;
-            // _wheel.Get
-            // shuffleState.PrepareForShuffle();
-            // return shuffleState;
-        }
-        if (_currentSwipeCommand == null)
-        {
+            Debug.Log($"{_currentSwipeCommand == null} {_currentSelectedPoint == null}");
             return null;
         }
         else
         {
             MoveState moveState = WheelDelegates.MoveState() as MoveState;
-            Assert.IsTrue(_currentSwipeCommand != null && _currentSelectedPoint != null);
             moveState.PrepareForMove(_currentSwipeCommand, _currentSelectedPoint);
             _currentSwipeCommand = null;
+            OnDeselectSegmentCommand();
             return moveState;
         }
     }
@@ -99,6 +79,14 @@ public class IdleState : WheelState
     public override void OnDestroy()
     {
         WheelDelegates.IdleState -= GetThisState;
+        if (InputDelegatesContainer.SelectSegmentCommand == null)
+        { 
+            InputDelegatesContainer.SelectSegmentCommand -= OnSelectSegmentCommand;
+        }
+        if (InputDelegatesContainer.DeselectSegmentCommand == null)
+        { 
+            InputDelegatesContainer.DeselectSegmentCommand -= OnDeselectSegmentCommand;
+        }
         if (InputDelegatesContainer.SwipeCommand != null)
         { 
             InputDelegatesContainer.SwipeCommand -= OnSwipeCommand;
@@ -108,5 +96,10 @@ public class IdleState : WheelState
     protected override WheelState GetThisState()
     {
         return this;
+    }
+
+    public override string ToString()
+    {
+        return "IdleState";
     }
 }

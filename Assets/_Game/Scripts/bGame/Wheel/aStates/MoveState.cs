@@ -62,8 +62,8 @@ public class MoveState : WheelState
                 _moveToMake.AssignToIndex(toIndex);
                 _wheel.MakeVerticesMove(in verticesMove, _moveLerpSpeed, OnCurrentMoveCompleted);
                 _segmentToMove = _currentSelectedPoint.Segment;
+                return;
             }
-            return;
         }
         
         _segmentToMove = null;
@@ -169,7 +169,10 @@ public class MoveState : WheelState
         return this;
     }
 
-    
+    public override string ToString()
+    {
+        return "MoveState";
+    }
 }
 
 /*

@@ -36,6 +36,7 @@ public class WheelStatesController : MonoBehaviour
                     _currentState.OnEnter();
                     newState = _currentState.HandleTransitions();
                 } while (newState != null);
+                Debug.Log(_currentState);
             }
             
             _currentState.ProcessState();
