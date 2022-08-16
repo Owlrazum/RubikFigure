@@ -10,7 +10,6 @@ public struct SegmentMoveJob : IJob
     public float P_ClockMoveBufferLerpValue; // Assert that it is less than 0.5f;
 
     public float P_LerpParam;
-    public VerticesMove.TypeType P_SegmentMoveType;
     public SegmentVertexPositions P_VertexPositions;
 
     [ReadOnly]

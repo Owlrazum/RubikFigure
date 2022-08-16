@@ -12,6 +12,8 @@ public class LevelDescriptionSO : ScriptableObject
     public float ShuffleLerpSpeed;
     public float MoveLerpSpeed;
 
+    public Vector3 StartPositionForSegmentsInCompletionPhase;
+
     public bool ShouldUsePredefinedEmptyPlaces;
     public Vector2Int[] PredefinedEmptyPlaces;
     public int EmptyPlacesCount;

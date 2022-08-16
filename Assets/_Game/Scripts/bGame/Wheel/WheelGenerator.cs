@@ -191,6 +191,9 @@ public class WheelGenerator : MonoBehaviour
 
         _vertices.Dispose();
         _indices.Dispose();
+        _segmentVertexPositions.Dispose();
+        _segmentPointVertices.Dispose();
+        _segmentPointIndices.Dispose();
     }
 
     private void InitializeSegmentMeshes(int side, int ring, int vertexBufferStart, int indexBufferStart)

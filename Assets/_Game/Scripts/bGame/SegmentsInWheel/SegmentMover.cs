@@ -69,6 +69,10 @@ public class SegmentMover : MonoBehaviour
         {
             StartCoroutine(MoveSequence(verticesMove));
         }
+        else if (move is TeleportMove teleportMove)
+        {
+            StartCoroutine(TeleportSequence(teleportMove));
+        }
     }
 
     private IEnumerator RotateSequence(RotationMove rotationMove)
@@ -92,13 +96,56 @@ public class SegmentMover : MonoBehaviour
         _moveCompleteAction?.Invoke(rotationMove.ToIndex);
     }
 
+    private IEnumerator TeleportSequence(TeleportMove teleportMove)
+    {
+        transform.localPosition = teleportMove.StartTeleportPosition;
+        transform.localRotation = teleportMove.TargetOrientation;
+        TeleportVertices(teleportMove.VertexPositions);
+
+        float lerpParam = 0;
+        while (lerpParam < 1)
+        {
+            lerpParam += _currentLerpSpeed * Time.deltaTime;
+            if (lerpParam > 1)
+            {
+                lerpParam = 1;
+            }
+            transform.localPosition = Vector3.Lerp(teleportMove.StartTeleportPosition, Vector3.zero, EaseInOut(lerpParam));
+            yield return null;
+        }
+    }
+
+    private void TeleportVertices(SegmentVertexPositions vertexPositions)
+    { 
+        VertexData data;
+
+        for (int i = 0; i < vertexPositions.Count; i++)
+        {
+            int2 indices = vertexPositions.GetSegmentIndices(i);
+            float3 targetPos = vertexPositions.GetPointVertexPos(i);
+
+            data = _vertices[indices.x];
+            data.position = targetPos;
+            _vertices[indices.x] = data;
+            if (indices.y < 0)
+            {
+                continue;
+            }
+
+            data = _vertices[indices.y];
+            data.position = targetPos;
+            _vertices[indices.y] = data;
+        }
+
+        AssignVertices(_vertices);
+    }
+
     private IEnumerator MoveSequence(VerticesMove verticesMove)
     {
         float lerpParam = 0;
         _segmentMoveJob = new SegmentMoveJob()
         {
             P_ClockMoveBufferLerpValue = CLOCK_MOVE_BUFFER_LERP_VALUE,
-            P_SegmentMoveType = verticesMove.Type,
             P_VertexPositions = verticesMove.VertexPositions,
             P_VertexCountInOneSegment = Segment.VertexCount,
 
@@ -158,6 +205,11 @@ public class SegmentMover : MonoBehaviour
 
         newMesh.RecalculateNormals();
         _meshFilter.mesh = newMesh;
+    }
+
+    public void Appear()
+    {
+        gameObject.SetActive(true);
     }
 
     private void OnDestroy()

@@ -23,6 +23,8 @@ public class Wheel : MonoBehaviour
     private HashSet<int2> _currentMovesDestinations; // used by shuffleState
     private Action _currentMoveCompleteAction; // used by moveState
 
+    private Vector3 _startTeleportPosition;
+
     private void Awake()
     {
         WheelDelegates.GetCurrentWheel += GetThis;
@@ -42,6 +44,8 @@ public class Wheel : MonoBehaviour
         _sideCount = generationData.SideCount;
         _segmentPoints = generationData.SegmentPoints;
         _segmentVertexPositions = generationData.SegmentVertexPositions;
+
+        _startTeleportPosition = generationData.LevelDescription.StartPositionForSegmentsInCompletionPhase;
 
         RotateSegmentOnGeneration();
 
@@ -76,15 +80,23 @@ public class Wheel : MonoBehaviour
     {
         for (int side = 0; side < _sideCount; side++)
         {
-            float rotationAngle = side * TAU / _sideCount * Mathf.Rad2Deg;
-            Quaternion rotation = Quaternion.AngleAxis(rotationAngle, Vector3.up);
             for (int ring = 0; ring < _ringCount; ring++)
             {
+                Quaternion rotation = GetSideRotation(side);
                 int2 index = new int2(side, ring);
                 _segmentPoints[index].Segment.transform.localRotation = rotation;
                 _segmentPoints[index].transform.localRotation = rotation;
             }
         }
+    }
+    private Quaternion GetSideRotation(int2 index)
+    {
+        return GetSideRotation(index.x);
+    }
+    private Quaternion GetSideRotation(int sideIndex)
+    { 
+        float rotationAngle = sideIndex * TAU / _sideCount * Mathf.Rad2Deg;
+        return Quaternion.AngleAxis(rotationAngle, Vector3.up);
     }
     private int2[] GenerateRandomEmptyPoints(int emptyPlacesCount)
     {
@@ -113,17 +125,16 @@ public class Wheel : MonoBehaviour
     {
         _currentMoveCompleteAction = moveCompleteAction;
 
-        print("Making move " + move);
+        Assert.IsNull(_segmentPoints[move.ToIndex].Segment);
+        Assert.IsNotNull(_segmentPoints[move.FromIndex].Segment);
         Segment movedSegment = _segmentPoints[move.FromIndex].Segment;
-        print(move.FromIndex + " " + movedSegment);
-        Assert.IsNotNull(movedSegment);
         _segmentPoints[move.FromIndex].Segment = null;
+        _segmentPoints[move.ToIndex].Segment = movedSegment;
+        Debug.Log($"Swapped segmentPoint contents {move.FromIndex} {move.ToIndex}");
 
-        SegmentPoint target = _segmentPoints[move.ToIndex];
-        target.Segment = movedSegment;
         if (move is VerticesMove verticesMove)
         {
-            verticesMove.AssignVertexPositions(_segmentVertexPositions[move.ToIndex.y]);
+            verticesMove.AssignVertexPositions(GetVertexPositions(move.ToIndex));
         }
         else if (move is RotationMove rotationMove)
         { 
@@ -149,7 +160,7 @@ public class Wheel : MonoBehaviour
         _currentMoveCompleteAction?.Invoke();
     }
 
-    public void MakeMoveCollection(SegmentMove[] moves, float lerpSpeed, Action moveCompleteAction = null)
+    public void MakeShuffleMoves(RotationMove[] moves, float lerpSpeed)
     {
         Segment[] movedSegments = new Segment[moves.Length];
         for (int i = 0; i < moves.Length; i++)
@@ -160,7 +171,6 @@ public class Wheel : MonoBehaviour
             {
                 continue;
             }
-            Assert.IsTrue(move is RotationMove);
             movedSegment.StartMove(
                 move,
                 lerpSpeed,
@@ -177,19 +187,57 @@ public class Wheel : MonoBehaviour
             {
                 continue;
             }
-            SegmentMove move = moves[i];
+            RotationMove move = moves[i];
             _segmentPoints[move.ToIndex].Segment = movedSegments[i];
         }
+    }
+    public void MakeTeleportMoves(List<TeleportMove> moves, float lerpSpeed)
+    { 
+        for (int i = 0; i < moves.Count; i++)
+        {
+            TeleportMove teleportMove = moves[i];
+            Quaternion rotation = GetSideRotation(teleportMove.ToIndex);
+            teleportMove.AssignTargetOrientation(rotation);
+            teleportMove.AssignStartTeleportPosition(_startTeleportPosition);
+            teleportMove.AssignVertexPositions(GetVertexPositions(teleportMove.ToIndex));
+            teleportMove.SegmentMover.StartMove(
+                teleportMove,
+                lerpSpeed,
+                null
+            );
+        }
+    }
+    private SegmentVertexPositions GetVertexPositions(int2 index)
+    {
+        return _segmentVertexPositions[index.y];
     }
 
     public Array2D<SegmentPoint> GetSegmentPointsForCompletionCheck()
     {
+        Debug.Log("returning segmentPoints for completion check");
         return _segmentPoints;
     }
 
-    public SegmentVertexPositions GetSegmentPointForTeleport(int2 index)
+    public bool IsIndexAdjacentTo(int2 lhs, int2 rhs)
     {
-        return _segmentVertexPositions[index.y];
+        Assert.IsTrue(math.any(lhs != rhs));
+        int2 delta = math.abs(rhs - lhs);
+        if (delta.x == 0)
+        {
+            if (delta.y == 1)
+            {
+                return true;
+            }
+        }
+        else if (delta.y == 0)
+        {
+            if (delta.x == _sideCount - 1 || delta.x == 1)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public bool IsPointEmpty(int2 index)
@@ -472,25 +520,5 @@ public class Wheel : MonoBehaviour
         return _segmentPoints[emptyIndex].transform.position;
     }
 
-    public bool IsIndexAdjacentTo(int2 lhs, int2 rhs)
-    {
-        Assert.IsTrue(math.any(lhs != rhs));
-        int2 delta = math.abs(rhs - lhs);
-        if (delta.x == 0)
-        {
-            if (delta.y == 1)
-            {
-                return true;
-            }
-        }
-        else if (delta.y == 0)
-        {
-            if (delta.x == _sideCount - 1 || delta.x == 1)
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
+    
 */

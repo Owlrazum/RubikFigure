@@ -47,6 +47,11 @@ public class Segment : MonoBehaviour
         _segmentMover.StartMove(move, lerpSpeed, OnMoveToDestinationCompleted);
     }
 
+    public SegmentMover GetSegmentMoverForTeleport()
+    {
+        return _segmentMover;
+    }
+
     public void HighlightRender()
     {
         _segmentRenderer.Highlight();
@@ -60,11 +65,5 @@ public class Segment : MonoBehaviour
     public void Dissappear()
     {
         gameObject.SetActive(false);
-    }
-
-    public void Appear()
-    {
-        print("hi");
-        gameObject.SetActive(true);
     }
 }

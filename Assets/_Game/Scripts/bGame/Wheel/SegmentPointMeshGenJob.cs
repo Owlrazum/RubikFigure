@@ -61,7 +61,6 @@ public struct SegmentPointMeshGenJob : IJob
         _pointIndexCount = 0;
         
         quaternion q = quaternion.AxisAngle(math.up(), _angleResolutionDelta);
-        UnityEngine.Debug.Log(_angleResolutionDelta);
         float3x2 rays = new float3x2(
             _startRay,
             math.rotate(q, _startRay)
@@ -116,7 +115,6 @@ public struct SegmentPointMeshGenJob : IJob
             rays[0] = rays[1];
             rays[1] = math.rotate(q, rays[1]);
         }
-        UnityEngine.Debug.Log("check");
 
         float3x4 rightQuad = new float3x4(
             rays[0] * radii.x,

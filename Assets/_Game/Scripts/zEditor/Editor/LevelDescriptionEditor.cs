@@ -14,6 +14,8 @@ namespace Orazum.CustomEditor
         private SerializedProperty _shuffleLerpSpeed;
         private SerializedProperty _moveLerpSpeed;
 
+        private SerializedProperty _startPosition;
+
         private SerializedProperty _shouldUsePredefinedEmptyPlaces;
         private SerializedProperty _predefinedEmptyPlaces;
         private SerializedProperty _emptyPlacesCount;
@@ -28,6 +30,8 @@ namespace Orazum.CustomEditor
             _shufflePauseTime = serializedObject.FindProperty("ShufflePauseTime");
             _shuffleLerpSpeed = serializedObject.FindProperty("ShuffleLerpSpeed");
             _moveLerpSpeed = serializedObject.FindProperty("MoveLerpSpeed");
+
+            _startPosition = serializedObject.FindProperty("StartPositionForSegmentsInCompletionPhase");
 
             _shouldUsePredefinedEmptyPlaces = serializedObject.FindProperty("ShouldUsePredefinedEmptyPlaces");
             _predefinedEmptyPlaces = serializedObject.FindProperty("PredefinedEmptyPlaces");
@@ -46,6 +50,8 @@ namespace Orazum.CustomEditor
             EditorGUILayout.PropertyField(_shufflePauseTime);
             EditorGUILayout.PropertyField(_shuffleLerpSpeed);
             EditorGUILayout.PropertyField(_moveLerpSpeed);
+
+            EditorGUILayout.PropertyField(_startPosition);
 
             EditorGUILayout.PropertyField(_shouldUsePredefinedEmptyPlaces);
             if (_shouldUsePredefinedEmptyPlaces.boolValue)

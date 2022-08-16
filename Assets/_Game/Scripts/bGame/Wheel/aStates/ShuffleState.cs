@@ -95,7 +95,7 @@ public class ShuffleState : WheelState
     {
         ShuffleIndices();
 
-        SegmentMove[] moves = new SegmentMove[_wheel.SideCount * _wheel.RingCount];
+        RotationMove[] moves = new RotationMove[_wheel.SideCount * _wheel.RingCount];
         int moveIndex = 0;
         for (int ring = 0; ring < _shuffleIndices.Length; ring++)
         {
@@ -134,7 +134,7 @@ public class ShuffleState : WheelState
                 moves[moveIndex++] = rotationMove;
             }
         }
-        _wheel.MakeMoveCollection(moves, _shuffleLerpSpeed);
+        _wheel.MakeShuffleMoves(moves, _shuffleLerpSpeed);
     }
 
     private void ShuffleIndices()

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 using Orazum.Collections;
 
@@ -14,7 +15,11 @@ public class WheelCompleter : MonoBehaviour
 
     [SerializeField]
     private float s_amplitude = 3;
-    private Dictionary<int, List<Segment>> _emptiedSegments;
+
+    [SerializeField]
+    private float _teleportLerpSpeed = 1;
+
+    private Dictionary<int, List<SegmentMover>> _completionSegmentMovers;
     private Dictionary<int, List<int2>> _potentialAssembleData;
 
     private List<int2> _emptyIndices; // avoid gc
@@ -22,7 +27,7 @@ public class WheelCompleter : MonoBehaviour
     private Wheel _currentWheel;
     private void Awake()
     {
-        _emptiedSegments = new Dictionary<int, List<Segment>>(_maxEmptyPlacesCount);
+        _completionSegmentMovers = new Dictionary<int, List<SegmentMover>>(_maxEmptyPlacesCount);
         _potentialAssembleData = new Dictionary<int, List<int2>>(_maxEmptyPlacesCount);
         _emptyIndices = new List<int2>(_maxEmptyPlacesCount);
 
@@ -43,24 +48,24 @@ public class WheelCompleter : MonoBehaviour
 
     private void OnSegmentsWereEmptied(Segment[] segmentsArg)
     {
-        _emptiedSegments.Clear();
+        _completionSegmentMovers.Clear();
 
         for (int i = 0; i < segmentsArg.Length; i++)
         {
             int puzzleIndex = segmentsArg[i].PuzzleIndex;
-            if (_emptiedSegments.ContainsKey(puzzleIndex))
+            if (_completionSegmentMovers.ContainsKey(puzzleIndex))
             {
-                _emptiedSegments[puzzleIndex].Add(segmentsArg[i]);
+                _completionSegmentMovers[puzzleIndex].Add(segmentsArg[i].GetSegmentMoverForTeleport());
             }
             else
             {
-                _emptiedSegments.Add(puzzleIndex, new List<Segment>(3));
-                _emptiedSegments[puzzleIndex].Add(segmentsArg[i]);
+                _completionSegmentMovers.Add(puzzleIndex, new List<SegmentMover>(3));
+                _completionSegmentMovers[puzzleIndex].Add(segmentsArg[i].GetSegmentMoverForTeleport());
             }
         }
     }
 
-    public void CheckCompletion()
+    private void CheckCompletion()
     {
         Array2D<SegmentPoint> segmentPoints = _currentWheel.GetSegmentPointsForCompletionCheck();
         for (int side = 0; side < segmentPoints.ColCount; side++)
@@ -99,29 +104,33 @@ public class WheelCompleter : MonoBehaviour
     {
         WheelDelegates.EventWheelWasCompleted?.Invoke();
 
+        List<TeleportMove> teleportMoves = new List<TeleportMove>(_potentialAssembleData.Count * 2);
         foreach (var entry in _potentialAssembleData)
         {
             int puzzleIndex = entry.Key;
 
             List<int2> teleportLocationIndices = entry.Value;
-            List<Segment> toTeleportSegments = _emptiedSegments[puzzleIndex];
+            List<SegmentMover> segmentMovers = _completionSegmentMovers[puzzleIndex];
             for (int i = 0; i < teleportLocationIndices.Count; i++)
             {
-                int2 segmentPointIndex = teleportLocationIndices[i];
-                SegmentVertexPositions destination = _currentWheel.GetSegmentPointForTeleport(segmentPointIndex);
-                print(toTeleportSegments[i] != null);
-                // toTeleportSegments[i].TeleportTo(destination);
-                // toTeleportSegments[i].Appear();
+                Assert.IsNotNull(segmentMovers[i]);
+                TeleportMove teleportMove = new TeleportMove();
+                teleportMove.AssignSegmentMover(segmentMovers[i]);
+
+                int2 destinationIndex = teleportLocationIndices[i];
+                teleportMove.AssignToIndex(destinationIndex);
+                teleportMoves.Add(teleportMove);
+                segmentMovers[i].Appear();
             }
         }
-
-        print("Level completed");
-        GameDelegatesContainer.EventLevelCompleted?.Invoke();
-        StartCoroutine(WheelRotationSequence());
+        _currentWheel.MakeTeleportMoves(teleportMoves, _teleportLerpSpeed);
+        StartCoroutine(CompletionSequence(1.0f / _teleportLerpSpeed));
     }
 
-    private IEnumerator WheelRotationSequence()
+    private IEnumerator CompletionSequence(float beforeRotatePauseTime)
     {
+        yield return new WaitForSeconds(beforeRotatePauseTime);
+        GameDelegatesContainer.EventLevelCompleted?.Invoke();
         Vector3 rotationEuler = Vector3.zero;
         while (true)
         {

@@ -872,3 +872,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _maxEmptyPlacesCount: 2
   s_amplitude: 7
+  _teleportLerpSpeed: 0.5
