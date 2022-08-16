@@ -35,7 +35,7 @@ public class SegmentMover : MonoBehaviour
 
     private bool _wasJobScheduled;
     private bool _wasMoveCompleted;
-    private Action<int2> _moveCompleteAction;
+    private Action _moveCompleteAction;
 
     private void Awake()
     {
@@ -54,7 +54,7 @@ public class SegmentMover : MonoBehaviour
     public void StartMove(
         SegmentMove move,
         float _lerpSpeed,
-        Action<int2> OnMoveToDestinationCompleted)
+        Action OnMoveToDestinationCompleted)
     {
         _currentToIndex = move.ToIndex;
         _currentLerpSpeed = _lerpSpeed;
@@ -93,7 +93,7 @@ public class SegmentMover : MonoBehaviour
 
         transform.localRotation = targetRotation;
 
-        _moveCompleteAction?.Invoke(rotationMove.ToIndex);
+        _moveCompleteAction?.Invoke();
     }
 
     private IEnumerator TeleportSequence(TeleportMove teleportMove)
@@ -183,7 +183,7 @@ public class SegmentMover : MonoBehaviour
             {
                 _vertices[i] = _currentVertices[i];
             }
-            _moveCompleteAction?.Invoke(_currentToIndex);
+            _moveCompleteAction?.Invoke();
             _wasMoveCompleted = false;
         }
         else if (_wasJobScheduled)

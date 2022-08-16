@@ -50,7 +50,6 @@ public class IdleState : WheelState
 
     private void OnSwipeCommand(SwipeCommand swipeCommand)
     {
-        Debug.Log("Swipe");
         _currentSwipeCommand = swipeCommand;
     }
 
@@ -58,7 +57,6 @@ public class IdleState : WheelState
     {
         if (_currentSwipeCommand == null || _currentSelectedPoint == null)
         {
-            Debug.Log($"{_currentSwipeCommand == null} {_currentSelectedPoint == null}");
             return null;
         }
         else

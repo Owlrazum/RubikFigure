@@ -42,7 +42,7 @@ public class Segment : MonoBehaviour
     public void StartMove(
         SegmentMove move,
         float lerpSpeed,
-        Action<int2> OnMoveToDestinationCompleted)
+        Action OnMoveToDestinationCompleted)
     {
         _segmentMover.StartMove(move, lerpSpeed, OnMoveToDestinationCompleted);
     }

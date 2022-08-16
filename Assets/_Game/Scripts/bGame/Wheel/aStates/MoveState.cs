@@ -10,10 +10,10 @@ public class MoveState : WheelState
 {
     private SwipeCommand _currentSwipeCommand;
     private SegmentPoint _currentSelectedPoint;
-    private Segment _segmentToMove;
     private VerticesMove _verticesMove; // we store it once to avoid gc. SegemntToMove presence determines logic.
     private RotationMove _rotationMove; // same as above.
     private float _moveLerpSpeed;
+    private bool _isMoving;
 
     public MoveState(LevelDescriptionSO levelDescription, Wheel wheelArg) : base(levelDescription, wheelArg)
     { 
@@ -52,6 +52,7 @@ public class MoveState : WheelState
         if (_moveToMake is RotationMove rotationMove)
         {
             MakeRotationMoves(_currentSelectedPoint.Index.y, rotationMove.Type);
+            _isMoving = true;
             return;
         }
         else if (_moveToMake is VerticesMove verticesMove)
@@ -61,12 +62,12 @@ public class MoveState : WheelState
             {
                 _moveToMake.AssignToIndex(toIndex);
                 _wheel.MakeVerticesMove(in verticesMove, _moveLerpSpeed, OnCurrentMoveCompleted);
-                _segmentToMove = _currentSelectedPoint.Segment;
+                _isMoving = true;
                 return;
             }
         }
         
-        _segmentToMove = null;
+        _isMoving = false;
     }
 
     private SegmentMove DetermineMoveFromInput(Vector3 circleCenter, Vector3 worldPos, Vector3 worldDir)
@@ -134,24 +135,24 @@ public class MoveState : WheelState
             rotationMoves.Add(rotationMove);
         }
 
-        _wheel.MakeRotationMoves(rotationMoves, _moveLerpSpeed);
+        _wheel.MakeRotationMoves(rotationMoves, _moveLerpSpeed, OnCurrentMoveCompleted);
     }
 
     private void OnCurrentMoveCompleted()
     {
-        _segmentToMove = null;
+        _isMoving = false;
         WheelDelegates.ActionCheckWheelCompletion();
     }
 
     public override WheelState HandleTransitions()
     {
-        if (_segmentToMove == null)
+        if (_isMoving)
         {
-            return WheelDelegates.IdleState();
+            return null;
         }
         else
         { 
-            return null;
+            return WheelDelegates.IdleState();
         }
     }
 

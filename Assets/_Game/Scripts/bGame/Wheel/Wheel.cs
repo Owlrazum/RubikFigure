@@ -20,9 +20,6 @@ public class Wheel : MonoBehaviour
     private Array2D<SegmentPoint> _segmentPoints;
     private SegmentVertexPositions[] _segmentVertexPositions;
 
-    private HashSet<int2> _currentMovesDestinations; // used by shuffleState
-    private Action _currentMoveCompleteAction; // used by moveState
-
     private Vector3 _startTeleportPosition;
 
     private void Awake()
@@ -71,8 +68,6 @@ public class Wheel : MonoBehaviour
             _segmentPoints[index].Segment = null;
         }
         WheelDelegates.EventSegmentsWereEmptied?.Invoke(emptySegments);
-
-        _currentMovesDestinations = new HashSet<int2>(emptySegmentPointIndices.Length);
 
         generationData.EmtpySegmentPointIndicesForShuffle = emptySegmentPointIndices;
     }
@@ -123,8 +118,6 @@ public class Wheel : MonoBehaviour
 
     public void MakeVerticesMove(in VerticesMove move, float lerpSpeed, Action moveCompleteAction = null)
     {
-        _currentMoveCompleteAction = moveCompleteAction;
-
         Assert.IsNull(_segmentPoints[move.ToIndex].Segment);
         Assert.IsNotNull(_segmentPoints[move.FromIndex].Segment);
         Segment movedSegment = _segmentPoints[move.FromIndex].Segment;
@@ -137,20 +130,14 @@ public class Wheel : MonoBehaviour
         movedSegment.StartMove(
             move,
             lerpSpeed,
-            OnSegmentCompletedMove
+            moveCompleteAction
         );
-        _currentMovesDestinations.Add(move.ToIndex);
-    }
-    private void OnSegmentCompletedMove(int2 destination)
-    {
-        Assert.IsTrue(_currentMovesDestinations.Contains(destination));
-        _currentMovesDestinations.Remove(destination);
-        _currentMoveCompleteAction?.Invoke();
     }
 
-    public void MakeRotationMoves(List<RotationMove> moves, float lerpSpeed)
+    public void MakeRotationMoves(List<RotationMove> moves, float lerpSpeed, Action moveCompleteAction = null)
     {
         Segment[] movedSegments = new Segment[moves.Count];
+        bool isAssignedMoveCompleteAction = false;
         for (int i = 0; i < moves.Count; i++)
         {
             RotationMove rotationMove = moves[i];
@@ -166,7 +153,7 @@ public class Wheel : MonoBehaviour
             movedSegment.StartMove(
                 rotationMove,
                 lerpSpeed,
-                null
+                isAssignedMoveCompleteAction ? null : moveCompleteAction 
             );
 
             movedSegments[i] = movedSegment;
@@ -442,7 +429,7 @@ public class Wheel : MonoBehaviour
 
     private bool IsPointFreeToMoveInto(int2 pointIndex)
     {
-        return IsPointEmpty(pointIndex) || _currentMovesDestinations.Contains(pointIndex);
+        return IsPointEmpty(pointIndex);
     }
 
     private int2 MoveIndexDown(int2 index)
@@ -498,19 +485,10 @@ public class Wheel : MonoBehaviour
     }
 
     [ContextMenu("Print")]
-    public void LogThis()
+    public override string ToString()
     {
         Debug.Log(_segmentPoints);
-        LogCurrentMoves();
-    }
-    private void LogCurrentMoves()
-    { 
-        string log = "";
-        foreach (var entry in _currentMovesDestinations)
-        {
-            log += entry.ToString() + "\n";
-        }
-        Debug.Log(log);
+        return _segmentPoints.ToString();
     }
 }
 

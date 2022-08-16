@@ -18,7 +18,7 @@ MonoBehaviour:
   ShuffleStepsAmount: 1
   ShufflePauseTime: 0.5
   ShuffleLerpSpeed: 1
-  MoveLerpSpeed: 1
+  MoveLerpSpeed: 2
   StartPositionForSegmentsInCompletionPhase: {x: 0, y: -10, z: 0}
   ShouldUsePredefinedEmptyPlaces: 0
   PredefinedEmptyPlaces:
