@@ -7,7 +7,6 @@ using UnityEngine;
 using UnityEngine.Assertions;
 
 using Orazum.Collections;
-using Orazum.Utilities.ConstContainers;
 using static Orazum.Math.MathUtilities;
 
 public class Wheel : MonoBehaviour
@@ -29,7 +28,7 @@ public class Wheel : MonoBehaviour
         WheelDelegates.GetCurrentWheel += GetThis;
     }
     private void OnDestroy()
-    { 
+    {
         WheelDelegates.GetCurrentWheel -= GetThis;
     }
     private Wheel GetThis()
@@ -55,7 +54,7 @@ public class Wheel : MonoBehaviour
         }
         else
         {
-            emptySegmentPointIndices = 
+            emptySegmentPointIndices =
                 GenerateRandomEmptyPoints(generationData.LevelDescription.EmptyPlacesCount);
         }
 
@@ -73,7 +72,6 @@ public class Wheel : MonoBehaviour
 
         generationData.EmtpySegmentPointIndicesForShuffle = emptySegmentPointIndices;
     }
-
     private void RotateSegmentOnGeneration()
     {
         for (int side = 0; side < _sideCount; side++)
@@ -88,7 +86,6 @@ public class Wheel : MonoBehaviour
             }
         }
     }
-    
     private int2[] GenerateRandomEmptyPoints(int emptyPlacesCount)
     {
         var randomGenerator = Unity.Mathematics.Random.CreateFromIndex(15);
@@ -124,9 +121,18 @@ public class Wheel : MonoBehaviour
 
         SegmentPoint target = _segmentPoints[move.ToIndex];
         target.Segment = movedSegment;
-        if (move.Type == SegmentMoveType.Down || move.Type == SegmentMoveType.Up)
+        if (move is VerticesMove verticesMove)
+        {
+            verticesMove.AssignVertexPositions(_segmentVertexPositions[move.ToIndex.y]);
+        }
+        else if (move is RotationMove rotationMove)
         { 
-            move.AssignVertexPositions(_segmentVertexPositions[move.ToIndex.y]);
+            float rotationAngle = TAU / _sideCount * Mathf.Rad2Deg;
+            if (rotationMove.Type == RotationMove.TypeType.CounterClockwise)
+            {
+                rotationAngle = -rotationAngle;
+            }
+            rotationMove.AssignRotation(Quaternion.AngleAxis(rotationAngle, Vector3.up));
         }
 
         movedSegment.StartMove(
@@ -135,6 +141,12 @@ public class Wheel : MonoBehaviour
             OnSegmentCompletedMove
         );
         _currentMovesDestinations.Add(move.ToIndex);
+    }
+    private void OnSegmentCompletedMove(int2 destination)
+    {
+        Assert.IsTrue(_currentMovesDestinations.Contains(destination));
+        _currentMovesDestinations.Remove(destination);
+        _currentMoveCompleteAction?.Invoke();
     }
 
     public void MakeMoveCollection(SegmentMove[] moves, float lerpSpeed, Action moveCompleteAction = null)
@@ -148,7 +160,7 @@ public class Wheel : MonoBehaviour
             {
                 continue;
             }
-            Assert.IsTrue(move.Type != SegmentMoveType.Down && move.Type != SegmentMoveType.Up);
+            Assert.IsTrue(move is RotationMove);
             movedSegment.StartMove(
                 move,
                 lerpSpeed,
@@ -170,48 +182,16 @@ public class Wheel : MonoBehaviour
         }
     }
 
-    private void OnSegmentCompletedMove(int2 destination)
-    {
-        Assert.IsTrue(_currentMovesDestinations.Contains(destination));
-        _currentMovesDestinations.Remove(destination);
-        _currentMoveCompleteAction?.Invoke();
-    }
-
     public Array2D<SegmentPoint> GetSegmentPointsForCompletionCheck()
     {
         return _segmentPoints;
     }
 
-    public Vector3 GetEmptySegmentPointPosition(int2 emptyIndex)
+    public SegmentVertexPositions GetSegmentPointForTeleport(int2 index)
     {
-        return _segmentPoints[emptyIndex].transform.position;
-    }
-    public SegmentPoint GetSegmentPointForTeleport(int2 index)
-    {
-        return _segmentPoints[index];
+        return _segmentVertexPositions[index.y];
     }
 
-    public bool IsIndexAdjacentTo(int2 lhs, int2 rhs)
-    {
-        Assert.IsTrue(math.any(lhs != rhs));
-        int2 delta = math.abs(rhs - lhs);
-        if (delta.x == 0)
-        {
-            if (delta.y == 1)
-            {
-                return true;
-            }
-        }
-        else if (delta.y == 0)
-        {
-            if (delta.x == _sideCount - 1 || delta.x == 1)
-            {
-                return true;
-            }
-        }
-        
-        return false;
-    }
     public bool IsPointEmpty(int2 index)
     {
         return _segmentPoints[index].Segment == null;
@@ -231,13 +211,13 @@ public class Wheel : MonoBehaviour
         }
 
         check = MoveIndexDown(index);
-        if (check.y >= 0 && IsPointEmpty(check))
+        if (IsValidIndexForMoveDown(index) && IsPointEmpty(check))
         {
             return true;
         }
 
         check = MoveIndexUp(index);
-        if(check.y < _ringCount && IsPointEmpty(check))
+        if (IsValidIndexForMoveUp(index) && IsPointEmpty(check))
         {
             return true;
         }
@@ -249,65 +229,38 @@ public class Wheel : MonoBehaviour
     {
         if (HasSegmentThatWillMoveDown(emptyIndex))
         {
-            possibleMoves.Add(new SegmentMove(SegmentMoveType.Down, MoveIndexUp(emptyIndex), emptyIndex));
+            VerticesMove verticesMove = new VerticesMove();
+            verticesMove.AssignType(VerticesMove.TypeType.Down);
+            verticesMove.AssignFromIndex(MoveIndexUp(emptyIndex));
+            verticesMove.AssignToIndex(emptyIndex);
+            possibleMoves.Add(verticesMove);
         }
         if (HasSegmentThatWillMoveUp(emptyIndex))
         {
-            possibleMoves.Add(new SegmentMove(SegmentMoveType.Up, MoveIndexDown(emptyIndex), emptyIndex));
+            VerticesMove verticesMove = new VerticesMove();
+            verticesMove.AssignType(VerticesMove.TypeType.Up);
+            verticesMove.AssignFromIndex(MoveIndexDown(emptyIndex));
+            verticesMove.AssignToIndex(emptyIndex);
+            possibleMoves.Add(verticesMove);
         }
         if (HasSegmentThatWillMoveCounterClockwise(emptyIndex))
         {
-            possibleMoves.Add(
-                new SegmentMove(SegmentMoveType.CounterClockwise, 
-                MoveIndexClockwise(emptyIndex), emptyIndex)
-            );
+            RotationMove rotationMove = new RotationMove();
+            rotationMove.AssignType(RotationMove.TypeType.CounterClockwise);
+            rotationMove.AssignFromIndex(MoveIndexClockwise(emptyIndex));
+            rotationMove.AssignToIndex(emptyIndex);
+            possibleMoves.Add(rotationMove);
         }
         if (HasSegmentThatWillMoveClockwise(emptyIndex))
         {
-            possibleMoves.Add(
-                new SegmentMove(SegmentMoveType.Clockwise, 
-                MoveIndexCounterClockwise(emptyIndex), emptyIndex));
+            RotationMove rotationMove = new RotationMove();
+            rotationMove.AssignType(RotationMove.TypeType.Clockwise);
+            rotationMove.AssignFromIndex(MoveIndexCounterClockwise(emptyIndex));
+            rotationMove.AssignToIndex(emptyIndex);
+            possibleMoves.Add(rotationMove);
         }
     }
-    public bool IsMovePossible(SegmentMove move, out int2 toIndex)
-    {
-        Assert.IsNotNull(_segmentPoints[move.FromIndex].Segment);
-        toIndex = int2.zero;
-        switch (move.Type)
-        {
-            case SegmentMoveType.Down:
-                if (CanMoveDown(move.FromIndex))
-                {
-                    toIndex = MoveIndexDown(move.FromIndex);
-                    return true;
-                }
-                break;
-            case SegmentMoveType.Up:
-                if (CanMoveUp(move.FromIndex))
-                {
-                    toIndex = MoveIndexUp(move.FromIndex);
-                    return true;
-                }
-                break;
-            case SegmentMoveType.CounterClockwise:
-                if (CanMoveCounterClockwise(move.FromIndex))
-                {
-                    toIndex = MoveIndexCounterClockwise(move.FromIndex);
-                    return true;
-                }
-                break;
-            case SegmentMoveType.Clockwise:
-                if (CanMoveClockwise(move.FromIndex))
-                {
-                    toIndex = MoveIndexClockwise(move.FromIndex);
-                    return true;
-                }
-                break;
-        }
-
-        return false;
-    }
-
+   
     private bool HasSegmentThatWillMoveDown(int2 emptyIndex)
     {
         if (!IsValidIndexForMoveUp(emptyIndex))
@@ -359,27 +312,54 @@ public class Wheel : MonoBehaviour
         return true;
     }
 
-    public int2 MoveIndexDown(int2 index)
+    public bool IsMovePossibleFromIndex(SegmentMove move, out int2 toIndex)
     {
-        index.y--;
-        return index;
+        Assert.IsNotNull(_segmentPoints[move.FromIndex].Segment);
+        Assert.IsTrue(IsValidIndex(move.FromIndex));
+        toIndex = int2.zero;
+        if (move is VerticesMove verticesMove)
+        {
+            switch (verticesMove.Type)
+            { 
+                case VerticesMove.TypeType.Down:
+                    if (CanMoveDown(move.FromIndex))
+                    {
+                        toIndex = MoveIndexDown(move.FromIndex);
+                        return true;
+                    }
+                    break;
+                case VerticesMove.TypeType.Up:
+                    if (CanMoveUp(move.FromIndex))
+                    {
+                        toIndex = MoveIndexUp(move.FromIndex);
+                        return true;
+                    }
+                    break;
+            }
+        }
+        else if (move is RotationMove rotationMove)
+        {
+            switch (rotationMove.Type)
+            {
+                case RotationMove.TypeType.CounterClockwise:
+                    if (CanMoveCounterClockwise(move.FromIndex))
+                    {
+                        toIndex = MoveIndexCounterClockwise(move.FromIndex);
+                        return true;
+                    }
+                    break;
+                case RotationMove.TypeType.Clockwise:
+                    if (CanMoveClockwise(move.FromIndex))
+                    {
+                        toIndex = MoveIndexClockwise(move.FromIndex);
+                        return true;
+                    }
+                    break;
+            }
+        }
+        return false;
     }
-    public int2 MoveIndexUp(int2 index)
-    {
-        index.y++;
-        return index;
-    }
-    public int2 MoveIndexCounterClockwise(int2 index)
-    {
-        index.x = index.x - 1 >= 0 ? index.x - 1 : _sideCount - 1;
-        return index;
-    }
-    public int2 MoveIndexClockwise(int2 index)
-    {
-        index.x = index.x + 1 < _sideCount ? index.x + 1 : 0;
-        return index;
-    }
-
+   
     private bool CanMoveDown(int2 index)
     {
         if (!IsValidIndexForMoveDown(index))
@@ -411,6 +391,32 @@ public class Wheel : MonoBehaviour
         return IsPointFreeToMoveInto(cw);
     }
 
+    private bool IsPointFreeToMoveInto(int2 pointIndex)
+    {
+        return IsPointEmpty(pointIndex) || _currentMovesDestinations.Contains(pointIndex);
+    }
+
+    private int2 MoveIndexDown(int2 index)
+    {
+        index.y--;
+        return index;
+    }
+    private int2 MoveIndexUp(int2 index)
+    {
+        index.y++;
+        return index;
+    }
+    private int2 MoveIndexCounterClockwise(int2 index)
+    {
+        index.x = index.x - 1 >= 0 ? index.x - 1 : _sideCount - 1;
+        return index;
+    }
+    private int2 MoveIndexClockwise(int2 index)
+    {
+        index.x = index.x + 1 < _sideCount ? index.x + 1 : 0;
+        return index;
+    }
+
     private bool IsValidIndexForMoveDown(int2 index)
     {
         if (index.y - 1 >= 0)
@@ -427,10 +433,14 @@ public class Wheel : MonoBehaviour
         }
         return false;
     }
-
-    private bool IsPointFreeToMoveInto(int2 pointIndex)
+    private bool IsValidIndex(int2 index)
     {
-        return IsPointEmpty(pointIndex) || _currentMovesDestinations.Contains(pointIndex);
+        if (index.y >= 0 && index.y < _ringCount && index.x >= 0 && index.x < _sideCount)
+        {
+            return true;
+        }
+
+        return false;
     }
 
     private int XyToIndex(int x, int y)
@@ -454,3 +464,33 @@ public class Wheel : MonoBehaviour
         Debug.Log(log);
     }
 }
+
+
+/*
+    public Vector3 GetEmptySegmentPointPosition(int2 emptyIndex)
+    {
+        return _segmentPoints[emptyIndex].transform.position;
+    }
+
+    public bool IsIndexAdjacentTo(int2 lhs, int2 rhs)
+    {
+        Assert.IsTrue(math.any(lhs != rhs));
+        int2 delta = math.abs(rhs - lhs);
+        if (delta.x == 0)
+        {
+            if (delta.y == 1)
+            {
+                return true;
+            }
+        }
+        else if (delta.y == 0)
+        {
+            if (delta.x == _sideCount - 1 || delta.x == 1)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+*/

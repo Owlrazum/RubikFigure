@@ -36,6 +36,7 @@ public class IdleState : WheelState
         Assert.IsTrue(isFound);
         if (segmentPoint.Segment == null)
         {
+            _currentSelectedPoint = null;
             Debug.LogWarning("No segment located here");
             return;
         }
@@ -51,7 +52,7 @@ public class IdleState : WheelState
 
     private void OnDeselectSegmentCommand()
     {
-        _currentSelectedPoint.Segment.DefaultRender();
+        _currentSelectedPoint?.Segment.DefaultRender();
     }
 
     private void OnSwipeCommand(SwipeCommand swipeCommand)

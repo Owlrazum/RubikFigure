@@ -31,7 +31,7 @@ public class SegmentMover : MonoBehaviour
 
     private NativeArray<VertexData> _currentVertices;
     private float _currentLerpSpeed;
-    private SegmentMove _currentMove;
+    private int2 _currentToIndex;
 
     private bool _wasJobScheduled;
     private bool _wasMoveCompleted;
@@ -56,30 +56,26 @@ public class SegmentMover : MonoBehaviour
         float _lerpSpeed,
         Action<int2> OnMoveToDestinationCompleted)
     {
-        _currentMove = move;
+        _currentToIndex = move.ToIndex;
         _currentLerpSpeed = _lerpSpeed;
         _wasMoveCompleted = false;
         _moveCompleteAction = OnMoveToDestinationCompleted;
 
-        switch (_currentMove.Type)
+        if (move is RotationMove rotationMove)
         { 
-            case SegmentMoveType.Clockwise:
-            case SegmentMoveType.CounterClockwise:
-                StartCoroutine(RotateSequence());
-                break;
-            case SegmentMoveType.Down:
-            case SegmentMoveType.Up:
-                StartCoroutine(MoveSequence());
-                break;
+            StartCoroutine(RotateSequence(rotationMove));
+        }
+        else if (move is VerticesMove verticesMove)
+        {
+            StartCoroutine(MoveSequence(verticesMove));
         }
     }
 
-    private IEnumerator RotateSequence()
+    private IEnumerator RotateSequence(RotationMove rotationMove)
     {
         float lerpParam = 0;
         Quaternion initialRotation = transform.localRotation;
-        print($"move rotation {_currentMove.rotation.eulerAngles}");
-        Quaternion targetRotation = initialRotation * _currentMove.rotation;
+        Quaternion targetRotation = initialRotation * rotationMove.Rotation;
         while (lerpParam < 1)
         {
             lerpParam += _currentLerpSpeed * Time.deltaTime;
@@ -92,29 +88,25 @@ public class SegmentMover : MonoBehaviour
         }
 
         transform.localRotation = targetRotation;
-        print($"{targetRotation.eulerAngles}");
 
-        _moveCompleteAction?.Invoke(_currentMove.ToIndex);
+        _moveCompleteAction?.Invoke(rotationMove.ToIndex);
     }
 
-    private IEnumerator MoveSequence()
+    private IEnumerator MoveSequence(VerticesMove verticesMove)
     {
         float lerpParam = 0;
         _segmentMoveJob = new SegmentMoveJob()
         {
             P_ClockMoveBufferLerpValue = CLOCK_MOVE_BUFFER_LERP_VALUE,
-            P_SegmentMoveType = _currentMove.Type,
-            P_VertexPositions = _currentMove.VertexPositions,
+            P_SegmentMoveType = verticesMove.Type,
+            P_VertexPositions = verticesMove.VertexPositions,
             P_VertexCountInOneSegment = Segment.VertexCount,
 
             InputVertices = _vertices,
             OutputVertices = _currentVertices
         };
 
-        if (_currentMove.Type == SegmentMoveType.Down || _currentMove.Type == SegmentMoveType.Up)
-        {
-            _segmentMoveJob.P_VertexPositions = _currentMove.VertexPositions;
-        }
+        _segmentMoveJob.P_VertexPositions = verticesMove.VertexPositions;
 
         while (lerpParam < 1)
         {
@@ -144,7 +136,7 @@ public class SegmentMover : MonoBehaviour
             {
                 _vertices[i] = _currentVertices[i];
             }
-            _moveCompleteAction?.Invoke(_currentMove.ToIndex);
+            _moveCompleteAction?.Invoke(_currentToIndex);
             _wasMoveCompleted = false;
         }
         else if (_wasJobScheduled)

@@ -20,7 +20,7 @@ public struct SegmentVertexPositions
     { 
         _startRay = startRay;
         _data = data;
-        _indicesCount = (segmentResolution + 1) * 3; // the total count is (segRes + 1) * 2
+        _indicesCount = (segmentResolution + 1) * 3;
         Count = (segmentResolution + 1) * 2;
     }
 
@@ -40,7 +40,6 @@ public struct SegmentVertexPositions
         }
         int rayIndex = pointVertexIndex / 2;
         float angle = _data.z * rayIndex;
-        UnityEngine.Debug.Log($"{pointVertexIndex} {rayIndex} {_data.z} {math.degrees(angle)}");
         // float angle = math.lerp(0, _data.z, _data.w * rayIndex);
         quaternion q = quaternion.AxisAngle(math.up(), angle);
         float3 vertexRay = math.rotate(q, _startRay);

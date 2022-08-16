@@ -103,7 +103,10 @@ public class ShuffleState : WheelState
             {
                 int2 fromIndex = new int2(side, ring);
                 int2 toIndex = _shuffleIndices[ring][side];
-                SegmentMove move = new SegmentMove(SegmentMoveType.Clockwise, fromIndex, toIndex);
+                RotationMove rotationMove = new RotationMove();
+                rotationMove.AssignFromIndex(fromIndex);
+                rotationMove.AssignToIndex(toIndex);
+                rotationMove.AssignType(RotationMove.TypeType.Clockwise);
 
                 float rotationAngle = 0;
                 int sideDeltaCW = Mathf.Abs(toIndex.x - fromIndex.x);
@@ -114,6 +117,7 @@ public class ShuffleState : WheelState
                     if (toIndex.x < fromIndex.x)
                     {
                         rotationAngle = -rotationAngle;
+                        rotationMove.AssignType(RotationMove.TypeType.CounterClockwise);
                     }
                 }
                 else
@@ -122,11 +126,12 @@ public class ShuffleState : WheelState
                     if (toIndex.x + _wheel.SideCount < fromIndex.x)
                     {
                         rotationAngle = -rotationAngle;
+                        rotationMove.AssignType(RotationMove.TypeType.CounterClockwise);
                     }
                 }
                 Debug.Log($"rotation angel {rotationAngle}");
-                move.rotation = Quaternion.AngleAxis(rotationAngle, Vector3.up);
-                moves[moveIndex++] = move;
+                rotationMove.AssignRotation(Quaternion.AngleAxis(rotationAngle, Vector3.up));
+                moves[moveIndex++] = rotationMove;
             }
         }
         _wheel.MakeMoveCollection(moves, _shuffleLerpSpeed);
@@ -150,37 +155,8 @@ public class ShuffleState : WheelState
             {
                 log += _shuffleIndices[ring][side];
             }
-            Debug.Log(log);
         }
 
-    }
-
-    private void ShuffleIndexTriangle(int3 indexTriangle)
-    {
-        // int3 element = _shuffleIndices[indexTriangle.x];
-
-    }
-
-    private void ShuffleIncrementally(float lerpSpeed)
-    { 
-        for (int i = 0; i < _currentEmptyIndices.Length; i++)
-        {
-            int2 emptyIndex = _currentEmptyIndices[i];
-
-            List<SegmentMove> possibleMoves = new List<SegmentMove>();
-            _wheel.DeterminePossibleMoves(emptyIndex, possibleMoves);
-            if (possibleMoves.Count == 0)
-            {
-                continue;
-            }
-
-            int rnd = _randomGenerator.NextInt(0, possibleMoves.Count);
-            SegmentMove randomMove = possibleMoves[rnd];
-            _currentEmptyIndices[i] = randomMove.FromIndex;
-
-            _wheel.MakeMove(in randomMove, lerpSpeed);
-            possibleMoves.Clear();
-        }
     }
 
     private void Subscribe()
