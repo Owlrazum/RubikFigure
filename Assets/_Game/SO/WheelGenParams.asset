@@ -15,6 +15,6 @@ MonoBehaviour:
   _height: 1
   _outerRadius: 5
   _innerRadius: 0.6
-  _sideCount: 6
+  _sideCount: 3
   _ringCount: 4
-  _segmentResolution: 5
+  _segmentResolution: 10

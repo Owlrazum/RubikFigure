@@ -20,7 +20,7 @@ public struct SegmentVertexPositions
     { 
         _startRay = startRay;
         _data = data;
-        _indicesCount = (segmentResolution + 1) * 3;
+        _indicesCount = (segmentResolution) * 4;
         Count = (segmentResolution + 1) * 2;
     }
 
