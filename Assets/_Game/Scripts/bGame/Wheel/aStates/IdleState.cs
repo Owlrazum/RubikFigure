@@ -36,6 +36,7 @@ public class IdleState : WheelState
         Assert.IsTrue(isFound);
         if (segmentPoint.Segment == null)
         {
+            Debug.LogWarning("No segment located here");
             return;
         }
 

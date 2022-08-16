@@ -23,14 +23,14 @@ public class SegmentPoint : MonoBehaviour
 
     public Segment Segment { get; set; }
     public int2 Index { get; private set; }
-    public void InitializeAfterMeshesGenerated(Segment segment, int2 index)
+    public void InitializeAfterMeshesGenerated(Mesh mesh, Segment segment, int2 index)
     {
         Assert.IsNotNull(segment.MeshContainer.mesh);
         Segment = segment;
         Index = index;
 
-        _meshFilter.mesh = Instantiate(Segment.MeshContainer.mesh);
-        _meshCollider.sharedMesh = Instantiate(Segment.MeshContainer.mesh);
+        _meshFilter.mesh = mesh;
+        _meshCollider.sharedMesh = mesh;
         _meshCollider.isTrigger = true;
 
         _meshRenderer.sharedMaterial = _emptyMaterial;

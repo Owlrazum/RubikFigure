@@ -4,6 +4,7 @@ using Unity.Mathematics;
 using UnityEngine;
 
 using Orazum.Collections;
+using static Orazum.Math.MathUtilities;
 
 using rnd = Unity.Mathematics.Random;
 
@@ -103,6 +104,28 @@ public class ShuffleState : WheelState
                 int2 fromIndex = new int2(side, ring);
                 int2 toIndex = _shuffleIndices[ring][side];
                 SegmentMove move = new SegmentMove(SegmentMoveType.Clockwise, fromIndex, toIndex);
+
+                float rotationAngle = 0;
+                int sideDeltaCW = Mathf.Abs(toIndex.x - fromIndex.x);
+                int sideDeltaCCW = Mathf.Abs(toIndex.x + _wheel.SideCount - fromIndex.x);
+                if (sideDeltaCW < sideDeltaCCW)
+                { 
+                    rotationAngle = sideDeltaCW * TAU / _wheel.SideCount * Mathf.Rad2Deg;
+                    if (toIndex.x < fromIndex.x)
+                    {
+                        rotationAngle = -rotationAngle;
+                    }
+                }
+                else
+                { 
+                    rotationAngle = sideDeltaCCW * TAU / _wheel.SideCount * Mathf.Rad2Deg;
+                    if (toIndex.x + _wheel.SideCount < fromIndex.x)
+                    {
+                        rotationAngle = -rotationAngle;
+                    }
+                }
+                Debug.Log($"rotation angel {rotationAngle}");
+                move.rotation = Quaternion.AngleAxis(rotationAngle, Vector3.up);
                 moves[moveIndex++] = move;
             }
         }

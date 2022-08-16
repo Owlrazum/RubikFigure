@@ -7,7 +7,6 @@ using Unity.Collections;
 
 using UnityEngine;
 using UnityEngine.Rendering;
-using UnityEngine.Assertions;
 
 using Orazum.Collections;
 using static Orazum.Math.MathUtilities;
@@ -31,7 +30,7 @@ public class SegmentMover : MonoBehaviour
     private JobHandle _segmentMoveJobHandle;
 
     private NativeArray<VertexData> _currentVertices;
-    private float _currentSpeed;
+    private float _currentLerpSpeed;
     private SegmentMove _currentMove;
 
     private bool _wasJobScheduled;
@@ -54,37 +53,48 @@ public class SegmentMover : MonoBehaviour
 
     public void StartMove(
         SegmentMove move,
-        float speed,
+        float _lerpSpeed,
         Action<int2> OnMoveToDestinationCompleted)
     {
         _currentMove = move;
-        _currentSpeed = speed;
+        _currentLerpSpeed = _lerpSpeed;
         _wasMoveCompleted = false;
         _moveCompleteAction = OnMoveToDestinationCompleted;
 
         switch (_currentMove.Type)
         { 
-            case SegmentMoveType.Down:
-            case SegmentMoveType.Up:
-                StartCoroutine(MoveSequence());
-                break;
             case SegmentMoveType.Clockwise:
             case SegmentMoveType.CounterClockwise:
                 StartCoroutine(RotateSequence());
+                break;
+            case SegmentMoveType.Down:
+            case SegmentMoveType.Up:
+                StartCoroutine(MoveSequence());
                 break;
         }
     }
 
     private IEnumerator RotateSequence()
     {
-        yield break;
-        // float lerpParam = 0;
-        // float angleDelta = _currentMove.MoveType;
-        // while (lerpParam < 1)
-        // {
-        //     transform.localRotation = Quaternion.AngleAxis(Vector3.up, _currentAngle);
-        //     yield return null;
-        // }
+        float lerpParam = 0;
+        Quaternion initialRotation = transform.localRotation;
+        print($"move rotation {_currentMove.rotation.eulerAngles}");
+        Quaternion targetRotation = initialRotation * _currentMove.rotation;
+        while (lerpParam < 1)
+        {
+            lerpParam += _currentLerpSpeed * Time.deltaTime;
+            if (lerpParam > 1)
+            {
+                lerpParam = 1;
+            }
+            transform.localRotation = Quaternion.Slerp(initialRotation, targetRotation, EaseInOut(lerpParam));
+            yield return null;
+        }
+
+        transform.localRotation = targetRotation;
+        print($"{targetRotation.eulerAngles}");
+
+        _moveCompleteAction?.Invoke(_currentMove.ToIndex);
     }
 
     private IEnumerator MoveSequence()
@@ -108,7 +118,7 @@ public class SegmentMover : MonoBehaviour
 
         while (lerpParam < 1)
         {
-            lerpParam += _currentSpeed * Time.deltaTime;
+            lerpParam += _currentLerpSpeed * Time.deltaTime;
             if (lerpParam > 1)
             {
                 lerpParam = 1;
@@ -146,37 +156,13 @@ public class SegmentMover : MonoBehaviour
         }
     }
 
-    public void TeleportTo(SegmentPoint destination)
-    {
-        VertexData data;
-        for (int corner = 0; corner < 8; corner++)
-        {
-            int3 meshCorner = WheelLookUpTable.GetCornerIndices(corner);
-            float3 cornerPos = float3.zero;//destination.CornerPositions.GetCornerPosition(corner);
-
-            data = _vertices[meshCorner.x];
-            data.position = cornerPos;
-            _vertices[meshCorner.x] = data;
-
-            data = _vertices[meshCorner.y];
-            data.position = cornerPos;
-            _vertices[meshCorner.y] = data;
-
-            data = _vertices[meshCorner.z];
-            data.position = cornerPos;
-            _vertices[meshCorner.z] = data;
-        }
-
-        AssignVertices(_vertices);
-    }
-
     private void AssignVertices(NativeArray<VertexData> toAssign)
     {
         Mesh newMesh = _meshFilter.mesh;
-        // newMesh.SetVertexBufferData(toAssign, 0, 0,
-        //     VERTEX_COUNT, 0,
-        //     MESH_UPDATE_FLAGS
-        // );
+        newMesh.SetVertexBufferData(toAssign, 0, 0,
+            Segment.VertexCount, 0,
+            MESH_UPDATE_FLAGS
+        );
 
         newMesh.RecalculateNormals();
         _meshFilter.mesh = newMesh;

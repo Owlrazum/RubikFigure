@@ -14,7 +14,6 @@ public class SegmentRenderer : MonoBehaviour
     private void Awake()
     {
         TryGetComponent(out _meshRenderer);
-
         _meshRenderer.material = _defaultMaterial;
     }
 

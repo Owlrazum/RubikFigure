@@ -1,5 +1,6 @@
 using System;
 using Unity.Mathematics;
+using UnityEngine;
 using UnityEngine.Assertions;
 
 public enum SegmentMoveType
@@ -15,7 +16,7 @@ public class SegmentMove
     public SegmentMoveType Type { get; set; }
     public int2 FromIndex { get; set; }
     public int2 ToIndex { get; set; }
-    private SegmentPoint _target;
+    public Quaternion rotation { get; set; }
 
     public SegmentMove(SegmentMoveType typeArg, int2 fromIndexArg, int2 toIndexArg)
     {

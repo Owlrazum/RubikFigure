@@ -14,6 +14,8 @@ namespace Orazum.Utilities.ConstContainers
             }
         }
 
+        public const int WHEEL_LAYER = 6;
+
         public const int SEGMENT_POINTS_LAYER = 7;
         public const int SEGMENT_POINTS_LAYER_MASK = 1 << SEGMENT_POINTS_LAYER;
     }

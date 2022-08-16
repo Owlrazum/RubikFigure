@@ -45,13 +45,21 @@ public class MoveState : WheelState
         Vector3 worldDir = (worldEndPos - worldStartPos).normalized;
 
         SegmentMoveType moveType = DetermineMoveType(center, worldStartPos, worldDir);
-        Debug.Log(moveType);
         _moveToMake.FromIndex = _currentSelectedPoint.Index;
         _moveToMake.Type = moveType;
         if (_wheel.IsMovePossible(_moveToMake, out int2 toIndex))
         {
             _segmentToMove = _currentSelectedPoint.Segment;
             _moveToMake.ToIndex = toIndex;
+            if (moveType == SegmentMoveType.CounterClockwise || moveType == SegmentMoveType.Clockwise)
+            {
+                float rotationAngle = TAU / _wheel.SideCount * Mathf.Rad2Deg;
+                if (moveType == SegmentMoveType.CounterClockwise)
+                {
+                    rotationAngle = -rotationAngle;
+                }
+                _moveToMake.rotation = Quaternion.AngleAxis(rotationAngle, Vector3.up);
+            }
             _wheel.MakeMove(in _moveToMake, _moveLerpSpeed, OnCurrentMoveCompleted);
         }
         else

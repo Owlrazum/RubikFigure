@@ -27,6 +27,11 @@ public struct VertexData
                 stream : 0)
     };
 
+    public static readonly VertexAttributeDescriptor[] PositionBufferMemoryLayout =
+    {
+        new VertexAttributeDescriptor(VertexAttribute.Position, stream: 0)
+    };
+
     public override string ToString()
     {
         return position.ToString();

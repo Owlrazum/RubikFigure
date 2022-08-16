@@ -10,7 +10,6 @@ using UnityEngine;
 [BurstCompile]
 public struct WheelGenJob : IJob
 {
-    public float P_WheelHeight;
     public float P_OuterCircleRadius;
     public float P_InnerCircleRadius;
     public int P_SideCount;
@@ -78,6 +77,9 @@ public struct WheelGenJob : IJob
                 {
                     positionsData.x = _currentRadius;
                     positionsData.y = _nextRadius;
+                    positionsData.z = _angleResolutionDelta;
+                    // positionsData.w = 1.0f / (P_SegmentResolution);
+
                     OutputSegmentsVertexPositions[ring] = new SegmentVertexPositions(_startRay, positionsData, P_SegmentResolution);
                 } 
                 _currentRadius = _nextRadius;

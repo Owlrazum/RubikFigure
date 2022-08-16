@@ -76,6 +76,7 @@ public class WheelCompleter : MonoBehaviour
                     continue;
                 }
 
+                Debug.Log($"{puzzleIndex} vs {segmentPoints[index].Segment.PuzzleIndex}");
                 if (puzzleIndex < 0)
                 {
                     puzzleIndex = segmentPoints[index].Segment.PuzzleIndex;
@@ -110,8 +111,8 @@ public class WheelCompleter : MonoBehaviour
                 int2 segmentPointIndex = teleportLocationIndices[i];
                 SegmentPoint destination = _currentWheel.GetSegmentPointForTeleport(segmentPointIndex);
                 print(toTeleportSegments[i] != null);
-                toTeleportSegments[i].TeleportTo(destination);
-                toTeleportSegments[i].Appear();
+                // toTeleportSegments[i].TeleportTo(destination);
+                // toTeleportSegments[i].Appear();
             }
         }
 

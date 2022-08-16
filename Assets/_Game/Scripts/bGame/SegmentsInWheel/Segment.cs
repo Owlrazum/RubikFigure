@@ -47,11 +47,6 @@ public class Segment : MonoBehaviour
         _segmentMover.StartMove(move, lerpSpeed, OnMoveToDestinationCompleted);
     }
 
-    public void TeleportTo(SegmentPoint destination)
-    {
-        _segmentMover.TeleportTo(destination);
-    }
-
     public void HighlightRender()
     {
         _segmentRenderer.Highlight();
