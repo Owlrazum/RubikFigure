@@ -12,8 +12,8 @@ public class VerticesMove : SegmentMove
         Type = type;
     }
 
-    public SegmentVertexPositions VertexPositions { get; private set; }
-    public void AssignVertexPositions(SegmentVertexPositions segmentVertexPositions)
+    public SegmentMesh VertexPositions { get; private set; }
+    public void AssignVertexPositions(SegmentMesh segmentVertexPositions)
     {
         VertexPositions = segmentVertexPositions;
     }

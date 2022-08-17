@@ -115,7 +115,7 @@ public class SegmentMover : MonoBehaviour
         }
     }
 
-    private void TeleportVertices(SegmentVertexPositions vertexPositions)
+    private void TeleportVertices(SegmentMesh vertexPositions)
     { 
         VertexData data;
 

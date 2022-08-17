@@ -1,7 +1,7 @@
 public abstract class WheelState
 {
     protected Wheel _wheel;
-    public WheelState(LevelDescriptionSO levelDescription, Wheel wheelArg)
+    public WheelState(FigureParamsSO figureParams, Wheel wheelArg)
     {
         _wheel = wheelArg;
     }

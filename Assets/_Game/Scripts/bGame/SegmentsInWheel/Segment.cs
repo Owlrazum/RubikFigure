@@ -33,10 +33,10 @@ public class Segment : MonoBehaviour
         TryGetComponent(out _segmentRenderer);
     }
 
-    public void Initialize(NativeArray<VertexData> verticesArg, int puzzleColorIndexArg)
+    public void Initialize(NativeArray<VertexData> verticesArg, int puzzleIndexArg)
     { 
         _segmentMover.Initialize(verticesArg);
-        _puzzleIndex = puzzleColorIndexArg;
+        _puzzleIndex = puzzleIndexArg;
     }
 
     public void StartMove(

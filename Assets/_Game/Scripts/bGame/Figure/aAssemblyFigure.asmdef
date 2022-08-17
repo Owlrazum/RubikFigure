@@ -1,10 +1,11 @@
 {
-    "name": "Game",
+    "name": "aAssemblyFigure",
     "rootNamespace": "",
     "references": [
-        "GUID:78c4c26ee56af4ebf9c230bddfebb69b",
-        "GUID:43a2148cc6fb144658f76e1b92ef3bdd",
-        "GUID:cda7be8dc7c07426a98cab7ae784b071"
+        "GUID:4c7e3e4ed962149f399567723a54abfc",
+        "GUID:b556b07a0f21145aca381d4ae36ffb7e",
+        "GUID:c9baafb1b2dee4869908eae54e7884d6",
+        "GUID:d8b63aba1907145bea998dd612889d6b"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

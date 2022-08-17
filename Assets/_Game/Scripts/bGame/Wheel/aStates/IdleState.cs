@@ -6,7 +6,7 @@ public class IdleState : WheelState
     private SwipeCommand _currentSwipeCommand;
     private SegmentPoint _currentSelectedPoint;
 
-    public IdleState(LevelDescriptionSO levelDescription, Wheel wheelArg) : base(levelDescription, wheelArg)
+    public IdleState(FigureParamsSO figureParams, Wheel wheelArg) : base(figureParams, wheelArg)
     {
         WheelDelegates.IdleState += GetThisState;
     }

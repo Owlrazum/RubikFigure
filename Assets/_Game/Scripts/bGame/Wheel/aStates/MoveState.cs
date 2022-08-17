@@ -15,9 +15,9 @@ public class MoveState : WheelState
     private float _moveLerpSpeed;
     private bool _isMoving;
 
-    public MoveState(LevelDescriptionSO levelDescription, Wheel wheelArg) : base(levelDescription, wheelArg)
+    public MoveState(FigureParamsSO figureParams, Wheel wheelArg) : base(figureParams, wheelArg)
     { 
-        _moveLerpSpeed = levelDescription.MoveLerpSpeed;
+        _moveLerpSpeed = figureParams.MoveLerpSpeed;
         _verticesMove = new VerticesMove();
         _rotationMove = new RotationMove();
 
@@ -35,7 +35,7 @@ public class MoveState : WheelState
         Assert.IsNotNull(_currentSwipeCommand);
         Assert.IsNotNull(_currentSelectedPoint.Segment);
 
-        Camera renderingCamera = GameDelegatesContainer.GetRenderingCamera();
+        Camera renderingCamera = InputDelegatesContainer.GetRenderingCamera();
         Vector3 center = _wheel.transform.position;
         float planeDistance = (center - renderingCamera.transform.position).magnitude;
         Vector3 viewStartPos = new Vector3(_currentSwipeCommand.ViewStartPos.x,

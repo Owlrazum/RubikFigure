@@ -8,13 +8,13 @@ using static Orazum.Math.MathUtilities;
 // [BurstCompile]
 public struct SegmentPointMeshGenJob : IJob
 {
-    private const float HEIGHT = 1;
-
-    public float P_OuterCircleRadius;
-    public float P_InnerCircleRadius;
     public int P_SideCount;
     public int P_RingCount;
     public int P_SegmentResolution;
+    
+    public float P_InnerCircleRadius;
+    public float P_OuterCircleRadius;
+    public float P_Height;
     
     [WriteOnly]
     public NativeArray<float3> OutputVertices;
@@ -66,7 +66,7 @@ public struct SegmentPointMeshGenJob : IJob
             math.rotate(q, _startRay)
         );
 
-        float3 h = math.up() * HEIGHT;
+        float3 h = math.up() * P_Height;
 
         float3x4 leftQuad = new float3x4(
             rays[0] * radii.y,

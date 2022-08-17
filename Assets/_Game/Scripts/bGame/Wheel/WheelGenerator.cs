@@ -9,114 +9,115 @@ using Unity.Mathematics;
 using Orazum.Collections;
 using Orazum.Utilities.ConstContainers;
 
-public class WheelGenerationData
-{
-    public LevelDescriptionSO LevelDescription { get; set; }
-    public int2[] EmtpySegmentPointIndicesForShuffle { get; set; }
-    public SegmentVertexPositions[] SegmentVertexPositions { get; set; }
-
-    public WheelGenerationData(
-        Array2D<SegmentPoint> SegmentPointsArg, 
-        int sideCountArg, 
-        int ringCount)
-    {
-        SegmentPoints = SegmentPointsArg;
-        SideCount = sideCountArg;
-        RingCount = ringCount;
-    }
-
-    public Array2D<SegmentPoint> SegmentPoints { get; private set; }
-    public int SideCount { get; private set; }
-    public int RingCount { get; private set; }
-}
-
-public class WheelGenerator : MonoBehaviour
+public class WheelGenerator : FigureGenerator
 {
     [SerializeField]
-    private LevelDescriptionSO _levelDescription;
-
+    private FigureParamsSO _figureParams; 
     private WheelGenJob _wheelMeshGenJob;
-    private JobHandle _wheelMeshGenJobHandle;
-
-    private NativeArray<VertexData> _vertices;
-    private NativeArray<short> _indices;
-
-    private NativeArray<SegmentVertexPositions> _segmentVertexPositions;
-
     private SegmentPointMeshGenJob _segmentPointMeshGenJob;
-    private JobHandle _segmentPointMeshGenJobHandle;
 
-    private NativeArray<float3> _segmentPointVertices;
-    private NativeArray<short> _segmentPointIndices;
+    private NativeArray<SegmentMesh> _segmentMeshes;
 
     private int _sideCount;
     private int _ringCount;
-    private int _resolution;
+    private int _segmentResolution;
 
-    private int _vertexCount;
-    private int _indexCount;
+    private int _segmentCount;
 
-    private int _vertexCountSegmentPoints;
-    private int _indexCountSegmentPoints;
+    private BuffersData _segmentBuffersData;
+    private BuffersData _segmentPointBuffersData;
+
+    private float _innerRadius;
+    private float _outerRadius;
+
+    private GameObject _segmentPrefab;
+    private GameObject _segmentPointPrefab;
 
     private Wheel _wheel;
-    private WheelStatesController _wheelController;
+    private WheelStatesController _wheelStatesController;
     private Array2D<Segment> _segments;
     private Array2D<SegmentPoint> _segmentPoints;
 
-
     private void Awake()
     {
-        _sideCount = _levelDescription.GenerationParams.SideCount;
-        _ringCount = _levelDescription.GenerationParams.RingCount;
-        _resolution = _levelDescription.GenerationParams.SegmentResolution;
-        int segmentCount = _sideCount * _ringCount;
+        StartGeneration(_figureParams.FigureGenParamsSO);
+    }
 
-        _vertexCount = 4 * _resolution;
-        _indexCount = 6 * _resolution;
+    private void Start()
+    {
+        FinishGeneration(_figureParams);
+    }
 
-        Segment.InitializeVertexCount(_vertexCount);
+    protected override void InitializeParameters(FigureGenParamsSO figureGenParams)
+    {
+        WheelGenParamsSO generationParams =  figureGenParams as WheelGenParamsSO;
+        _sideCount = generationParams.SideCount;
+        _ringCount = generationParams.RingCount;
+        _segmentResolution = generationParams.SegmentResolution;
+        
+        _segmentCount = _sideCount * _ringCount;
+        
+        _segmentBuffersData = new BuffersData();
+        _segmentBuffersData.SetVertexCount( 4 * _segmentResolution);
+        _segmentBuffersData.SetIndexCount(6 * _segmentResolution);
+        Segment.InitializeVertexCount(_segmentBuffersData.Count.x);
 
-        _vertices = new NativeArray<VertexData>(_vertexCount * segmentCount, Allocator.Persistent);
-        _indices = new NativeArray<short>(_indexCount * segmentCount, Allocator.TempJob);
-        _segmentVertexPositions = new NativeArray<SegmentVertexPositions>(_ringCount, Allocator.TempJob);
+        _segmentPointBuffersData = new BuffersData();
+        _segmentPointBuffersData.SetVertexCount(_segmentBuffersData.Count.x * 4 + 8);
+        _segmentPointBuffersData.SetIndexCount(_segmentBuffersData.Count.y * 4 + 12);
+
+        _innerRadius = generationParams.InnerRadius;
+        _outerRadius = generationParams.OuterRadius;
+
+        _segmentPointHeight = generationParams.Height;
+
+        _segmentPrefab = generationParams.SegmentPrefab;
+        _segmentPointPrefab = generationParams.SegmentPointPrefab;
+    }
+
+    protected override void StartMeshGeneration()
+    {
+        _figureVertices = new NativeArray<VertexData>(_segmentBuffersData.Count.x * _segmentCount, Allocator.Persistent);
+        _figureIndices = new NativeArray<short>(_segmentBuffersData.Count.y * _segmentCount, Allocator.TempJob);
+        _segmentMeshes = new NativeArray<SegmentMesh>(_ringCount, Allocator.TempJob);
 
         _wheelMeshGenJob = new WheelGenJob()
         {
-            P_OuterCircleRadius = _levelDescription.GenerationParams.OuterRadius,
-            P_InnerCircleRadius = _levelDescription.GenerationParams.InnerRadius,
             P_SideCount = _sideCount,
             P_RingCount = _ringCount,
-            P_SegmentResolution = _levelDescription.GenerationParams.SegmentResolution,
+            P_SegmentResolution = _segmentResolution,
+            P_InnerCircleRadius = _innerRadius,
+            P_OuterCircleRadius = _outerRadius,
 
-            OutputVertices = _vertices,
-            OutputIndices = _indices,
+            OutputVertices = _figureVertices,
+            OutputIndices = _figureIndices,
 
-            OutputSegmentsVertexPositions = _segmentVertexPositions
+            OutputSegmentMeshes = _segmentMeshes
         };
-        _wheelMeshGenJobHandle = _wheelMeshGenJob.Schedule();
+        _figureMeshGenJobHandle = _wheelMeshGenJob.Schedule();
 
-        _vertexCountSegmentPoints = (_vertexCount * 4 + 8) * _ringCount;
-        _indexCountSegmentPoints = (_indexCount * 4 + 12) * _ringCount;
-
-        _segmentPointVertices = new NativeArray<float3>(_vertexCountSegmentPoints, Allocator.TempJob);
-        _segmentPointIndices = new NativeArray<short>(_indexCountSegmentPoints, Allocator.TempJob);
+        _segmentPointsVertices = new NativeArray<float3>(_segmentPointBuffersData.Count.x * _ringCount, Allocator.TempJob);
+        _segmentPointsIndices = new NativeArray<short>(_segmentPointBuffersData.Count.y * _ringCount, Allocator.TempJob);
 
         _segmentPointMeshGenJob = new SegmentPointMeshGenJob()
         {
-            P_OuterCircleRadius = _levelDescription.GenerationParams.OuterRadius,
-            P_InnerCircleRadius = _levelDescription.GenerationParams.InnerRadius,
             P_SideCount = _sideCount,
             P_RingCount = _ringCount,
-            P_SegmentResolution = _levelDescription.GenerationParams.SegmentResolution,
+            P_SegmentResolution = _segmentResolution,
+            P_InnerCircleRadius = _innerRadius,
+            P_OuterCircleRadius = _outerRadius,
+            P_Height = _segmentPointHeight,
 
-            OutputVertices = _segmentPointVertices,
-            OutputIndices = _segmentPointIndices
+            OutputVertices = _segmentPointsVertices,
+            OutputIndices = _segmentPointsIndices
         };
-        _segmentPointMeshGenJobHandle = _segmentPointMeshGenJob.Schedule();
+        _segmentPointsMeshGenJobHandle = _segmentPointMeshGenJob.Schedule();
 
         JobHandle.ScheduleBatchedJobs();
+    }
 
+    protected override void GenerateFigureGameObject()
+    {
         GameObject wheelGb = new GameObject("Wheel", typeof(Wheel), typeof(WheelStatesController));
         wheelGb.layer = LayerUtilities.WHEEL_LAYER;
         Transform parentWheel = wheelGb.transform;
@@ -138,13 +139,13 @@ public class WheelGenerator : MonoBehaviour
         {
             for (int side = 0; side < _sideCount; side++)
             {
-                GameObject segmentGb = Instantiate(_levelDescription.SegmentPrefab);
+                GameObject segmentGb = Instantiate(_segmentPrefab);
                 segmentGb.transform.parent = segmentsParent;
                 Segment segment = segmentGb.GetComponent<Segment>();
                 Assert.IsNotNull(segment);
                 _segments[side, ring] = segment;
 
-                GameObject segmentPointGb = Instantiate(_levelDescription.SegmentPointPrefab);
+                GameObject segmentPointGb = Instantiate(_segmentPointPrefab);
                 segmentPointGb.layer = LayerUtilities.SEGMENT_POINTS_LAYER;
                 segmentPointGb.name = "Point[" + side + "," + ring + "]";
                 segmentPointGb.transform.parent = segmentPointsParent;
@@ -155,118 +156,72 @@ public class WheelGenerator : MonoBehaviour
         }
 
         _wheel = wheelGb.GetComponent<Wheel>();
-        _wheelController = _wheel.GetComponent<WheelStatesController>();
+        _wheelStatesController = _wheel.GetComponent<WheelStatesController>();
     }
 
-    private void Start()
+    public override Figure FinishGeneration(FigureParamsSO figureParams)
     {
-        _wheelMeshGenJobHandle.Complete();
-        _segmentPointMeshGenJobHandle.Complete();
+        _figureMeshGenJobHandle.Complete();
+        _segmentPointsMeshGenJobHandle.Complete();
 
         Mesh[] segmentPointMeshes = CreateSegmentPointMeshes();
 
-        int vertexBufferStart = 0;
-        int indexBufferStart = 0;
+        _segmentBuffersData.ResetVertexStart();
+        _segmentBuffersData.ResetIndexStart();
 
         for (int side = 0; side < _sideCount; side++)
         {
             for (int ring = 0; ring < _ringCount; ring++)
             {
-                InitializeSegmentMeshes(side, ring, vertexBufferStart, indexBufferStart);
+                UpdateSegment(_segments[side, ring], _segmentBuffersData, side);
 
                 SegmentPoint currentPoint = _segmentPoints[side, ring];
                 currentPoint.InitializeAfterMeshesGenerated(segmentPointMeshes[ring], _segments[side, ring], new int2(side, ring));
 
-                vertexBufferStart += _vertexCount;
-                indexBufferStart += _indexCount;
+                _segmentBuffersData.AddVertexCountToVertexStart();
+                _segmentBuffersData.AddIndexCountToIndexStart();
             }
         }
 
-        WheelGenerationData generationData = new WheelGenerationData(_segmentPoints, _sideCount, _ringCount);
-        generationData.LevelDescription = _levelDescription;
-        generationData.SegmentVertexPositions = _segmentVertexPositions.ToArray();;
-
-        _wheel.GenerationInitialization(generationData);
-        _wheelController.GenerationInitialization(_wheel, generationData);
-
-        _vertices.Dispose();
-        _indices.Dispose();
-        _segmentVertexPositions.Dispose();
-        _segmentPointVertices.Dispose();
-        _segmentPointIndices.Dispose();
-    }
-
-    private void InitializeSegmentMeshes(int side, int ring, int vertexBufferStart, int indexBufferStart)
-    {
-        Segment currentSegment = _segments[side, ring];
-        Mesh newMesh = currentSegment.MeshContainer.mesh;
-        newMesh.MarkDynamic();
-
-        newMesh.SetVertexBufferParams(_vertexCount, VertexData.VertexBufferMemoryLayout);
-        newMesh.SetIndexBufferParams(_indexCount, IndexFormat.UInt16);
-
-        newMesh.SetVertexBufferData(_vertices, vertexBufferStart, 0, _vertexCount, 0, SegmentMover.MESH_UPDATE_FLAGS);
-        newMesh.SetIndexBufferData(_indices, indexBufferStart, 0, _indexCount, SegmentMover.MESH_UPDATE_FLAGS);
-
-        newMesh.subMeshCount = 1;
-        SubMeshDescriptor subMesh = new SubMeshDescriptor(
-            indexStart: 0,
-            indexCount: _indexCount
+        _wheel.Initialize(
+            _segmentPoints, 
+            _segmentMeshes.ToArray(), 
+            _wheelStatesController,
+            figureParams    
         );
-        newMesh.SetSubMesh(0, subMesh);
 
-        newMesh.RecalculateBounds();
+        _figureVertices.Dispose();
+        _figureIndices.Dispose();
+        _segmentMeshes.Dispose();
 
-        currentSegment.MeshContainer.mesh = newMesh;
+        _segmentPointsVertices.Dispose();
+        _segmentPointsIndices.Dispose();
 
-        NativeArray<VertexData> segmentVertices = CollectionUtilities.GetSlice(
-            _vertices, vertexBufferStart, _vertexCount);
-        currentSegment.Initialize(segmentVertices, side);
+        return _wheel;
     }
 
     private Mesh[] CreateSegmentPointMeshes()
     {
         Mesh[] meshes = new Mesh[_ringCount];
 
-        int vertexCountPoint = _vertexCountSegmentPoints / _ringCount;
-        int indexCountPoint = _indexCountSegmentPoints / _ringCount;
-        int vertexBufferStart = 0;
-        int indexBufferStart = 0;
+        _segmentPointBuffersData.ResetVertexStart();
+        _segmentPointBuffersData.ResetIndexStart();
+
         for (int i = 0; i < meshes.Length; i++)
         {
-            Mesh segmentPointMesh = new Mesh();
-            segmentPointMesh.MarkDynamic();
-
-            segmentPointMesh.SetVertexBufferParams(vertexCountPoint, VertexData.PositionBufferMemoryLayout);
-            segmentPointMesh.SetIndexBufferParams(indexCountPoint, IndexFormat.UInt16);
-
-            segmentPointMesh.SetVertexBufferData(_segmentPointVertices, vertexBufferStart, 0, vertexCountPoint, 0, SegmentMover.MESH_UPDATE_FLAGS);
-            segmentPointMesh.SetIndexBufferData(_segmentPointIndices, indexBufferStart, 0, indexCountPoint, SegmentMover.MESH_UPDATE_FLAGS);
-
-            segmentPointMesh.subMeshCount = 1;
-            SubMeshDescriptor subMesh = new SubMeshDescriptor(
-                indexStart: 0,
-                indexCount: indexCountPoint
-            );
-            segmentPointMesh.SetSubMesh(0, subMesh);
-
-            segmentPointMesh.RecalculateBounds();
+            Mesh segmentPointMesh = CreateSegmentPointMesh(_segmentPointBuffersData);
             meshes[i] = segmentPointMesh;
 
-            vertexBufferStart += vertexCountPoint;
-            indexBufferStart += indexCountPoint;
+            _segmentPointBuffersData.AddVertexCountToVertexStart();
+            _segmentPointBuffersData.AddIndexCountToIndexStart();
         }
 
         return meshes;
     }
 
-    private void OnDestroy()
+    protected override void OnDestroy()
     {
-        CollectionUtilities.DisposeIfNeeded(_vertices);
-        CollectionUtilities.DisposeIfNeeded(_indices);
-        CollectionUtilities.DisposeIfNeeded(_segmentVertexPositions);
-
-        CollectionUtilities.DisposeIfNeeded(_segmentPointVertices);
-        CollectionUtilities.DisposeIfNeeded(_segmentPointIndices);
+        base.OnDestroy();
+        CollectionUtilities.DisposeIfNeeded(_segmentMeshes);
     }
 }

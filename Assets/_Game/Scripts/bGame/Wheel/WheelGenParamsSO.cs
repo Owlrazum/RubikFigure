@@ -1,12 +1,8 @@
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "WheelGenParams", menuName = "Game/WheelGenParams", order = 1)]
-public class WheelGenParamsSO : ScriptableObject
+public class WheelGenParamsSO : FigureGenParamsSO
 {
-    [SerializeField]
-    private float _height;
-    public float Height { get { return _height; } }
-
     [SerializeField]
     private float _outerRadius;
     public float OuterRadius { get { return _outerRadius; } }

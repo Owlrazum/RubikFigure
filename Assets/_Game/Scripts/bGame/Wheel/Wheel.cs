@@ -9,7 +9,7 @@ using UnityEngine.Assertions;
 using Orazum.Collections;
 using static Orazum.Math.MathUtilities;
 
-public class Wheel : MonoBehaviour
+public class Wheel : Figure
 {
     private int _sideCount;
     private int _ringCount;
@@ -18,7 +18,7 @@ public class Wheel : MonoBehaviour
     public int RingCount { get { return _ringCount; } }
 
     private Array2D<SegmentPoint> _segmentPoints;
-    private SegmentVertexPositions[] _segmentVertexPositions;
+    private SegmentMesh[] _segmentMeshes;
 
     private Vector3 _startTeleportPosition;
 
@@ -35,28 +35,34 @@ public class Wheel : MonoBehaviour
         return this;
     }
 
-    public void GenerationInitialization(WheelGenerationData generationData)
+    public void Initialize(
+        Array2D<SegmentPoint> segmentPoints, 
+        SegmentMesh[] segmentMeshes, 
+        WheelStatesController statesController,
+        FigureParamsSO figureParams
+    )
     {
-        _ringCount = generationData.RingCount;
-        _sideCount = generationData.SideCount;
-        _segmentPoints = generationData.SegmentPoints;
-        _segmentVertexPositions = generationData.SegmentVertexPositions;
+        _segmentPoints = segmentPoints;
 
-        _startTeleportPosition = generationData.LevelDescription.StartPositionForSegmentsInCompletionPhase;
+        _sideCount = _segmentPoints.ColCount;
+        _ringCount = _segmentPoints.RowCount;
+        _segmentMeshes = segmentMeshes;
+
+        _startTeleportPosition = figureParams.StartPositionForSegmentsInCompletionPhase;
 
         RotateSegmentOnGeneration();
 
         int2[] emptySegmentPointIndices = null;
 
-        if (generationData.LevelDescription.ShouldUsePredefinedEmptyPlaces)
+        if (figureParams.ShouldUsePredefinedEmptyPlaces)
         {
-            emptySegmentPointIndices = new int2[generationData.LevelDescription.PredefinedEmptyPlaces.Length];
-            generationData.LevelDescription.PredefinedEmptyPlaces.CopyTo(emptySegmentPointIndices, 0);
+            emptySegmentPointIndices = new int2[figureParams.PredefinedEmptyPlaces.Length];
+            figureParams.PredefinedEmptyPlaces.CopyTo(emptySegmentPointIndices, 0);
         }
         else
         {
             emptySegmentPointIndices =
-                GenerateRandomEmptyPoints(generationData.LevelDescription.EmptyPlacesCount);
+                GenerateRandomEmptyPoints(figureParams.EmptyPlacesCount);
         }
 
         Segment[] emptySegments = new Segment[emptySegmentPointIndices.Length];
@@ -69,7 +75,7 @@ public class Wheel : MonoBehaviour
         }
         WheelDelegates.EventSegmentsWereEmptied?.Invoke(emptySegments);
 
-        generationData.EmtpySegmentPointIndicesForShuffle = emptySegmentPointIndices;
+        statesController.Initialize(this, figureParams, emptySegmentPointIndices);
     }
     private void RotateSegmentOnGeneration()
     {
@@ -218,9 +224,9 @@ public class Wheel : MonoBehaviour
             );
         }
     }
-    private SegmentVertexPositions GetVertexPositions(int2 index)
+    private SegmentMesh GetVertexPositions(int2 index)
     {
-        return _segmentVertexPositions[index.y];
+        return _segmentMeshes[index.y];
     }
 
     public Array2D<SegmentPoint> GetSegmentPointsForCompletionCheck()

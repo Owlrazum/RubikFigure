@@ -15,7 +15,7 @@ public class SegmentPointVertexPositionsTests
     private void TestIndices(int resolution)
     { 
         float4 mockData = new float4(1, 2, TAU / 3, 1 / resolution);
-        SegmentVertexPositions mock = new SegmentVertexPositions(new float3(0, 0, 1), mockData, resolution);
+        SegmentMesh mock = new SegmentMesh(new float3(0, 0, 1), mockData, resolution);
 
         for (int i = 0; i < (resolution + 1) * 2; i += 2)
         {

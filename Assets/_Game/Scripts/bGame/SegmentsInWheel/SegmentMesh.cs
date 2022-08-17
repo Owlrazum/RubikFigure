@@ -5,7 +5,7 @@ using Unity.Mathematics;
 /// while this struct uses indexing based on rays:
 /// inner outer, shift angle, inner outer, shift angle, inner outer ...
 /// </summary>
-public struct SegmentVertexPositions
+public struct SegmentMesh
 {
     private float3 _startRay;
     private float4 _data;
@@ -16,7 +16,7 @@ public struct SegmentVertexPositions
     /// <summary>
     /// data: xy:inner outer radiuses, z:finalAngle, w:lerpDeltaRelativeToResolution
     /// </summary>
-    public SegmentVertexPositions(float3 startRay, float4 data, int segmentResolution)
+    public SegmentMesh(float3 startRay, float4 data, int segmentResolution)
     { 
         _startRay = startRay;
         _data = data;

@@ -20,8 +20,8 @@ public class TeleportMove : SegmentMove
         StartTeleportPosition = teleportPosition;
     }
 
-    public SegmentVertexPositions VertexPositions { get; private set; }
-    public void AssignVertexPositions(SegmentVertexPositions vertexPositions)
+    public SegmentMesh VertexPositions { get; private set; }
+    public void AssignVertexPositions(SegmentMesh vertexPositions)
     {
         VertexPositions = vertexPositions;
     }

@@ -1,5 +1,7 @@
 using System.Collections;
 
+using Unity.Mathematics;
+
 using UnityEngine;
 
 public class WheelStatesController : MonoBehaviour
@@ -7,14 +9,14 @@ public class WheelStatesController : MonoBehaviour
     private WheelState _currentState;
     private Wheel _wheel;
 
-    public void GenerationInitialization(Wheel wheelArg, WheelGenerationData generationData)
+    public void Initialize(Wheel wheelArg, FigureParamsSO figureParams, int2[] emptyIndices)
     {
         _wheel = wheelArg;
 
-        IdleState idleState = new IdleState(generationData.LevelDescription, _wheel);
-        MoveState moveState = new MoveState(generationData.LevelDescription, _wheel);
-        ShuffleState shuffleState = new ShuffleState(generationData.LevelDescription, _wheel);
-        shuffleState.PrepareForShuffle(generationData.EmtpySegmentPointIndicesForShuffle);
+        IdleState idleState = new IdleState(figureParams, _wheel);
+        MoveState moveState = new MoveState(figureParams, _wheel);
+        ShuffleState shuffleState = new ShuffleState(figureParams, _wheel);
+        shuffleState.PrepareForShuffle(emptyIndices);
 
         _currentState = shuffleState;
         _currentState.OnEnter();

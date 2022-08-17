@@ -130,7 +130,7 @@ public class WheelCompleter : MonoBehaviour
     private IEnumerator CompletionSequence(float beforeRotatePauseTime)
     {
         yield return new WaitForSeconds(beforeRotatePauseTime);
-        GameDelegatesContainer.EventLevelCompleted?.Invoke();
+        FigureDelegatesContainer.FigureCompleted?.Invoke();
         Vector3 rotationEuler = Vector3.zero;
         while (true)
         {

@@ -10,11 +10,12 @@ using UnityEngine;
 [BurstCompile]
 public struct WheelGenJob : IJob
 {
-    public float P_OuterCircleRadius;
-    public float P_InnerCircleRadius;
     public int P_SideCount;
     public int P_RingCount;
     public int P_SegmentResolution;
+    
+    public float P_InnerCircleRadius;
+    public float P_OuterCircleRadius;
 
     [WriteOnly]
     public NativeArray<VertexData> OutputVertices;
@@ -23,7 +24,7 @@ public struct WheelGenJob : IJob
     public NativeArray<short> OutputIndices;
 
     [WriteOnly]
-    public NativeArray<SegmentVertexPositions> OutputSegmentsVertexPositions; // one for each ring
+    public NativeArray<SegmentMesh> OutputSegmentMeshes; // one for each ring
 
     private short _totalVertexCount;
     private short _totalIndexCount;
@@ -80,7 +81,7 @@ public struct WheelGenJob : IJob
                     positionsData.z = _angleResolutionDelta;
                     // positionsData.w = 1.0f / (P_SegmentResolution);
 
-                    OutputSegmentsVertexPositions[ring] = new SegmentVertexPositions(_startRay, positionsData, P_SegmentResolution);
+                    OutputSegmentMeshes[ring] = new SegmentMesh(_startRay, positionsData, P_SegmentResolution);
                 } 
                 _currentRadius = _nextRadius;
                 _nextRadius += radiusDelta;

@@ -27,12 +27,12 @@ public class ShuffleState : WheelState
     private int _currentStep;
     private int2[] _currentEmptyIndices;
 
-    public ShuffleState(LevelDescriptionSO levelDescription, Wheel wheelArg) : base(levelDescription, wheelArg)
+    public ShuffleState(FigureParamsSO figureParams, Wheel wheelArg) : base(figureParams, wheelArg)
     {
-        _shuffleLerpSpeed = levelDescription.ShuffleLerpSpeed;
-        _shufflePauseTime = levelDescription.ShufflePauseTime;
+        _shuffleLerpSpeed = figureParams.ShuffleLerpSpeed;
+        _shufflePauseTime = figureParams.ShufflePauseTime;
 
-        _shuffleStepsAmount = levelDescription.ShuffleStepsAmount;
+        _shuffleStepsAmount = figureParams.ShuffleStepsAmount;
         _fastShuffleTime = 1 / FAST_SPEED + _shufflePauseTime / 10;
         _shuffleTime = 1 / _shuffleLerpSpeed + _shufflePauseTime;
 

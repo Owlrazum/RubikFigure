@@ -2,12 +2,10 @@ using UnityEditor;
 
 namespace Orazum.CustomEditor
 { 
-    [UnityEditor.CustomEditor(typeof(LevelDescriptionSO))]
-    public class LevelDescriptionInspector : Editor
+    [UnityEditor.CustomEditor(typeof(FigureParamsSO))]
+    public class FigureParamsEditor : Editor
     {
         private SerializedProperty _generationParams;
-        private SerializedProperty _segmentPrefab;
-        private SerializedProperty _segmentPointPrefab;
 
         private SerializedProperty _shuffleStepsAmount;
         private SerializedProperty _shufflePauseTime;
@@ -22,9 +20,7 @@ namespace Orazum.CustomEditor
 
         public void OnEnable()
         {
-            _generationParams = serializedObject.FindProperty("GenerationParams");
-            _segmentPrefab = serializedObject.FindProperty("SegmentPrefab");
-            _segmentPointPrefab = serializedObject.FindProperty("SegmentPointPrefab");
+            _generationParams = serializedObject.FindProperty("FigureGenParamsSO");
 
             _shuffleStepsAmount = serializedObject.FindProperty("ShuffleStepsAmount");
             _shufflePauseTime = serializedObject.FindProperty("ShufflePauseTime");
@@ -43,8 +39,6 @@ namespace Orazum.CustomEditor
             serializedObject.Update();
 
             EditorGUILayout.PropertyField(_generationParams);            
-            EditorGUILayout.PropertyField(_segmentPrefab);
-            EditorGUILayout.PropertyField(_segmentPointPrefab);
 
             EditorGUILayout.PropertyField(_shuffleStepsAmount);
             EditorGUILayout.PropertyField(_shufflePauseTime);
