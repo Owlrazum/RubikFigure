@@ -1,6 +1,6 @@
 using Unity.Mathematics;
 
-public class RotationMove : SegmentMove
+public class WheelRotationMove : FigureSegmentMove
 {
     public enum TypeType
     { 

@@ -8,8 +8,8 @@ public static class WheelDelegates
     public static Func<WheelState> ShuffleState;
     public static Func<WheelState> MoveState;
 
-    public static Action<Segment[]> EventSegmentsWereEmptied;
-    public static Func<SegmentPoint[]> GetEmptySegmentPoints;
+    public static Action<WheelSegment[]> EventSegmentsWereEmptied;
+    public static Func<FigureSegmentPoint[]> GetEmptySegmentPoints;
     public static Action ActionCheckWheelCompletion;
 
     public static Action EventWheelWasCompleted;

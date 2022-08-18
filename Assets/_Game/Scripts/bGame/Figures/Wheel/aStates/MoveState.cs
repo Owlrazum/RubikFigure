@@ -9,22 +9,22 @@ using static Orazum.Math.MathUtilities;
 public class MoveState : WheelState
 {
     private SwipeCommand _currentSwipeCommand;
-    private SegmentPoint _currentSelectedPoint;
-    private VerticesMove _verticesMove; // we store it once to avoid gc. SegemntToMove presence determines logic.
-    private RotationMove _rotationMove; // same as above.
+    private FigureSegmentPoint _currentSelectedPoint;
+    private WheelVerticesMove _verticesMove; // we store it once to avoid gc. SegemntToMove presence determines logic.
+    private WheelRotationMove _rotationMove; // same as above.
     private float _moveLerpSpeed;
     private bool _isMoving;
 
     public MoveState(FigureParamsSO figureParams, Wheel wheelArg) : base(figureParams, wheelArg)
     { 
         _moveLerpSpeed = figureParams.MoveLerpSpeed;
-        _verticesMove = new VerticesMove();
-        _rotationMove = new RotationMove();
+        _verticesMove = new WheelVerticesMove();
+        _rotationMove = new WheelRotationMove();
 
         WheelDelegates.MoveState += GetThisState;
     }
 
-    public void PrepareForMove(SwipeCommand swipeCommand, SegmentPoint selectedSegmentPoint)
+    public void PrepareForMove(SwipeCommand swipeCommand, FigureSegmentPoint selectedSegmentPoint)
     {
         _currentSwipeCommand = swipeCommand;
         _currentSelectedPoint = selectedSegmentPoint;
@@ -47,15 +47,15 @@ public class MoveState : WheelState
         Vector3 worldEndPos = renderingCamera.ViewportToWorldPoint(viewEndPos);
         Vector3 worldDir = (worldEndPos - worldStartPos).normalized;
 
-        SegmentMove _moveToMake = DetermineMoveFromInput(center, worldStartPos, worldDir);
+        FigureSegmentMove _moveToMake = DetermineMoveFromInput(center, worldStartPos, worldDir);
         Debug.Log("Make Rotation moves " + _moveToMake);
-        if (_moveToMake is RotationMove rotationMove)
+        if (_moveToMake is WheelRotationMove rotationMove)
         {
             MakeRotationMoves(_currentSelectedPoint.Index.y, rotationMove.Type);
             _isMoving = true;
             return;
         }
-        else if (_moveToMake is VerticesMove verticesMove)
+        else if (_moveToMake is WheelVerticesMove verticesMove)
         {
             _moveToMake.AssignFromIndex(_currentSelectedPoint.Index);
             if (_wheel.IsMovePossibleFromIndex(verticesMove, out int2 toIndex))
@@ -70,7 +70,7 @@ public class MoveState : WheelState
         _isMoving = false;
     }
 
-    private SegmentMove DetermineMoveFromInput(Vector3 circleCenter, Vector3 worldPos, Vector3 worldDir)
+    private FigureSegmentMove DetermineMoveFromInput(Vector3 circleCenter, Vector3 worldPos, Vector3 worldDir)
     {
         Vector3 DirToCenter = (circleCenter - worldPos).normalized;
         float rotateAngleDeg = Mathf.Atan2(DirToCenter.z, DirToCenter.x) * Mathf.Rad2Deg;
@@ -79,47 +79,47 @@ public class MoveState : WheelState
         float swipeAngle = Mathf.Atan2(worldDir.z, worldDir.x);
         if (swipeAngle > -TAU / 12 && swipeAngle < TAU / 12)
         {
-            _verticesMove.AssignType(VerticesMove.TypeType.Down);
+            _verticesMove.AssignType(WheelVerticesMove.TypeType.Down);
             return _verticesMove;
         }
         else if (swipeAngle > TAU / 12 && swipeAngle < 5 * TAU / 12)
         {
-            _rotationMove.AssignType(RotationMove.TypeType.Clockwise);
+            _rotationMove.AssignType(WheelRotationMove.TypeType.Clockwise);
             return _rotationMove;
         }
         else if (swipeAngle > -5 * TAU / 12 && swipeAngle < -TAU / 12)
         {
-            _rotationMove.AssignType(RotationMove.TypeType.CounterClockwise);
+            _rotationMove.AssignType(WheelRotationMove.TypeType.CounterClockwise);
             return _rotationMove;
         }
         else
         {
-            _verticesMove.AssignType(VerticesMove.TypeType.Up);
+            _verticesMove.AssignType(WheelVerticesMove.TypeType.Up);
             return _verticesMove;
         }
     }
 
-    private void MakeRotationMoves(int ringIndex, RotationMove.TypeType type)
+    private void MakeRotationMoves(int ringIndex, WheelRotationMove.TypeType type)
     {
         int2 index = new int2(0, ringIndex);
         int2 nextIndex = int2.zero; 
-        if (type == RotationMove.TypeType.Clockwise)
+        if (type == WheelRotationMove.TypeType.Clockwise)
         { 
             nextIndex = _wheel.MoveIndexClockwise(index);
         }
-        else if (type == RotationMove.TypeType.CounterClockwise)
+        else if (type == WheelRotationMove.TypeType.CounterClockwise)
         { 
             nextIndex = _wheel.MoveIndexCounterClockwise(index);
         }
-        List<RotationMove> rotationMoves = new List<RotationMove>(_wheel.SideCount);
+        List<WheelRotationMove> rotationMoves = new List<WheelRotationMove>(_wheel.SideCount);
         for (int i = 0; i < _wheel.SideCount; i++)
         {
             index = nextIndex;
-            if (type == RotationMove.TypeType.Clockwise)
+            if (type == WheelRotationMove.TypeType.Clockwise)
             {
                 nextIndex = _wheel.MoveIndexClockwise(index);
             }
-            else if (type == RotationMove.TypeType.CounterClockwise)
+            else if (type == WheelRotationMove.TypeType.CounterClockwise)
             {
                 nextIndex = _wheel.MoveIndexCounterClockwise(index);
             }
@@ -127,7 +127,7 @@ public class MoveState : WheelState
             {
                 continue;
             }
-            RotationMove rotationMove = new RotationMove();
+            WheelRotationMove rotationMove = new WheelRotationMove();
             rotationMove.AssignType(type);
             rotationMove.AssignFromIndex(index);
             rotationMove.AssignToIndex(nextIndex);

@@ -4,13 +4,13 @@ using Unity.Mathematics;
 using Unity.Collections;
 
 [BurstCompile]
-public struct SegmentMoveJob : IJob
+public struct WheelSegmentMoveJob : IJob
 {
     public int P_VertexCountInOneSegment;
     public float P_ClockMoveBufferLerpValue; // Assert that it is less than 0.5f;
 
     public float P_LerpParam;
-    public SegmentMesh P_VertexPositions;
+    public WheelSegmentMesh P_VertexPositions;
 
     [ReadOnly]
     public NativeArray<VertexData> InputVertices;

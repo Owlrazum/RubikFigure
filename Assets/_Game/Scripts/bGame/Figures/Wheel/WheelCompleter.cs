@@ -19,7 +19,7 @@ public class WheelCompleter : MonoBehaviour
     [SerializeField]
     private float _teleportLerpSpeed = 1;
 
-    private Dictionary<int, List<SegmentMover>> _completionSegmentMovers;
+    private Dictionary<int, List<WheelSegmentMover>> _completionSegmentMovers;
     private Dictionary<int, List<int2>> _potentialAssembleData;
 
     private List<int2> _emptyIndices; // avoid gc
@@ -27,7 +27,7 @@ public class WheelCompleter : MonoBehaviour
     private Wheel _currentWheel;
     private void Awake()
     {
-        _completionSegmentMovers = new Dictionary<int, List<SegmentMover>>(_maxEmptyPlacesCount);
+        _completionSegmentMovers = new Dictionary<int, List<WheelSegmentMover>>(_maxEmptyPlacesCount);
         _potentialAssembleData = new Dictionary<int, List<int2>>(_maxEmptyPlacesCount);
         _emptyIndices = new List<int2>(_maxEmptyPlacesCount);
 
@@ -37,7 +37,7 @@ public class WheelCompleter : MonoBehaviour
 
     private void Start()
     {
-        // _currentWheel = WheelDelegates.GetCurrentWheel();
+        _currentWheel = WheelDelegates.GetCurrentWheel();
     }
 
     private void OnDestroy()
@@ -46,7 +46,7 @@ public class WheelCompleter : MonoBehaviour
         WheelDelegates.ActionCheckWheelCompletion -= CheckCompletion;
     }
 
-    private void OnSegmentsWereEmptied(Segment[] segmentsArg)
+    private void OnSegmentsWereEmptied(WheelSegment[] segmentsArg)
     {
         _completionSegmentMovers.Clear();
 
@@ -59,7 +59,7 @@ public class WheelCompleter : MonoBehaviour
             }
             else
             {
-                _completionSegmentMovers.Add(puzzleIndex, new List<SegmentMover>(3));
+                _completionSegmentMovers.Add(puzzleIndex, new List<WheelSegmentMover>(3));
                 _completionSegmentMovers[puzzleIndex].Add(segmentsArg[i].GetSegmentMoverForTeleport());
             }
         }
@@ -67,7 +67,7 @@ public class WheelCompleter : MonoBehaviour
 
     private void CheckCompletion()
     {
-        Array2D<SegmentPoint> segmentPoints = _currentWheel.GetSegmentPointsForCompletionCheck();
+        Array2D<FigureSegmentPoint> segmentPoints = _currentWheel.GetSegmentPointsForCompletionCheck();
         for (int side = 0; side < segmentPoints.ColCount; side++)
         {
             int puzzleIndex = -1;
@@ -104,17 +104,17 @@ public class WheelCompleter : MonoBehaviour
     {
         WheelDelegates.EventWheelWasCompleted?.Invoke();
 
-        List<TeleportMove> teleportMoves = new List<TeleportMove>(_potentialAssembleData.Count * 2);
+        List<WheelTeleportMove> teleportMoves = new List<WheelTeleportMove>(_potentialAssembleData.Count * 2);
         foreach (var entry in _potentialAssembleData)
         {
             int puzzleIndex = entry.Key;
 
             List<int2> teleportLocationIndices = entry.Value;
-            List<SegmentMover> segmentMovers = _completionSegmentMovers[puzzleIndex];
+            List<WheelSegmentMover> segmentMovers = _completionSegmentMovers[puzzleIndex];
             for (int i = 0; i < teleportLocationIndices.Count; i++)
             {
                 Assert.IsNotNull(segmentMovers[i]);
-                TeleportMove teleportMove = new TeleportMove();
+                WheelTeleportMove teleportMove = new WheelTeleportMove();
                 teleportMove.AssignSegmentMover(segmentMovers[i]);
 
                 int2 destinationIndex = teleportLocationIndices[i];

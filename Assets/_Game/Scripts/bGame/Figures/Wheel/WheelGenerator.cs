@@ -13,9 +13,8 @@ public class WheelGenerator : FigureGenerator
 {
     [SerializeField]
     private FigureParamsSO _figureParams; 
-    private SegmentPointMeshGenJob _segmentPointMeshGenJob;
 
-    private NativeArray<SegmentMesh> _segmentMeshes;
+    private NativeArray<WheelSegmentMesh> _segmentMeshes;
 
     private int _sideCount;
     private int _ringCount;
@@ -34,8 +33,8 @@ public class WheelGenerator : FigureGenerator
 
     private Wheel _wheel;
     private WheelStatesController _wheelStatesController;
-    private Array2D<Segment> _segments;
-    private Array2D<SegmentPoint> _segmentPoints;
+    private Array2D<WheelSegment> _segments;
+    private Array2D<FigureSegmentPoint> _segmentPoints;
 
     private void Awake()
     {
@@ -62,7 +61,7 @@ public class WheelGenerator : FigureGenerator
         _segmentBuffersData = new BuffersData();
         _segmentBuffersData.SetVertexCount( 4 * _segmentResolution);
         _segmentBuffersData.SetIndexCount(6 * _segmentResolution);
-        Segment.InitializeVertexCount(_segmentBuffersData.Count.x);
+        FigureSegment.InitializeVertexCount(_segmentBuffersData.Count.x);
 
         _segmentPointBuffersData = new BuffersData();
         _segmentPointBuffersData.SetVertexCount(_segmentBuffersData.Count.x * 4 + 8);
@@ -81,7 +80,7 @@ public class WheelGenerator : FigureGenerator
     {
         _figureVertices = new NativeArray<VertexData>(_segmentBuffersData.Count.x * _segmentCount, Allocator.Persistent);
         _figureIndices = new NativeArray<short>(_segmentBuffersData.Count.y * _segmentCount, Allocator.TempJob);
-        _segmentMeshes = new NativeArray<SegmentMesh>(_ringCount, Allocator.TempJob);
+        _segmentMeshes = new NativeArray<WheelSegmentMesh>(_ringCount, Allocator.TempJob);
 
         WheelGenJob wheelMeshGenJob = new WheelGenJob()
         {
@@ -101,7 +100,7 @@ public class WheelGenerator : FigureGenerator
         _segmentPointsVertices = new NativeArray<float3>(_segmentPointBuffersData.Count.x * _ringCount, Allocator.TempJob);
         _segmentPointsIndices = new NativeArray<short>(_segmentPointBuffersData.Count.y * _ringCount, Allocator.TempJob);
 
-        _segmentPointMeshGenJob = new SegmentPointMeshGenJob()
+        WheelSegmentPointMeshGenJob segmentPointMeshGenJob = new WheelSegmentPointMeshGenJob()
         {
             P_SideCount = _sideCount,
             P_RingCount = _ringCount,
@@ -113,7 +112,7 @@ public class WheelGenerator : FigureGenerator
             OutputVertices = _segmentPointsVertices,
             OutputIndices = _segmentPointsIndices
         };
-        _segmentPointsMeshGenJobHandle = _segmentPointMeshGenJob.Schedule();
+        _segmentPointsMeshGenJobHandle = segmentPointMeshGenJob.Schedule();
 
         JobHandle.ScheduleBatchedJobs();
     }
@@ -134,8 +133,8 @@ public class WheelGenerator : FigureGenerator
         segmentsParent.parent = parentWheel;
         segmentsParent.SetSiblingIndex(1);
 
-        _segmentPoints = new Array2D<SegmentPoint>(_sideCount, _ringCount);
-        _segments = new Array2D<Segment>(_sideCount, _ringCount);
+        _segmentPoints = new Array2D<FigureSegmentPoint>(_sideCount, _ringCount);
+        _segments = new Array2D<WheelSegment>(_sideCount, _ringCount);
         
         for (int ring = 0; ring < _ringCount; ring++)
         {
@@ -143,15 +142,14 @@ public class WheelGenerator : FigureGenerator
             {
                 GameObject segmentGb = Instantiate(_segmentPrefab);
                 segmentGb.transform.parent = segmentsParent;
-                Segment segment = segmentGb.GetComponent<Segment>();
-                Assert.IsNotNull(segment);
+                WheelSegment segment = segmentGb.AddComponent<WheelSegment>();
                 _segments[side, ring] = segment;
 
                 GameObject segmentPointGb = Instantiate(_segmentPointPrefab);
                 segmentPointGb.layer = LayerUtilities.SEGMENT_POINTS_LAYER;
                 segmentPointGb.name = "Point[" + side + "," + ring + "]";
                 segmentPointGb.transform.parent = segmentPointsParent;
-                SegmentPoint segmentPoint = segmentPointGb.GetComponent<SegmentPoint>();
+                FigureSegmentPoint segmentPoint = segmentPointGb.GetComponent<FigureSegmentPoint>();
                 Assert.IsNotNull(segmentPoint);
                 _segmentPoints[side, ring] = segmentPoint;
             }
@@ -177,7 +175,7 @@ public class WheelGenerator : FigureGenerator
             {
                 UpdateSegment(_segments[side, ring], _segmentBuffersData, side);
 
-                SegmentPoint currentPoint = _segmentPoints[side, ring];
+                FigureSegmentPoint currentPoint = _segmentPoints[side, ring];
                 currentPoint.InitializeAfterMeshesGenerated(segmentPointMeshes[ring], _segments[side, ring], new int2(side, ring));
 
                 _segmentBuffersData.AddVertexCountToVertexStart();

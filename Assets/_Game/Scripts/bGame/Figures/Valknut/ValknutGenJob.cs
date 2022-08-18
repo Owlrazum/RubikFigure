@@ -140,9 +140,9 @@ public struct ValknutGenJob : IJob
         leftTriangle.Offset(centerTriangle.Right);
 
         
-        DrawTriangle(in upTriangle);
-        DrawTriangle(in rightTriangle);
-        DrawTriangle(in leftTriangle);        
+        // DrawTriangle(in upTriangle);
+        // DrawTriangle(in rightTriangle);
+        // DrawTriangle(in leftTriangle);        
 
         float4x3 dirs  = CalculateDirs(upTriangle);
 
@@ -155,6 +155,7 @@ public struct ValknutGenJob : IJob
         urPos[2] = upTriangle.Up;
         float3x4 urEdges = ConstructTwoAngleSegment(urPos, in urDir);
         ConstructOneAngleSegment(in urEdges, in urDir, x0z(upTriangle.Right));
+        OffsetUV();
 
 
         float4x3 rlDir = new float4x3(dirs);
@@ -166,6 +167,7 @@ public struct ValknutGenJob : IJob
         rlPos[2] = rightTriangle.Right;
         float3x4 rlEdges = ConstructTwoAngleSegment(rlPos, in rlDir);
         ConstructOneAngleSegment(in rlEdges, in rlDir, x0z(rightTriangle.Left));
+        OffsetUV();
 
 
         float4x3 luDir = new float4x3(dirs);
@@ -177,6 +179,7 @@ public struct ValknutGenJob : IJob
         luPos[2] = leftTriangle.Left;
         float3x4 luEdges = ConstructTwoAngleSegment(luPos, in luDir);
         ConstructOneAngleSegment(in luEdges, in luDir, x0z(leftTriangle.Up));
+        OffsetUV();
     }
 
     private void SwapDirs(int2 swaps, ref float4x3 dirs)
@@ -280,12 +283,12 @@ public struct ValknutGenJob : IJob
     private void AddTwoAngleSegmentMeshData(TwoAngleSegment twoAngleSegment)
     {
         _segmentVertexCount = 0;
-        Debug.DrawRay((twoAngleSegment.LeftQuad[0] + twoAngleSegment.LeftQuad[2]) / 2, Vector3.up, Color.red, 100);
+        // Debug.DrawRay((twoAngleSegment.LeftQuad[0] + twoAngleSegment.LeftQuad[2]) / 2, Vector3.up, Color.red, 100);
         AddQuad(twoAngleSegment.LeftQuad);
         AddQuad(twoAngleSegment.CenterQuad);
-        Debug.DrawRay((twoAngleSegment.CenterQuad[0] + twoAngleSegment.CenterQuad[2]) / 2, Vector3.up * 2, Color.red, 100);
+        // Debug.DrawRay((twoAngleSegment.CenterQuad[0] + twoAngleSegment.CenterQuad[2]) / 2, Vector3.up * 2, Color.red, 100);
         AddQuad(twoAngleSegment.RightQuad);
-        Debug.DrawRay((twoAngleSegment.RightQuad[0] + twoAngleSegment.RightQuad[2]) / 2, Vector3.up * 3, Color.red, 100);
+        // Debug.DrawRay((twoAngleSegment.RightQuad[0] + twoAngleSegment.RightQuad[2]) / 2, Vector3.up * 3, Color.red, 100);
     }
 
     private void AddQuad(float3x4 positions)

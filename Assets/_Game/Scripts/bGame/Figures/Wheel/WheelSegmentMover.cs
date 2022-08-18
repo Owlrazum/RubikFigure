@@ -12,70 +12,40 @@ using Orazum.Collections;
 using static Orazum.Math.MathUtilities;
 
 [RequireComponent(typeof(MeshFilter))]
-public class SegmentMover : MonoBehaviour
+public class WheelSegmentMover : FigureSegmentMover
 { 
-    public const MeshUpdateFlags MESH_UPDATE_FLAGS = MeshUpdateFlags.Default;
-
     private const float CLOCK_MOVE_BUFFER_LERP_VALUE = 0.4f;
-
-    private MeshFilter _meshFilter;
-
-    public MeshFilter MeshContainer { get { return _meshFilter; } }
 
     private float _currentAngle;
 
-    private NativeArray<VertexData> _vertices;
-
-    private SegmentMoveJob _segmentMoveJob;
-    private JobHandle _segmentMoveJobHandle;
-
-    private NativeArray<VertexData> _currentVertices;
-    private float _currentLerpSpeed;
-    private int2 _currentToIndex;
+    private WheelSegmentMoveJob _segmentMoveJob;
 
     private bool _wasJobScheduled;
     private bool _wasMoveCompleted;
-    private Action _moveCompleteAction;
 
-    private void Awake()
-    {
-        _currentAngle = 0;
-        TryGetComponent(out _meshFilter);
-    }
-
-    public void Initialize(NativeArray<VertexData> verticesArg)
-    {
-        _vertices = verticesArg;
-
-        _currentVertices =
-            new NativeArray<VertexData>(_vertices.Length, Allocator.Persistent);
-    }
-
-    public void StartMove(
-        SegmentMove move,
-        float _lerpSpeed,
+    public override void StartMove(
+        FigureSegmentMove move,
+        float lerpSpeed,
         Action OnMoveToDestinationCompleted)
     {
-        _currentToIndex = move.ToIndex;
-        _currentLerpSpeed = _lerpSpeed;
+        base.StartMove(move, lerpSpeed, OnMoveToDestinationCompleted);
         _wasMoveCompleted = false;
-        _moveCompleteAction = OnMoveToDestinationCompleted;
 
-        if (move is RotationMove rotationMove)
+        if (move is WheelRotationMove rotationMove)
         { 
             StartCoroutine(RotateSequence(rotationMove));
         }
-        else if (move is VerticesMove verticesMove)
+        else if (move is WheelVerticesMove verticesMove)
         {
             StartCoroutine(MoveSequence(verticesMove));
         }
-        else if (move is TeleportMove teleportMove)
+        else if (move is WheelTeleportMove teleportMove)
         {
             StartCoroutine(TeleportSequence(teleportMove));
         }
     }
 
-    private IEnumerator RotateSequence(RotationMove rotationMove)
+    private IEnumerator RotateSequence(WheelRotationMove rotationMove)
     {
         float lerpParam = 0;
         Quaternion initialRotation = transform.localRotation;
@@ -96,7 +66,7 @@ public class SegmentMover : MonoBehaviour
         _moveCompleteAction?.Invoke();
     }
 
-    private IEnumerator TeleportSequence(TeleportMove teleportMove)
+    private IEnumerator TeleportSequence(WheelTeleportMove teleportMove)
     {
         transform.localPosition = teleportMove.StartTeleportPosition;
         transform.localRotation = teleportMove.TargetOrientation;
@@ -115,7 +85,7 @@ public class SegmentMover : MonoBehaviour
         }
     }
 
-    private void TeleportVertices(SegmentMesh vertexPositions)
+    private void TeleportVertices(WheelSegmentMesh vertexPositions)
     { 
         VertexData data;
 
@@ -137,17 +107,17 @@ public class SegmentMover : MonoBehaviour
             _vertices[indices.y] = data;
         }
 
-        AssignVertices(_vertices);
+        AssignVertices(_vertices, _vertices.Length);
     }
 
-    private IEnumerator MoveSequence(VerticesMove verticesMove)
+    private IEnumerator MoveSequence(WheelVerticesMove verticesMove)
     {
         float lerpParam = 0;
-        _segmentMoveJob = new SegmentMoveJob()
+        _segmentMoveJob = new WheelSegmentMoveJob()
         {
             P_ClockMoveBufferLerpValue = CLOCK_MOVE_BUFFER_LERP_VALUE,
             P_VertexPositions = verticesMove.VertexPositions,
-            P_VertexCountInOneSegment = Segment.VertexCount,
+            P_VertexCountInOneSegment = _vertices.Length,
 
             InputVertices = _vertices,
             OutputVertices = _currentVertices
@@ -177,7 +147,7 @@ public class SegmentMover : MonoBehaviour
         {
             _segmentMoveJobHandle.Complete();
             _currentVertices = _segmentMoveJob.OutputVertices;
-            AssignVertices(_currentVertices);
+            AssignVertices(_currentVertices, _vertices.Length);
 
             for (int i = 0; i < _vertices.Length; i++)
             {
@@ -189,37 +159,9 @@ public class SegmentMover : MonoBehaviour
         else if (_wasJobScheduled)
         {
             _segmentMoveJobHandle.Complete();
-            AssignVertices(_currentVertices);
+            AssignVertices(_currentVertices, _vertices.Length);
             
             _wasJobScheduled = false;
         }
-    }
-
-    private void AssignVertices(NativeArray<VertexData> toAssign)
-    {
-        Mesh newMesh = _meshFilter.mesh;
-        newMesh.SetVertexBufferData(toAssign, 0, 0,
-            Segment.VertexCount, 0,
-            MESH_UPDATE_FLAGS
-        );
-
-        newMesh.RecalculateNormals();
-        _meshFilter.mesh = newMesh;
-    }
-
-    public void Appear()
-    {
-        gameObject.SetActive(true);
-    }
-
-    private void OnDestroy()
-    {
-        if (!_segmentMoveJobHandle.IsCompleted)
-        {
-            _segmentMoveJobHandle.Complete();
-        }
-
-        CollectionUtilities.DisposeIfNeeded(_currentVertices);
-        CollectionUtilities.DisposeIfNeeded(_vertices);
     }
 }

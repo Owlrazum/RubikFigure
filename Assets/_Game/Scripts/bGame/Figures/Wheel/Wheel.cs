@@ -17,8 +17,10 @@ public class Wheel : Figure
     public int SideCount { get { return _sideCount; } }
     public int RingCount { get { return _ringCount; } }
 
-    private Array2D<SegmentPoint> _segmentPoints;
-    private SegmentMesh[] _segmentMeshes;
+    private int _segmentVertexPosition;
+
+    private Array2D<FigureSegmentPoint> _segmentPoints;
+    private WheelSegmentMesh[] _segmentMeshes;
 
     private Vector3 _startTeleportPosition;
 
@@ -36,8 +38,8 @@ public class Wheel : Figure
     }
 
     public void Initialize(
-        Array2D<SegmentPoint> segmentPoints, 
-        SegmentMesh[] segmentMeshes, 
+        Array2D<FigureSegmentPoint> segmentPoints, 
+        WheelSegmentMesh[] segmentMeshes, 
         WheelStatesController statesController,
         FigureParamsSO figureParams
     )
@@ -65,11 +67,12 @@ public class Wheel : Figure
                 GenerateRandomEmptyPoints(figureParams.EmptyPlacesCount);
         }
 
-        Segment[] emptySegments = new Segment[emptySegmentPointIndices.Length];
+        WheelSegment[] emptySegments = new WheelSegment[emptySegmentPointIndices.Length];
         for (int i = 0; i < emptySegmentPointIndices.Length; i++)
         {
             int2 index = emptySegmentPointIndices[i];
-            emptySegments[i] = _segmentPoints[index].Segment;
+            emptySegments[i] = _segmentPoints[index].Segment as WheelSegment;
+            Assert.IsNotNull(emptySegments[i]);
             _segmentPoints[index].Segment.Dissappear();
             _segmentPoints[index].Segment = null;
         }
@@ -122,11 +125,11 @@ public class Wheel : Figure
         return emptySegmentPointIndices;
     }
 
-    public void MakeVerticesMove(in VerticesMove move, float lerpSpeed, Action moveCompleteAction = null)
+    public void MakeVerticesMove(in WheelVerticesMove move, float lerpSpeed, Action moveCompleteAction = null)
     {
         Assert.IsNull(_segmentPoints[move.ToIndex].Segment);
         Assert.IsNotNull(_segmentPoints[move.FromIndex].Segment);
-        Segment movedSegment = _segmentPoints[move.FromIndex].Segment;
+        FigureSegment movedSegment = _segmentPoints[move.FromIndex].Segment;
         _segmentPoints[move.FromIndex].Segment = null;
         _segmentPoints[move.ToIndex].Segment = movedSegment;
         Debug.Log($"Swapped segmentPoint contents {move.FromIndex} {move.ToIndex}");
@@ -140,21 +143,21 @@ public class Wheel : Figure
         );
     }
 
-    public void MakeRotationMoves(List<RotationMove> moves, float lerpSpeed, Action moveCompleteAction = null)
+    public void MakeRotationMoves(List<WheelRotationMove> moves, float lerpSpeed, Action moveCompleteAction = null)
     {
-        Segment[] movedSegments = new Segment[moves.Count];
+        FigureSegment[] movedSegments = new FigureSegment[moves.Count];
         bool isAssignedMoveCompleteAction = false;
         for (int i = 0; i < moves.Count; i++)
         {
-            RotationMove rotationMove = moves[i];
+            WheelRotationMove rotationMove = moves[i];
             Assert.IsTrue(IsValidIndex(rotationMove.FromIndex) && IsValidIndex(rotationMove.ToIndex));
             float rotationAngle = TAU / _sideCount * Mathf.Rad2Deg;
-            if (rotationMove.Type == RotationMove.TypeType.CounterClockwise)
+            if (rotationMove.Type == WheelRotationMove.TypeType.CounterClockwise)
             {
                 rotationAngle = -rotationAngle;
             }
             rotationMove.AssignRotation(Quaternion.AngleAxis(rotationAngle, Vector3.up));
-            Segment movedSegment = _segmentPoints[rotationMove.FromIndex].Segment;
+            FigureSegment movedSegment = _segmentPoints[rotationMove.FromIndex].Segment;
             Assert.IsNotNull(movedSegment);
             movedSegment.StartMove(
                 rotationMove,
@@ -172,18 +175,18 @@ public class Wheel : Figure
             {
                 continue;
             }
-            RotationMove move = moves[i];
+            WheelRotationMove move = moves[i];
             _segmentPoints[move.ToIndex].Segment = movedSegments[i];
         }
     }
 
-    public void MakeShuffleMoves(RotationMove[] moves, float lerpSpeed)
+    public void MakeShuffleMoves(WheelRotationMove[] moves, float lerpSpeed)
     {
-        Segment[] movedSegments = new Segment[moves.Length];
+        FigureSegment[] movedSegments = new FigureSegment[moves.Length];
         for (int i = 0; i < moves.Length; i++)
         {
-            SegmentMove move = moves[i];
-            Segment movedSegment = _segmentPoints[move.FromIndex].Segment;
+            FigureSegmentMove move = moves[i];
+            FigureSegment movedSegment = _segmentPoints[move.FromIndex].Segment;
             if (movedSegment == null)
             {
                 continue;
@@ -204,15 +207,15 @@ public class Wheel : Figure
             {
                 continue;
             }
-            RotationMove move = moves[i];
+            WheelRotationMove move = moves[i];
             _segmentPoints[move.ToIndex].Segment = movedSegments[i];
         }
     }
-    public void MakeTeleportMoves(List<TeleportMove> moves, float lerpSpeed)
+    public void MakeTeleportMoves(List<WheelTeleportMove> moves, float lerpSpeed)
     { 
         for (int i = 0; i < moves.Count; i++)
         {
-            TeleportMove teleportMove = moves[i];
+            WheelTeleportMove teleportMove = moves[i];
             Quaternion rotation = GetSideRotation(teleportMove.ToIndex);
             teleportMove.AssignTargetOrientation(rotation);
             teleportMove.AssignStartTeleportPosition(_startTeleportPosition);
@@ -224,12 +227,12 @@ public class Wheel : Figure
             );
         }
     }
-    private SegmentMesh GetVertexPositions(int2 index)
+    private WheelSegmentMesh GetVertexPositions(int2 index)
     {
         return _segmentMeshes[index.y];
     }
 
-    public Array2D<SegmentPoint> GetSegmentPointsForCompletionCheck()
+    public Array2D<FigureSegmentPoint> GetSegmentPointsForCompletionCheck()
     {
         Debug.Log("returning segmentPoints for completion check");
         return _segmentPoints;
@@ -290,36 +293,36 @@ public class Wheel : Figure
         return false;
     }
 
-    public void DeterminePossibleMoves(int2 emptyIndex, List<SegmentMove> possibleMoves)
+    public void DeterminePossibleMoves(int2 emptyIndex, List<FigureSegmentMove> possibleMoves)
     {
         if (HasSegmentThatWillMoveDown(emptyIndex))
         {
-            VerticesMove verticesMove = new VerticesMove();
-            verticesMove.AssignType(VerticesMove.TypeType.Down);
+            WheelVerticesMove verticesMove = new WheelVerticesMove();
+            verticesMove.AssignType(WheelVerticesMove.TypeType.Down);
             verticesMove.AssignFromIndex(MoveIndexUp(emptyIndex));
             verticesMove.AssignToIndex(emptyIndex);
             possibleMoves.Add(verticesMove);
         }
         if (HasSegmentThatWillMoveUp(emptyIndex))
         {
-            VerticesMove verticesMove = new VerticesMove();
-            verticesMove.AssignType(VerticesMove.TypeType.Up);
+            WheelVerticesMove verticesMove = new WheelVerticesMove();
+            verticesMove.AssignType(WheelVerticesMove.TypeType.Up);
             verticesMove.AssignFromIndex(MoveIndexDown(emptyIndex));
             verticesMove.AssignToIndex(emptyIndex);
             possibleMoves.Add(verticesMove);
         }
         if (HasSegmentThatWillMoveCounterClockwise(emptyIndex))
         {
-            RotationMove rotationMove = new RotationMove();
-            rotationMove.AssignType(RotationMove.TypeType.CounterClockwise);
+            WheelRotationMove rotationMove = new WheelRotationMove();
+            rotationMove.AssignType(WheelRotationMove.TypeType.CounterClockwise);
             rotationMove.AssignFromIndex(MoveIndexClockwise(emptyIndex));
             rotationMove.AssignToIndex(emptyIndex);
             possibleMoves.Add(rotationMove);
         }
         if (HasSegmentThatWillMoveClockwise(emptyIndex))
         {
-            RotationMove rotationMove = new RotationMove();
-            rotationMove.AssignType(RotationMove.TypeType.Clockwise);
+            WheelRotationMove rotationMove = new WheelRotationMove();
+            rotationMove.AssignType(WheelRotationMove.TypeType.Clockwise);
             rotationMove.AssignFromIndex(MoveIndexCounterClockwise(emptyIndex));
             rotationMove.AssignToIndex(emptyIndex);
             possibleMoves.Add(rotationMove);
@@ -377,21 +380,21 @@ public class Wheel : Figure
         return true;
     }
 
-    public bool IsMovePossibleFromIndex(VerticesMove verticesMove, out int2 toIndex)
+    public bool IsMovePossibleFromIndex(WheelVerticesMove verticesMove, out int2 toIndex)
     {
         Assert.IsNotNull(_segmentPoints[verticesMove.FromIndex].Segment);
         Assert.IsTrue(IsValidIndex(verticesMove.FromIndex));
         toIndex = int2.zero;
         switch (verticesMove.Type)
         {
-            case VerticesMove.TypeType.Down:
+            case WheelVerticesMove.TypeType.Down:
                 if (CanMoveDown(verticesMove.FromIndex))
                 {
                     toIndex = MoveIndexDown(verticesMove.FromIndex);
                     return true;
                 }
                 break;
-            case VerticesMove.TypeType.Up:
+            case WheelVerticesMove.TypeType.Up:
                 if (CanMoveUp(verticesMove.FromIndex))
                 {
                     toIndex = MoveIndexUp(verticesMove.FromIndex);

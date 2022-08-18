@@ -1,6 +1,6 @@
 using Unity.Mathematics;
 
-public abstract class SegmentMove
+public abstract class FigureSegmentMove
 {
     public int2 FromIndex { get; private set; }
     public int2 ToIndex { get; private set; }
@@ -15,7 +15,7 @@ public abstract class SegmentMove
         ToIndex = toIndex;
     }
 
-    public SegmentMove()
+    public FigureSegmentMove()
     {
         FromIndex = -1;
         ToIndex = -1;

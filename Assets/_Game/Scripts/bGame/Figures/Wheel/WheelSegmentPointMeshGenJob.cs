@@ -5,8 +5,8 @@ using Unity.Collections;
 
 using static Orazum.Math.MathUtilities;
 
-// [BurstCompile]
-public struct SegmentPointMeshGenJob : IJob
+[BurstCompile]
+public struct WheelSegmentPointMeshGenJob : IJob
 {
     public int P_SideCount;
     public int P_RingCount;

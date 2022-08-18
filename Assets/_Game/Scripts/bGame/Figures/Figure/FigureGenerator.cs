@@ -84,7 +84,7 @@ public abstract class FigureGenerator : MonoBehaviour
             _start.y += toAdd;
         }
     }
-    protected virtual void UpdateSegment(Segment segment, BuffersData data, int puzzleIndex)
+    protected virtual void UpdateSegment(FigureSegment segment, BuffersData data, int puzzleIndex)
     {
         Mesh mesh = segment.MeshContainer.mesh;
         mesh.MarkDynamic();

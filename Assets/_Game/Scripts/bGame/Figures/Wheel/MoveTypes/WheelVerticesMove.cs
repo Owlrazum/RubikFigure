@@ -1,4 +1,4 @@
-public class VerticesMove : SegmentMove
+public class WheelVerticesMove : FigureSegmentMove
 {
     public enum TypeType
     { 
@@ -12,8 +12,8 @@ public class VerticesMove : SegmentMove
         Type = type;
     }
 
-    public SegmentMesh VertexPositions { get; private set; }
-    public void AssignVertexPositions(SegmentMesh segmentVertexPositions)
+    public WheelSegmentMesh VertexPositions { get; private set; }
+    public void AssignVertexPositions(WheelSegmentMesh segmentVertexPositions)
     {
         VertexPositions = segmentVertexPositions;
     }

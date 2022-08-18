@@ -5,7 +5,7 @@ using UnityEngine.Assertions;
 [RequireComponent(typeof(MeshFilter))]
 [RequireComponent(typeof(MeshCollider))]
 [RequireComponent(typeof(MeshRenderer))]
-public class SegmentPoint : MonoBehaviour
+public class FigureSegmentPoint : MonoBehaviour
 {
     private MeshFilter _meshFilter;
     private MeshCollider _meshCollider;
@@ -21,9 +21,9 @@ public class SegmentPoint : MonoBehaviour
         TryGetComponent(out _meshRenderer);
     }
 
-    public Segment Segment { get; set; }
+    public FigureSegment Segment { get; set; }
     public int2 Index { get; private set; }
-    public void InitializeAfterMeshesGenerated(Mesh mesh, Segment segment, int2 index)
+    public void InitializeAfterMeshesGenerated(Mesh mesh, FigureSegment segment, int2 index)
     {
         Assert.IsNotNull(segment.MeshContainer.mesh);
         Segment = segment;

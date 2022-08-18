@@ -1,9 +1,9 @@
 using Unity.Mathematics;
 
-public class TeleportMove : SegmentMove
+public class WheelTeleportMove : FigureSegmentMove
 { 
-    public SegmentMover SegmentMover { get; private set; }
-    public void AssignSegmentMover(SegmentMover segmentMover)
+    public WheelSegmentMover SegmentMover { get; private set; }
+    public void AssignSegmentMover(WheelSegmentMover segmentMover)
     {
         SegmentMover = segmentMover;
     }
@@ -20,8 +20,8 @@ public class TeleportMove : SegmentMove
         StartTeleportPosition = teleportPosition;
     }
 
-    public SegmentMesh VertexPositions { get; private set; }
-    public void AssignVertexPositions(SegmentMesh vertexPositions)
+    public WheelSegmentMesh VertexPositions { get; private set; }
+    public void AssignVertexPositions(WheelSegmentMesh vertexPositions)
     {
         VertexPositions = vertexPositions;
     }

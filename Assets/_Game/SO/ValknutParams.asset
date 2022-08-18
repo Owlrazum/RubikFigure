@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dbce5a62c0d3f441fb1902bbabf0ddd4, type: 3}
   m_Name: ValknutParams
   m_EditorClassIdentifier: 
-  FigureGenParamsSO: {fileID: 11400000, guid: ecb6ca1efe9f9484cad85bcc6f45140d, type: 2}
+  FigureGenParamsSO: {fileID: 11400000, guid: 14debc9ec158943e282230daebfe804d, type: 2}
   ShuffleStepsAmount: 0
   ShufflePauseTime: 0.5
   ShuffleLerpSpeed: 1

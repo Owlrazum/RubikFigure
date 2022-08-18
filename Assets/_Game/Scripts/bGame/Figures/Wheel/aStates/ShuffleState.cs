@@ -95,7 +95,7 @@ public class ShuffleState : WheelState
     {
         ShuffleIndices();
 
-        RotationMove[] moves = new RotationMove[_wheel.SideCount * _wheel.RingCount];
+        WheelRotationMove[] moves = new WheelRotationMove[_wheel.SideCount * _wheel.RingCount];
         int moveIndex = 0;
         for (int ring = 0; ring < _shuffleIndices.Length; ring++)
         {
@@ -103,10 +103,10 @@ public class ShuffleState : WheelState
             {
                 int2 fromIndex = new int2(side, ring);
                 int2 toIndex = _shuffleIndices[ring][side];
-                RotationMove rotationMove = new RotationMove();
+                WheelRotationMove rotationMove = new WheelRotationMove();
                 rotationMove.AssignFromIndex(fromIndex);
                 rotationMove.AssignToIndex(toIndex);
-                rotationMove.AssignType(RotationMove.TypeType.Clockwise);
+                rotationMove.AssignType(WheelRotationMove.TypeType.Clockwise);
 
                 float rotationAngle = 0;
                 int sideDeltaCW = Mathf.Abs(toIndex.x - fromIndex.x);
@@ -117,7 +117,7 @@ public class ShuffleState : WheelState
                     if (toIndex.x < fromIndex.x)
                     {
                         rotationAngle = -rotationAngle;
-                        rotationMove.AssignType(RotationMove.TypeType.CounterClockwise);
+                        rotationMove.AssignType(WheelRotationMove.TypeType.CounterClockwise);
                     }
                 }
                 else
@@ -126,7 +126,7 @@ public class ShuffleState : WheelState
                     if (toIndex.x + _wheel.SideCount < fromIndex.x)
                     {
                         rotationAngle = -rotationAngle;
-                        rotationMove.AssignType(RotationMove.TypeType.CounterClockwise);
+                        rotationMove.AssignType(WheelRotationMove.TypeType.CounterClockwise);
                     }
                 }
                 rotationMove.AssignRotation(Quaternion.AngleAxis(rotationAngle, Vector3.up));

@@ -4,7 +4,7 @@ using UnityEngine.Assertions;
 public class IdleState : WheelState
 {
     private SwipeCommand _currentSwipeCommand;
-    private SegmentPoint _currentSelectedPoint;
+    private FigureSegmentPoint _currentSelectedPoint;
 
     public IdleState(FigureParamsSO figureParams, Wheel wheelArg) : base(figureParams, wheelArg)
     {
@@ -29,7 +29,7 @@ public class IdleState : WheelState
 
     private void OnSelectSegmentCommand(Collider segmentPointCollider)
     {
-        bool isFound = segmentPointCollider.TryGetComponent(out SegmentPoint segmentPoint);
+        bool isFound = segmentPointCollider.TryGetComponent(out FigureSegmentPoint segmentPoint);
         Assert.IsTrue(isFound);
         if (segmentPoint.Segment == null)
         {

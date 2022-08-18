@@ -41,11 +41,11 @@ public class ValknutGenerator : FigureGenerator
 
     private Valknut _valknut;
 
-    private List<Segment> _segments;
+    private List<FigureSegment> _segments;
 
     private void Awake()
     {
-        _segments = new List<Segment>();
+        _segments = new List<FigureSegment>();
         StartGeneration(_figureParams.FigureGenParamsSO);
     }
 
@@ -132,7 +132,7 @@ public class ValknutGenerator : FigureGenerator
         {
             GameObject segmentGb = Instantiate(_segmentPrefab);
             segmentGb.transform.parent = segmentsParent;
-            Segment segment = segmentGb.GetComponent<Segment>();
+            FigureSegment segment = segmentGb.GetComponent<FigureSegment>();
             _segments.Add(segment);
             Assert.IsNotNull(segment);
         }

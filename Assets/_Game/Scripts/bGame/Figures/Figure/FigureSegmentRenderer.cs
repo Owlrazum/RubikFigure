@@ -1,7 +1,7 @@
 using UnityEngine;
 
 [RequireComponent(typeof(MeshRenderer))]
-public class SegmentRenderer : MonoBehaviour
+public class FigureSegmentRenderer : MonoBehaviour
 {
     [SerializeField]
     private Material _defaultMaterial;

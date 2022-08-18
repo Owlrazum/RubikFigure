@@ -22,7 +22,7 @@ public struct WheelGenJob : IJob
     public NativeArray<short> OutputIndices;
 
     [WriteOnly]
-    public NativeArray<SegmentMesh> OutputSegmentMeshes; // one for each ring
+    public NativeArray<WheelSegmentMesh> OutputSegmentMeshes; // one for each ring
 
     private short _totalVertexCount;
     private short _totalIndexCount;
@@ -74,7 +74,7 @@ public struct WheelGenJob : IJob
                     positionsData.z = _angleResolutionDelta;
                     // positionsData.w = 1.0f / (P_SegmentResolution);
 
-                    OutputSegmentMeshes[ring] = new SegmentMesh(_startRay, positionsData, P_SegmentResolution);
+                    OutputSegmentMeshes[ring] = new WheelSegmentMesh(_startRay, positionsData, P_SegmentResolution);
                 } 
                 _currentRadius = _nextRadius;
                 _nextRadius += radiusDelta;
