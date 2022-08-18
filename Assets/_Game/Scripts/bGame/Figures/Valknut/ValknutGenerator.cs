@@ -13,13 +13,24 @@ using Orazum.Utilities.ConstContainers;
 
 public class ValknutGenerator : FigureGenerator
 {
-    private const int SEGMENTS_COUNT = 3;
-    private const int QUADS_COUNT = 3;
-    [SerializeField]
-    private FigureParamsSO _figureParams; 
+    private const int SEGMENTS_COUNT = 3 + 3; // three outer and three inner;
+    private const int QUADS_COUNT_TWO_ANGLE_SEGMENT = 3;
+    private const int QUADS_COUNT_ONE_ANGLE_SEGMENT = 2;
 
-    private BuffersData _segmentBuffersData;
-    private BuffersData _segmentPointBuffersData;
+    private const int VERTEX_COUNT_TWO_ANGLE_SEGMNET = QUADS_COUNT_TWO_ANGLE_SEGMENT * 4;
+    private const int INDEX_COUNT_TWO_ANGLE_SEGMNET  = QUADS_COUNT_TWO_ANGLE_SEGMENT * 6;
+
+    private const int VERTEX_COUNT_ONE_ANGLE_SEGMNET = QUADS_COUNT_ONE_ANGLE_SEGMENT * 4;
+    private const int INDEX_COUNT_ONE_ANGLE_SEGMNET  = QUADS_COUNT_ONE_ANGLE_SEGMENT * 6;
+
+    private const int VERTEX_COUNT_VALKNUT_TRIANGLE = VERTEX_COUNT_TWO_ANGLE_SEGMNET + VERTEX_COUNT_ONE_ANGLE_SEGMNET;
+    private const int INDEX_COUNT_VALKNUT_TRIANGLE = INDEX_COUNT_TWO_ANGLE_SEGMNET + INDEX_COUNT_ONE_ANGLE_SEGMNET;
+
+    private const int TOTAL_VERTEX_COUNT = VERTEX_COUNT_VALKNUT_TRIANGLE * 3;
+    private const int TOTAL_INDEX_COUNT = INDEX_COUNT_VALKNUT_TRIANGLE * 3;
+
+    [SerializeField]
+    private FigureParamsSO _figureParams;
 
     private float _innerTriangleRadius;
     private float _width;
@@ -46,10 +57,9 @@ public class ValknutGenerator : FigureGenerator
     protected override void InitializeParameters(FigureGenParamsSO figureGenParams)
     {
         ValknutGenParamsSO generationParams =  figureGenParams as ValknutGenParamsSO;
-        _segmentBuffersData = new BuffersData();
-        _segmentBuffersData.SetVertexCount(4 * QUADS_COUNT);
-        _segmentBuffersData.SetIndexCount(6 * QUADS_COUNT);
-        Segment.InitializeVertexCount(_segmentBuffersData.Count.x);
+        // _segmentBuffersData.SetVertexCount(4 * QUADS_COUNT);
+        // _segmentBuffersData.SetIndexCount(6 * QUADS_COUNT);
+        // Segment.InitializeVertexCount(_segmentBuffersData.Count.x);
 
         // _segmentPointBuffersData = new BuffersData();
         // _segmentPointBuffersData.SetVertexCount(_segmentBuffersData.Count.x * 4 + 8);
@@ -65,8 +75,8 @@ public class ValknutGenerator : FigureGenerator
 
     protected override void StartMeshGeneration()
     {
-        _figureVertices = new NativeArray<VertexData>(_segmentBuffersData.Count.x * SEGMENTS_COUNT, Allocator.Persistent);
-        _figureIndices = new NativeArray<short>(_segmentBuffersData.Count.y * SEGMENTS_COUNT, Allocator.TempJob);
+        _figureVertices = new NativeArray<VertexData>(TOTAL_VERTEX_COUNT, Allocator.Persistent);
+        _figureIndices = new NativeArray<short>(TOTAL_INDEX_COUNT, Allocator.TempJob);
 
         ValknutGenJob valknutGenJob = new ValknutGenJob()
         {
@@ -145,14 +155,29 @@ public class ValknutGenerator : FigureGenerator
 
         Mesh[] segmentPointMeshes = CreateSegmentPointMeshes();
 
-        _segmentBuffersData.ResetVertexStart();
-        _segmentBuffersData.ResetIndexStart();
+        BuffersData segmentBuffersData = new BuffersData();
+        segmentBuffersData.ResetVertexStart();
+        segmentBuffersData.ResetIndexStart();
+        segmentBuffersData.SetVertexCount(VERTEX_COUNT_TWO_ANGLE_SEGMNET);
+        segmentBuffersData.SetIndexCount(INDEX_COUNT_TWO_ANGLE_SEGMNET);
 
         for (int i = 0; i < SEGMENTS_COUNT; i++)
         { 
-            UpdateSegment(_segments[i], _segmentBuffersData, 0);
-            _segmentBuffersData.AddVertexCountToVertexStart();
-            _segmentBuffersData.AddIndexCountToIndexStart();
+            UpdateSegment(_segments[i], segmentBuffersData, 0);
+            if (i % 2 == 0)
+            {
+                segmentBuffersData.AddToVertexStart(VERTEX_COUNT_TWO_ANGLE_SEGMNET);
+                segmentBuffersData.AddToIndexStart(INDEX_COUNT_TWO_ANGLE_SEGMNET);
+                segmentBuffersData.SetVertexCount(VERTEX_COUNT_ONE_ANGLE_SEGMNET);
+                segmentBuffersData.SetIndexCount(INDEX_COUNT_ONE_ANGLE_SEGMNET);
+            }
+            else
+            { 
+                segmentBuffersData.AddToVertexStart(VERTEX_COUNT_ONE_ANGLE_SEGMNET);
+                segmentBuffersData.AddToIndexStart(INDEX_COUNT_ONE_ANGLE_SEGMNET);
+                segmentBuffersData.SetVertexCount(VERTEX_COUNT_TWO_ANGLE_SEGMNET);
+                segmentBuffersData.SetIndexCount(INDEX_COUNT_TWO_ANGLE_SEGMNET);
+            }
         }
 
         _figureVertices.Dispose();
@@ -168,17 +193,17 @@ public class ValknutGenerator : FigureGenerator
     {
         Mesh[] meshes = new Mesh[0];
 
-        _segmentPointBuffersData.ResetVertexStart();
-        _segmentPointBuffersData.ResetIndexStart();
+        // _segmentPointBuffersData.ResetVertexStart();
+        // _segmentPointBuffersData.ResetIndexStart();
 
-        for (int i = 0; i < meshes.Length; i++)
-        {
-            Mesh segmentPointMesh = CreateSegmentPointMesh(_segmentPointBuffersData);
-            meshes[i] = segmentPointMesh;
+        // for (int i = 0; i < meshes.Length; i++)
+        // {
+        //     Mesh segmentPointMesh = CreateSegmentPointMesh(_segmentPointBuffersData);
+        //     meshes[i] = segmentPointMesh;
 
-            _segmentPointBuffersData.AddVertexCountToVertexStart();
-            _segmentPointBuffersData.AddIndexCountToIndexStart();
-        }
+        //     _segmentPointBuffersData.AddVertexCountToVertexStart();
+        //     _segmentPointBuffersData.AddIndexCountToIndexStart();
+        // }
 
         return meshes;
     }

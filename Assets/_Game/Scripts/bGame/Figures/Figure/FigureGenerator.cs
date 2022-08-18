@@ -74,6 +74,15 @@ public abstract class FigureGenerator : MonoBehaviour
         {
             _start.y += _count.y;
         }
+
+        public void AddToVertexStart(int toAdd)
+        {
+            _start.x += toAdd;
+        }
+        public void AddToIndexStart(int toAdd)
+        {
+            _start.y += toAdd;
+        }
     }
     protected virtual void UpdateSegment(Segment segment, BuffersData data, int puzzleIndex)
     {

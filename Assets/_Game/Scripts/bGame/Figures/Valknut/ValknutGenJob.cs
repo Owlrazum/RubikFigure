@@ -153,25 +153,30 @@ public struct ValknutGenJob : IJob
         urPos[0] = rightTriangle.Up;
         urPos[1] = upTriangle.Left;
         urPos[2] = upTriangle.Up;
-        ConstructTwoAngleSegment(urPos, in urDir);
+        float3x4 urEdges = ConstructTwoAngleSegment(urPos, in urDir);
+        ConstructOneAngleSegment(in urEdges, in urDir, x0z(upTriangle.Right));
 
-        float4x3 ulDir = new float4x3(dirs);
-        SwapDirs(new int2(0, 1), ref ulDir);
 
-        float2x3 ulPos = new float2x3();
-        ulPos[0] = upTriangle.Left;
-        ulPos[1] = leftTriangle.Right;
-        ulPos[2] = leftTriangle.Left;
-        ConstructTwoAngleSegment(ulPos, in ulDir);
+        float4x3 rlDir = new float4x3(dirs);
+        SwapDirs(new int2(1, 2), ref rlDir);
 
-        float4x3 lrDir = new float4x3(dirs);
-        SwapDirs(new int2(1, 2), ref lrDir);
+        float2x3 rlPos = new float2x3();
+        rlPos[0] = leftTriangle.Right;
+        rlPos[1] = rightTriangle.Up;
+        rlPos[2] = rightTriangle.Right;
+        float3x4 rlEdges = ConstructTwoAngleSegment(rlPos, in rlDir);
+        ConstructOneAngleSegment(in rlEdges, in rlDir, x0z(rightTriangle.Left));
 
-        float2x3 lrPos = new float2x3();
-        lrPos[0] = leftTriangle.Right;
-        lrPos[1] = rightTriangle.Up;
-        lrPos[2] = rightTriangle.Right;
-        ConstructTwoAngleSegment(lrPos, in lrDir);
+
+        float4x3 luDir = new float4x3(dirs);
+        SwapDirs(new int2(0, 1), ref luDir);
+
+        float2x3 luPos = new float2x3();
+        luPos[0] = upTriangle.Left;
+        luPos[1] = leftTriangle.Right;
+        luPos[2] = leftTriangle.Left;
+        float3x4 luEdges = ConstructTwoAngleSegment(luPos, in luDir);
+        ConstructOneAngleSegment(in luEdges, in luDir, x0z(leftTriangle.Up));
     }
 
     private void SwapDirs(int2 swaps, ref float4x3 dirs)
@@ -181,12 +186,17 @@ public struct ValknutGenJob : IJob
         dirs[swaps.y] = t;
     }
 
-    /// <summary>
-    /// poses[0]: vertex of triangle from which intersection
-    /// poses[1]: triangleVertex for leftQuad
-    /// poses[2]: trianglevertex for rightQuad
-    /// </summary>
-    private void ConstructTwoAngleSegment(float2x3 poses, in float4x3 dirs)
+   /// <summary>
+   /// poses[0]: vertex of triangle from which intersection
+   /// poses[1]: triangleVertex for leftQuad
+   /// poses[2]: trianglevertex for rightQuad;
+   /// dirs[0] is cutting direction, others were placed by trial-error
+   /// </summary>
+   /// <returns>
+   /// edges with edges[0] and edges[2] on inner lines of one angle segment;
+   /// edges[1] and edges[3] are on outer
+   /// </returns>
+    private float3x4 ConstructTwoAngleSegment(float2x3 poses, in float4x3 dirs)
     { 
         TwoAngleSegment tas = new TwoAngleSegment();
         float3 intersect;
@@ -216,22 +226,34 @@ public struct ValknutGenJob : IJob
         tas.CenterQuad[3] = tas.RightQuad[0];
 
         AddTwoAngleSegmentMeshData(tas);
-    }
-    
-    private float3x4 MoveClockwise(float3x4 quad)
-    {
-        float3 temp = quad[0];
-        quad[0] = quad[3];
-        quad[3] = quad[2];
-        quad[2] = quad[1];
-        quad[1] = temp;
-        return quad;
+
+        float3x4 edges = new float3x4();
+        edges[0] = tas.LeftQuad[2];
+        edges[1] = tas.LeftQuad[3];
+        edges[2] = tas.RightQuad[3];
+        edges[3] = tas.RightQuad[2];
+        return edges;
     }
 
-    private struct OneAngleSegment
+    private void ConstructOneAngleSegment(in float3x4 edges, in float4x3 dirs, float3 triangleVertex)
     {
-        public float3x4 LeftQuad;
-        public float3x4 RightQuad;
+        float3 intersectPos = float3.zero;
+        IntersectRays(Ray(edges[2].xz, dirs[2].xy), Ray(edges[0].xz, dirs[1].zw), out intersectPos);
+        
+        OneAngleSegment oas = new OneAngleSegment();
+        oas.LeftQuad = new float3x4();
+        oas.LeftQuad[0] = triangleVertex;
+        oas.LeftQuad[1] = intersectPos;
+        oas.LeftQuad[2] = edges[2] + x0z(dirs[2].xy * (P_GapSize * 2 + P_Width));
+        oas.LeftQuad[3] = edges[3] + x0z(dirs[2].xy * (P_GapSize * 2 + P_Width));
+
+        oas.RightQuad = new float3x4();
+        oas.RightQuad[0] = triangleVertex;
+        oas.RightQuad[1] = intersectPos;
+        oas.RightQuad[2] = edges[0] + x0z(dirs[1].zw * (P_GapSize * 2 + P_Width));
+        oas.RightQuad[3] = edges[1] + x0z(dirs[1].zw * (P_GapSize * 2 + P_Width));
+
+        AddOneAngleSegment(oas);
     }
 
     private struct TwoAngleSegment
@@ -241,6 +263,13 @@ public struct ValknutGenJob : IJob
         public float3x4 RightQuad;
     }
 
+    private struct OneAngleSegment
+    {
+        public float3x4 LeftQuad;
+        public float3x4 RightQuad;
+    }
+
+    
     private void AddOneAngleSegment(OneAngleSegment oneAngleSegment)
     {
         _segmentVertexCount = 0;
