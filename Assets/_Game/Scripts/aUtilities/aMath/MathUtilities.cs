@@ -1,10 +1,12 @@
+using Unity.Mathematics;
+
 using UnityEngine;
 
 namespace Orazum.Math
 {
     public static class MathUtilities
     {
-        public const float Epsilon = 1E-12F;
+        public const float Epsilon = 1E-5F;
 
         #region EasingFunctions
         public static float EaseIn(float lerpParam)
@@ -28,6 +30,46 @@ namespace Orazum.Math
         }
         #endregion
 
+        public static float CrossScalar(float2 lhs, float2 rhs)
+        {
+            return rhs.x * lhs.y - rhs.y * lhs.x;
+        }
+
+        /// <summary>
+        /// intersection will be on xz, and y = 0
+        /// </summary>
+        public static bool IntersectRays(float4 r1, float4 r2, out float3 intersection)
+        {
+            intersection = float3.zero;
+            float det = CrossScalar(r1.zw, r2.zw);
+            if (Mathf.Approximately(det, 0))
+            {
+                return false;
+            }
+            
+            float2 d = new float2(r2.x - r1.x, r2.y - r1.y);
+
+            float u = (d.y * r2.z - d.x * r2.w) / det;
+            //v = (dy * ad.x - dx * ad.y) / det
+            float v = (d.y * r1.z - d.x * r1.w) / det;
+            if (u > 0 && v > 0)
+            {
+                intersection = new float3(r1.x + r1.z * u, 0, r1.y + r1.w * u);
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        public static bool IntersectRays(float4 r1, float4 r2, out float2 intersection)
+        {
+            bool toReturn = IntersectRays(r1, r2, out float3 p);
+            intersection = p.xz;
+            return toReturn;
+        }
+
         public static Vector3 ProjectVector(Vector3 toProject, Vector3 onto)
         {
             Vector3 direction = onto.normalized;
@@ -47,28 +89,10 @@ namespace Orazum.Math
             return Vector3.Cross((p0 - p1), (p0 - p2)).magnitude / (p2 - p1).magnitude;
         }
 
-        public static float GetCrossProdSign(Vector3 lhs, Vector3 rhs)
-        {
-            return Mathf.Sign(Vector3.Cross(lhs, rhs).y);
-        }
-
-        public static float GetDotProdSign(Vector3 first, Vector3 second)
-        {
-            return Mathf.Sign(Vector3.Dot(first, second));
-        }
-
-        public static Vector3 ComputePointOnCircle(float radius, float radian)
-        {
-            Vector3 normalizedPoint =
-                new Vector3(Mathf.Cos(radian), 0, Mathf.Sin(radian));
-            return normalizedPoint * radius;
-        }
-
         public static Vector3 ComputeCubicBeizerPos(
             CubicBeizerVector3Params par,
             float lerpParam)
         {
-
             Vector3 secondOrderAnchor1 =
                 Vector3.Lerp(par.initial, par.anchor1, lerpParam);
             Vector3 secondOrderAnchor2 =
@@ -85,11 +109,6 @@ namespace Orazum.Math
                 Vector3.Lerp(thirdOrderAnchor1, thirdOrderAnchor2, lerpParam);
 
             return cubicBeizerPos;
-        }
-
-        public static bool AreQuaternionsEqual(Quaternion q1, Quaternion q2)
-        {
-            return Mathf.Abs(Quaternion.Dot(q1.normalized, q2.normalized)) > 1 - Epsilon;
         }
 
         /// <summary>

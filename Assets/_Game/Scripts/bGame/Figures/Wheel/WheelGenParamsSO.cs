@@ -1,6 +1,6 @@
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "WheelGenParams", menuName = "Game/WheelGenParams", order = 1)]
+[CreateAssetMenu(fileName = "WheelGenParams", menuName = "Figure/WheelGenParams", order = 1)]
 public class WheelGenParamsSO : FigureGenParamsSO
 {
     [SerializeField]

@@ -5,8 +5,6 @@ using Unity.Collections;
 
 using static Orazum.Math.MathUtilities;
 
-using UnityEngine;
-
 [BurstCompile]
 public struct WheelGenJob : IJob
 {
@@ -33,7 +31,6 @@ public struct WheelGenJob : IJob
     private short _segmentIndexCount;
 
     private float2 _uv;
-    private int _segmentIndex;
     private float _currentRadius;
     private float _nextRadius;
 
@@ -45,12 +42,10 @@ public struct WheelGenJob : IJob
     public void Execute()
     {
         _startAngle = TAU / 4;
-        // we subtract so the positive would be clockwiseOrder,
-        // with addition it will be counter-clockwise;
+        _startRay = new float3(math.cos(_startAngle), 0, math.sin(_startAngle));
+        
         _angleResolutionDelta = TAU / P_SideCount;
         _angleResolutionDelta = _angleResolutionDelta / P_SegmentResolution;
-
-        _startRay = new float3(math.cos(_startAngle), 0, math.sin(_startAngle));
 
         float radiusDelta = (P_OuterCircleRadius - P_InnerCircleRadius) / P_RingCount;
         float lerpDeltaToResolution = 1 / P_SegmentResolution;
@@ -70,8 +65,6 @@ public struct WheelGenJob : IJob
 
             for (int ring = 0; ring < P_RingCount; ring++)
             {
-                _segmentIndex = side * P_RingCount + ring;
-
                 AddSegment();
 
                 if (!isInitializedSegmentVertexPositions)

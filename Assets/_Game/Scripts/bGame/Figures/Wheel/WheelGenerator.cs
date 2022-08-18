@@ -13,7 +13,6 @@ public class WheelGenerator : FigureGenerator
 {
     [SerializeField]
     private FigureParamsSO _figureParams; 
-    private WheelGenJob _wheelMeshGenJob;
     private SegmentPointMeshGenJob _segmentPointMeshGenJob;
 
     private NativeArray<SegmentMesh> _segmentMeshes;
@@ -40,7 +39,10 @@ public class WheelGenerator : FigureGenerator
 
     private void Awake()
     {
-        StartGeneration(_figureParams.FigureGenParamsSO);
+        if (enabled)
+        { 
+            StartGeneration(_figureParams.FigureGenParamsSO);
+        }
     }
 
     private void Start()
@@ -81,7 +83,7 @@ public class WheelGenerator : FigureGenerator
         _figureIndices = new NativeArray<short>(_segmentBuffersData.Count.y * _segmentCount, Allocator.TempJob);
         _segmentMeshes = new NativeArray<SegmentMesh>(_ringCount, Allocator.TempJob);
 
-        _wheelMeshGenJob = new WheelGenJob()
+        WheelGenJob wheelMeshGenJob = new WheelGenJob()
         {
             P_SideCount = _sideCount,
             P_RingCount = _ringCount,
@@ -94,7 +96,7 @@ public class WheelGenerator : FigureGenerator
 
             OutputSegmentMeshes = _segmentMeshes
         };
-        _figureMeshGenJobHandle = _wheelMeshGenJob.Schedule();
+        _figureMeshGenJobHandle = wheelMeshGenJob.Schedule();
 
         _segmentPointsVertices = new NativeArray<float3>(_segmentPointBuffersData.Count.x * _ringCount, Allocator.TempJob);
         _segmentPointsIndices = new NativeArray<short>(_segmentPointBuffersData.Count.y * _ringCount, Allocator.TempJob);
@@ -119,7 +121,7 @@ public class WheelGenerator : FigureGenerator
     protected override void GenerateFigureGameObject()
     {
         GameObject wheelGb = new GameObject("Wheel", typeof(Wheel), typeof(WheelStatesController));
-        wheelGb.layer = LayerUtilities.WHEEL_LAYER;
+        wheelGb.layer = LayerUtilities.FIGURE_LAYER;
         Transform parentWheel = wheelGb.transform;
 
         GameObject segmentPointsParentGb = new GameObject("SegmentPoints");

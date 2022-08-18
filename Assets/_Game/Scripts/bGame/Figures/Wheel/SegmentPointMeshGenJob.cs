@@ -110,8 +110,8 @@ public struct SegmentPointMeshGenJob : IJob
             );
             AddQuad(forwQuad);
             
-            UnityEngine.Debug.DrawRay(UnityEngine.Vector3.zero, rays[0] * 100, UnityEngine.Color.red, 100);
-            UnityEngine.Debug.DrawRay(UnityEngine.Vector3.zero, rays[1] * 100, UnityEngine.Color.red, 100);
+            // UnityEngine.Debug.DrawRay(UnityEngine.Vector3.zero, rays[0] * 100, UnityEngine.Color.red, 100);
+            // UnityEngine.Debug.DrawRay(UnityEngine.Vector3.zero, rays[1] * 100, UnityEngine.Color.red, 100);
             rays[0] = rays[1];
             rays[1] = math.rotate(q, rays[1]);
         }

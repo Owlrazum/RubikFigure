@@ -37,7 +37,7 @@ public class WheelCompleter : MonoBehaviour
 
     private void Start()
     {
-        _currentWheel = WheelDelegates.GetCurrentWheel();
+        // _currentWheel = WheelDelegates.GetCurrentWheel();
     }
 
     private void OnDestroy()
