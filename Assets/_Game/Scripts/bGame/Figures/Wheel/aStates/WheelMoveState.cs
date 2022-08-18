@@ -6,7 +6,7 @@ using UnityEngine.Assertions;
 
 using static Orazum.Math.MathUtilities;
 
-public class MoveState : WheelState
+public class WheelMoveState : FigureState
 {
     private SwipeCommand _currentSwipeCommand;
     private FigureSegmentPoint _currentSelectedPoint;
@@ -15,9 +15,13 @@ public class MoveState : WheelState
     private float _moveLerpSpeed;
     private bool _isMoving;
 
-    public MoveState(FigureParamsSO figureParams, Wheel wheelArg) : base(figureParams, wheelArg)
-    { 
-        _moveLerpSpeed = figureParams.MoveLerpSpeed;
+    private Wheel _wheel;
+
+    public WheelMoveState(float moveLerpSpeedArg, Wheel wheelArg)
+    {
+        _wheel = wheelArg;
+
+        _moveLerpSpeed = moveLerpSpeedArg;
         _verticesMove = new WheelVerticesMove();
         _rotationMove = new WheelRotationMove();
 
@@ -144,7 +148,7 @@ public class MoveState : WheelState
         WheelDelegates.ActionCheckWheelCompletion();
     }
 
-    public override WheelState HandleTransitions()
+    public override FigureState HandleTransitions()
     {
         if (_isMoving)
         {
@@ -165,7 +169,7 @@ public class MoveState : WheelState
         WheelDelegates.MoveState -= GetThisState;
     }
 
-    protected override WheelState GetThisState()
+    private WheelMoveState GetThisState()
     {
         return this;
     }

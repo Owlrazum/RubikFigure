@@ -22,6 +22,9 @@ public struct ValknutGenJob : IJob
     [WriteOnly]
     public NativeArray<short> OutputIndices;
 
+    [WriteOnly]
+    public NativeArray<ValknutSegmentMesh> OutputSegmentMeshes;
+
     private short _totalVertexCount;
     private short _totalIndexCount;
 

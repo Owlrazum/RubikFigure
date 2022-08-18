@@ -8,7 +8,7 @@ using static Orazum.Math.MathUtilities;
 
 using rnd = Unity.Mathematics.Random;
 
-public class ShuffleState : WheelState
+public class WheelShuffleState : FigureState
 { 
     private const int FAST_STEPS = 0;
     private const float FAST_SPEED = 10;
@@ -27,8 +27,12 @@ public class ShuffleState : WheelState
     private int _currentStep;
     private int2[] _currentEmptyIndices;
 
-    public ShuffleState(FigureParamsSO figureParams, Wheel wheelArg) : base(figureParams, wheelArg)
+    private Wheel _wheel;
+
+    public WheelShuffleState(FigureParamsSO figureParams, Wheel wheelArg)
     {
+        _wheel = wheelArg;
+
         _shuffleLerpSpeed = figureParams.ShuffleLerpSpeed;
         _shufflePauseTime = figureParams.ShufflePauseTime;
 
@@ -52,7 +56,7 @@ public class ShuffleState : WheelState
         _currentEmptyIndices = currentEmptyIndicesArg;
     }
 
-    public override WheelState HandleTransitions()
+    public override FigureState HandleTransitions()
     {
         if (_currentStep >= _shuffleStepsAmount)
         {
@@ -168,7 +172,7 @@ public class ShuffleState : WheelState
         WheelDelegates.ShuffleState -= GetThisState;
     }
 
-    protected override WheelState GetThisState()
+    private WheelShuffleState GetThisState()
     {
         return this;
     }

@@ -4,9 +4,9 @@ public static class WheelDelegates
 {
     public static Func<Wheel> GetCurrentWheel;
 
-    public static Func<WheelState> IdleState;
-    public static Func<WheelState> ShuffleState;
-    public static Func<WheelState> MoveState;
+    public static Func<WheelIdleState> IdleState;
+    public static Func<WheelShuffleState> ShuffleState;
+    public static Func<WheelMoveState> MoveState;
 
     public static Action<WheelSegment[]> EventSegmentsWereEmptied;
     public static Func<FigureSegmentPoint[]> GetEmptySegmentPoints;

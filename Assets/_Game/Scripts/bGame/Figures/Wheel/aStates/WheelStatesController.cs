@@ -1,48 +1,23 @@
-using System.Collections;
-
 using Unity.Mathematics;
+using UnityEngine.Assertions;
 
-using UnityEngine;
-
-public class WheelStatesController : MonoBehaviour
+public class WheelStatesController : FigureStatesController
 {
-    private WheelState _currentState;
     private Wheel _wheel;
 
-    public void Initialize(Wheel wheelArg, FigureParamsSO figureParams, int2[] emptyIndices)
+    public override void Initialize(Figure figureArg, FigureParamsSO figureParams, int2[] emptyIndices)
     {
-        _wheel = wheelArg;
+        _wheel = figureArg as Wheel;
+        Assert.IsNotNull(_wheel);
 
-        IdleState idleState = new IdleState(figureParams, _wheel);
-        MoveState moveState = new MoveState(figureParams, _wheel);
-        ShuffleState shuffleState = new ShuffleState(figureParams, _wheel);
+        WheelIdleState idleState = new WheelIdleState();
+        WheelMoveState moveState = new WheelMoveState(figureParams.MoveLerpSpeed, _wheel);
+        WheelShuffleState shuffleState = new WheelShuffleState(figureParams, _wheel);
         shuffleState.PrepareForShuffle(emptyIndices);
 
         _currentState = shuffleState;
         _currentState.OnEnter();
 
         StartCoroutine(StateSwitchSequence());
-    }
-
-    private IEnumerator StateSwitchSequence()
-    {
-        while (true)
-        {
-            WheelState newState = _currentState.HandleTransitions();
-            if (newState != null)
-            {
-                do
-                {
-                    _currentState.OnExit(); 
-                    _currentState = newState;
-                    _currentState.OnEnter();
-                    newState = _currentState.HandleTransitions();
-                } while (newState != null);
-                Debug.Log(_currentState);
-            }
-            
-            _currentState.ProcessState();
-            yield return null;
-        }
     }
 }

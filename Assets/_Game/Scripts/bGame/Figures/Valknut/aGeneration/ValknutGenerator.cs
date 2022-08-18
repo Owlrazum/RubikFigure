@@ -132,7 +132,7 @@ public class ValknutGenerator : FigureGenerator
         {
             GameObject segmentGb = Instantiate(_segmentPrefab);
             segmentGb.transform.parent = segmentsParent;
-            FigureSegment segment = segmentGb.GetComponent<FigureSegment>();
+            FigureSegment segment = segmentGb.AddComponent<ValknutSegment>();
             _segments.Add(segment);
             Assert.IsNotNull(segment);
         }

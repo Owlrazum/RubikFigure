@@ -3,22 +3,15 @@ using System.Collections;
 
 using Unity.Jobs;
 using Unity.Mathematics;
-using Unity.Collections;
 
 using UnityEngine;
-using UnityEngine.Rendering;
 
-using Orazum.Collections;
 using static Orazum.Math.MathUtilities;
 
 [RequireComponent(typeof(MeshFilter))]
 public class WheelSegmentMover : FigureSegmentMover
 { 
     private const float CLOCK_MOVE_BUFFER_LERP_VALUE = 0.4f;
-
-    private float _currentAngle;
-
-    private WheelSegmentMoveJob _segmentMoveJob;
 
     private bool _wasJobScheduled;
     private bool _wasMoveCompleted;
@@ -113,7 +106,7 @@ public class WheelSegmentMover : FigureSegmentMover
     private IEnumerator MoveSequence(WheelVerticesMove verticesMove)
     {
         float lerpParam = 0;
-        _segmentMoveJob = new WheelSegmentMoveJob()
+        WheelSegmentMoveJob segmentMoveJob = new WheelSegmentMoveJob()
         {
             P_ClockMoveBufferLerpValue = CLOCK_MOVE_BUFFER_LERP_VALUE,
             P_VertexPositions = verticesMove.VertexPositions,
@@ -123,7 +116,7 @@ public class WheelSegmentMover : FigureSegmentMover
             OutputVertices = _currentVertices
         };
 
-        _segmentMoveJob.P_VertexPositions = verticesMove.VertexPositions;
+        segmentMoveJob.P_VertexPositions = verticesMove.VertexPositions;
 
         while (lerpParam < 1)
         {
@@ -132,8 +125,8 @@ public class WheelSegmentMover : FigureSegmentMover
             {
                 lerpParam = 1;
             }
-            _segmentMoveJob.P_LerpParam = EaseInOut(lerpParam);
-            _segmentMoveJobHandle = _segmentMoveJob.Schedule(_segmentMoveJobHandle);
+            segmentMoveJob.P_LerpParam = EaseInOut(lerpParam);
+            _segmentMoveJobHandle = segmentMoveJob.Schedule(_segmentMoveJobHandle);
             _wasJobScheduled = true;
             yield return null;
         }
@@ -141,12 +134,11 @@ public class WheelSegmentMover : FigureSegmentMover
         _wasMoveCompleted = true;
     }
 
-    public void LateUpdate()
+    private void LateUpdate()
     {
         if (_wasMoveCompleted)
         {
             _segmentMoveJobHandle.Complete();
-            _currentVertices = _segmentMoveJob.OutputVertices;
             AssignVertices(_currentVertices, _vertices.Length);
 
             for (int i = 0; i < _vertices.Length; i++)

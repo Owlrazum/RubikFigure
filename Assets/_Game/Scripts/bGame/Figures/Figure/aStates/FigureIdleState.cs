@@ -1,15 +1,12 @@
 using UnityEngine;
 using UnityEngine.Assertions;
 
-public class IdleState : WheelState
-{
-    private SwipeCommand _currentSwipeCommand;
-    private FigureSegmentPoint _currentSelectedPoint;
+public abstract class FigureIdleState : FigureState
+{ 
+    protected SwipeCommand _currentSwipeCommand;
+    protected FigureSegmentPoint _currentSelectedPoint;
 
-    public IdleState(FigureParamsSO figureParams, Wheel wheelArg) : base(figureParams, wheelArg)
-    {
-        WheelDelegates.IdleState += GetThisState;
-    }
+    public abstract FigureState MoveToAnotherStateOnInput();
 
     public override void OnEnter()
     {
@@ -53,7 +50,7 @@ public class IdleState : WheelState
         _currentSwipeCommand = swipeCommand;
     }
 
-    public override WheelState HandleTransitions()
+    public override FigureState HandleTransitions()
     {
         if (_currentSwipeCommand == null || _currentSelectedPoint == null)
         {
@@ -61,22 +58,16 @@ public class IdleState : WheelState
         }
         else
         {
-            MoveState moveState = WheelDelegates.MoveState() as MoveState;
-            moveState.PrepareForMove(_currentSwipeCommand, _currentSelectedPoint);
+            FigureState anotherState = MoveToAnotherStateOnInput();
+            Assert.IsNotNull(anotherState);
             _currentSwipeCommand = null;
             OnDeselectSegmentCommand();
-            return moveState;
+            return anotherState;
         }
-    }
-
-    public override void ProcessState()
-    {
-
     }
 
     public override void OnDestroy()
     {
-        WheelDelegates.IdleState -= GetThisState;
         if (InputDelegatesContainer.SelectSegmentCommand == null)
         { 
             InputDelegatesContainer.SelectSegmentCommand -= OnSelectSegmentCommand;
@@ -89,11 +80,6 @@ public class IdleState : WheelState
         { 
             InputDelegatesContainer.SwipeCommand -= OnSwipeCommand;
         }
-    }
-
-    protected override WheelState GetThisState()
-    {
-        return this;
     }
 
     public override string ToString()
