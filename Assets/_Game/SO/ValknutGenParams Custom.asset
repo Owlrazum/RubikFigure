@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 06d040d615f594850b201ba61044efd2, type: 3}
-  m_Name: ValknutGenParams
+  m_Name: ValknutGenParams Custom
   m_EditorClassIdentifier: 
   _height: 1
   _segmentPrefab: {fileID: 6270584614686746192, guid: c417056fd1f314434bcea4a21b29a82c, type: 3}
   _segmentPointPrefab: {fileID: 1553978324677776507, guid: dfd0e0cf5893b4c2fb5997fd8f7972bf, type: 3}
   _innerTriangleRadius: 1
-  _width: 0.65
-  _gapSize: 0.35
+  _width: 0.8
+  _gapSize: 0.1

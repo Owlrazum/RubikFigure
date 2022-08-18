@@ -52,18 +52,18 @@ public struct ValknutGenJob : IJob
 
     private struct Triangle
     {
-        public float3 Up;
-        public float3 Right;
-        public float3 Left;
+        public float2 Up;
+        public float2 Right;
+        public float2 Left;
 
         public void Rotate(quaternion rotation)
         {
-            Up = math.rotate(rotation, Up);
-            Right = math.rotate(rotation, Right);
-            Left = math.rotate(rotation, Left);
+            Up = math.rotate(rotation, x0z(Up)).xz;
+            Right = math.rotate(rotation, x0z(Right)).xz;
+            Left = math.rotate(rotation, x0z(Left)).xz;
         }
 
-        public void Offset(float3 offset)
+        public void Offset(float2 offset)
         {
             Up += offset;
             Right += offset;
@@ -75,31 +75,48 @@ public struct ValknutGenJob : IJob
     {
         Triangle triangle = new Triangle()
         {
-            Up = triangleVertex,
-            Right = math.rotate(_rightRotate, triangleVertex),
-            Left = math.rotate(_leftRotate, triangleVertex)
+            Up = triangleVertex.xz,
+            Right = math.rotate(_rightRotate, triangleVertex).xz,
+            Left = math.rotate(_leftRotate, triangleVertex).xz
         };
         return triangle;
     }
 
-    private void DrawTriangle(Triangle triangle)
+    private void DrawTriangle(in Triangle triangle)
     { 
-        Debug.DrawLine(triangle.Up,    triangle.Right, Color.green, 100);
-        Debug.DrawLine(triangle.Right, triangle.Left, Color.green, 100);
-        Debug.DrawLine(triangle.Left,  triangle.Up, Color.green, 100);
+        Debug.DrawLine(x0z(triangle.Up),    x0z(triangle.Right), Color.white, 100);
+        Debug.DrawLine(x0z(triangle.Right), x0z(triangle.Left), Color.white, 100);
+        Debug.DrawLine(x0z(triangle.Left),  x0z(triangle.Up), Color.white, 100);
     }
 
-    private void DrawRays(float4x3 rays)
-    { 
-        Debug.DrawRay(Float3(rays[0].xy), Float3(rays[0].zw) * 5, Color.red, 100);
-        Debug.DrawRay(Float3(rays[1].xy), Float3(rays[1].zw) * 5, Color.red, 100);
-        Debug.DrawRay(Float3(rays[2].xy), Float3(rays[2].zw) * 5, Color.red, 100);
-    }
-
-    private float3 Float3(float2 xy)
+    private void DrawDirs(in float4x3 dirs, in Triangle triangle)
     {
-        return new float3(xy.x, 0, xy.y);
+        float length = 2;
+        float d1 = 0.05f, d2 = 0.05f; 
+        Debug.DrawRay(x0z(triangle.Up + new float2(d1, d1))   , x0z(dirs[0].xy) * length, Color.red, 100);
+        Debug.DrawRay(x0z(triangle.Right + new float2(d2, d2)), x0z(dirs[0].zw) * length, Color.magenta, 100);
+
+        Debug.DrawRay(x0z(triangle.Right + new float2(0, -d1)), x0z(dirs[1].xy) * length, Color.red, 100);
+        Debug.DrawRay(x0z(triangle.Left  + new float2(0, -d2)), x0z(dirs[1].zw) * length, Color.magenta, 100);
+
+        Debug.DrawRay(x0z(triangle.Left + new float2(-d1, d1)), x0z(dirs[2].xy) * length, Color.red, 100);
+        Debug.DrawRay(x0z(triangle.Up   + new float2(-d2, d2)), x0z(dirs[2].zw) * length, Color.magenta, 100);
     }
+
+    private float4 Ray(float2 pos, float2 dir)
+    {
+        return new float4(pos, dir);
+    }
+
+    private float4x3 CalculateDirs(Triangle triangle)
+    { 
+        float4x3 raysCW = new float4x3();
+        raysCW[0] = new float4(math.normalize(triangle.Right - triangle.Up),    math.normalize(triangle.Up    - triangle.Right));
+        raysCW[1] = new float4(math.normalize(triangle.Left  - triangle.Right), math.normalize(triangle.Right - triangle.Left));
+        raysCW[2] = new float4(math.normalize(triangle.Up    - triangle.Left),  math.normalize(triangle.Left  - triangle.Up));
+        return raysCW;
+    }
+    
 
     /// <summary>
     /// Perhaps direction vectors should be normalized
@@ -122,49 +139,93 @@ public struct ValknutGenJob : IJob
         Triangle leftTriangle = MakeTriangle(new float3(0, 0, valknutRadius));
         leftTriangle.Offset(centerTriangle.Right);
 
-        float4x3 upRaysCW    = CalculateCWRaysForTriangle(upTriangle);
-        float4x3 rightRaysCW = CalculateCWRaysForTriangle(rightTriangle);
-        float4x3 leftRaysCW  = CalculateCWRaysForTriangle(leftTriangle);
         
-        DrawRays(upRaysCW);
-        DrawRays(rightRaysCW);
-        DrawRays(leftRaysCW);        
+        DrawTriangle(in upTriangle);
+        DrawTriangle(in rightTriangle);
+        DrawTriangle(in leftTriangle);        
 
-        float4x3 upRaysCCW    = CalculateCCWRaysForTriangle(upTriangle);
-        float4x3 rightRaysCCW = CalculateCCWRaysForTriangle(rightTriangle);
-        float4x3 leftRaysCCW  = CalculateCCWRaysForTriangle(leftTriangle);
+        float4x3 dirs  = CalculateDirs(upTriangle);
 
+        float4x3 urDir = new float4x3(dirs);
+        SwapDirs(new int2(0, 2), ref urDir);
+
+        float2x3 urPos = new float2x3();
+        urPos[0] = rightTriangle.Up;
+        urPos[1] = upTriangle.Left;
+        urPos[2] = upTriangle.Up;
+        ConstructTwoAngleSegment(urPos, in urDir);
+
+        float4x3 ulDir = new float4x3(dirs);
+        SwapDirs(new int2(0, 1), ref ulDir);
+
+        float2x3 ulPos = new float2x3();
+        ulPos[0] = upTriangle.Left;
+        ulPos[1] = leftTriangle.Right;
+        ulPos[2] = leftTriangle.Left;
+        ConstructTwoAngleSegment(ulPos, in ulDir);
+
+        float4x3 lrDir = new float4x3(dirs);
+        SwapDirs(new int2(1, 2), ref lrDir);
+
+        float2x3 lrPos = new float2x3();
+        lrPos[0] = leftTriangle.Right;
+        lrPos[1] = rightTriangle.Up;
+        lrPos[2] = rightTriangle.Right;
+        ConstructTwoAngleSegment(lrPos, in lrDir);
+    }
+
+    private void SwapDirs(int2 swaps, ref float4x3 dirs)
+    {
+        float4 t = dirs[swaps.x];
+        dirs[swaps.x] = dirs[swaps.y];
+        dirs[swaps.y] = t;
+    }
+
+    /// <summary>
+    /// poses[0]: vertex of triangle from which intersection
+    /// poses[1]: triangleVertex for leftQuad
+    /// poses[2]: trianglevertex for rightQuad
+    /// </summary>
+    private void ConstructTwoAngleSegment(float2x3 poses, in float4x3 dirs)
+    { 
+        TwoAngleSegment tas = new TwoAngleSegment();
         float3 intersect;
 
-        TwoAngleSegment uus = new TwoAngleSegment();
+        float4 triangleIntersectRay = Ray(poses[0], dirs[0].zw);
 
-        uus.RightQuad = new float3x4();
-        uus.RightQuad[0] = upTriangle.Up;
-        IntersectRays(upRaysCW[0], rightRaysCCW[0], out intersect);
-        uus.RightQuad[1] = intersect + Float3(upRaysCCW[2].zw) * P_GapSize;
-        uus.RightQuad[2] = uus.RightQuad[1] + Float3(rightRaysCCW[0].zw) * P_Width;
-        IntersectRays(upRaysCCW[0], new float4(uus.RightQuad[2].xz, upRaysCCW[2].zw), out intersect);
-        uus.RightQuad[3] = intersect + Float3(upRaysCW[0].zw) * P_Width;
+        tas.LeftQuad = new float3x4();
+        IntersectRays(triangleIntersectRay, Ray(poses[1], dirs[1].zw), out intersect);
+        tas.LeftQuad[3] = intersect + x0z(dirs[1].xy) * P_GapSize;
+        tas.LeftQuad[2] = tas.LeftQuad[3] + x0z(dirs[0].xy) * P_Width;
+        IntersectRays(Ray(poses[1], dirs[0].xy), Ray(tas.LeftQuad[2].xz, dirs[1].xy), out intersect);
+        tas.LeftQuad[1] = intersect + x0z(dirs[1].zw)* P_Width;
+        tas.LeftQuad[0] = x0z(poses[1]);
 
-        AddQuad(uus.RightQuad);
+        tas.RightQuad = new float3x4();
+        IntersectRays(triangleIntersectRay, Ray(poses[2], dirs[2].xy), out intersect);
+        tas.RightQuad[2] = intersect + x0z(dirs[2].zw) * P_GapSize;
+        tas.RightQuad[3] = tas.RightQuad[2] + x0z(dirs[0].zw) * P_Width;
+        IntersectRays(Ray(poses[2], dirs[0].zw), Ray(tas.RightQuad[3].xz, dirs[2].zw), out intersect);
+        tas.RightQuad[0] = intersect + x0z(dirs[2].xy) * P_Width;
+        tas.RightQuad[1] = x0z(poses[2]);
+
+        tas.CenterQuad = new float3x4();
+        tas.CenterQuad[0] = tas.LeftQuad[1];
+        tas.CenterQuad[1] = tas.LeftQuad[0];
+        tas.CenterQuad[2] = tas.RightQuad[1];
+        tas.CenterQuad[3] = tas.RightQuad[0];
+
+        AddTwoAngleSegmentMeshData(tas);
     }
-
-    private float4x3 CalculateCWRaysForTriangle(Triangle triangle)
-    { 
-        float4x3 raysCW = new float4x3();
-        raysCW[0] = new float4(triangle.Up.xz,    math.normalize(triangle.Right.xz - triangle.Up.xz));
-        raysCW[1] = new float4(triangle.Right.xz, math.normalize(triangle.Left.xz  - triangle.Right.xz));
-        raysCW[2] = new float4(triangle.Left.xz,  math.normalize(triangle.Up.xz    - triangle.Left.xz));
-        return raysCW;
-    }
-
-    private float4x3 CalculateCCWRaysForTriangle(Triangle triangle)
-    { 
-        float4x3 raysCCW = new float4x3();
-        raysCCW[0] = new float4(triangle.Up.xz,    math.normalize(triangle.Left.xz  - triangle.Up.xz));
-        raysCCW[1] = new float4(triangle.Left.xz,  math.normalize(triangle.Right.xz - triangle.Left.xz));
-        raysCCW[2] = new float4(triangle.Right.xz, math.normalize(triangle.Up.xz    - triangle.Right.xz));
-        return raysCCW;
+    
+    private float3x4 MoveClockwise(float3x4 quad)
+    {
+        float3 temp = quad[0];
+        quad[0] = quad[3];
+        quad[3] = quad[2];
+        quad[2] = quad[1];
+        quad[1] = temp;
+        return quad;
     }
 
     private struct OneAngleSegment
@@ -187,12 +248,15 @@ public struct ValknutGenJob : IJob
         AddQuad(oneAngleSegment.RightQuad);
     }
 
-    private void AddTwoAngleSegment(TwoAngleSegment twoAngleSegment)
+    private void AddTwoAngleSegmentMeshData(TwoAngleSegment twoAngleSegment)
     {
         _segmentVertexCount = 0;
+        Debug.DrawRay((twoAngleSegment.LeftQuad[0] + twoAngleSegment.LeftQuad[2]) / 2, Vector3.up, Color.red, 100);
         AddQuad(twoAngleSegment.LeftQuad);
         AddQuad(twoAngleSegment.CenterQuad);
+        Debug.DrawRay((twoAngleSegment.CenterQuad[0] + twoAngleSegment.CenterQuad[2]) / 2, Vector3.up * 2, Color.red, 100);
         AddQuad(twoAngleSegment.RightQuad);
+        Debug.DrawRay((twoAngleSegment.RightQuad[0] + twoAngleSegment.RightQuad[2]) / 2, Vector3.up * 3, Color.red, 100);
     }
 
     private void AddQuad(float3x4 positions)

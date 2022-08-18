@@ -70,6 +70,11 @@ namespace Orazum.Math
             return toReturn;
         }
 
+        public static float3 x0z(float2 xy)
+        {
+            return new float3(xy.x, 0, xy.y);
+        }
+
         public static Vector3 ProjectVector(Vector3 toProject, Vector3 onto)
         {
             Vector3 direction = onto.normalized;

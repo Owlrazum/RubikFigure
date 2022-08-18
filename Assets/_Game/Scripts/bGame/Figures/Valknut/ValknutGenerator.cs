@@ -13,8 +13,8 @@ using Orazum.Utilities.ConstContainers;
 
 public class ValknutGenerator : FigureGenerator
 {
-    private const int SEGMENTS_COUNT = 1;
-    private const int QUADS_COUNT = 1;
+    private const int SEGMENTS_COUNT = 3;
+    private const int QUADS_COUNT = 3;
     [SerializeField]
     private FigureParamsSO _figureParams; 
 
@@ -118,15 +118,14 @@ public class ValknutGenerator : FigureGenerator
         // _segmentPoints = new Array2D<SegmentPoint>(_sideCount, _ringCount);
         // _segments = new Array2D<Segment>(_sideCount, _ringCount);
 
-        // for (int ring = 0; ring < _ringCount; ring++)
-        // {
-        //     for (int side = 0; side < _sideCount; side++)
-        //     {
-        GameObject segmentGb = Instantiate(_segmentPrefab);
-        segmentGb.transform.parent = segmentsParent;
-        Segment segment = segmentGb.GetComponent<Segment>();
-        _segments.Add(segment);
-        Assert.IsNotNull(segment);
+        for (int segmentIndex = 0; segmentIndex < SEGMENTS_COUNT; segmentIndex++)
+        {
+            GameObject segmentGb = Instantiate(_segmentPrefab);
+            segmentGb.transform.parent = segmentsParent;
+            Segment segment = segmentGb.GetComponent<Segment>();
+            _segments.Add(segment);
+            Assert.IsNotNull(segment);
+        }
 
         // GameObject segmentPointGb = Instantiate(_segmentPointPrefab);
         // segmentPointGb.layer = LayerUtilities.SEGMENT_POINTS_LAYER;
@@ -135,8 +134,6 @@ public class ValknutGenerator : FigureGenerator
         // SegmentPoint segmentPoint = segmentPointGb.GetComponent<SegmentPoint>();
         // Assert.IsNotNull(segmentPoint);
         // _segmentPoints[side, ring] = segmentPoint;
-        //     }
-        // }
 
         _valknut = valknutGb.GetComponent<Valknut>();
     }
@@ -151,7 +148,12 @@ public class ValknutGenerator : FigureGenerator
         _segmentBuffersData.ResetVertexStart();
         _segmentBuffersData.ResetIndexStart();
 
-        UpdateSegment(_segments[0], _segmentBuffersData, 0);
+        for (int i = 0; i < SEGMENTS_COUNT; i++)
+        { 
+            UpdateSegment(_segments[i], _segmentBuffersData, 0);
+            _segmentBuffersData.AddVertexCountToVertexStart();
+            _segmentBuffersData.AddIndexCountToIndexStart();
+        }
 
         _figureVertices.Dispose();
         _figureIndices.Dispose();
