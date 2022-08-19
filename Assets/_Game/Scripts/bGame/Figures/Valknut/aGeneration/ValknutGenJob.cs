@@ -10,7 +10,7 @@ using static Orazum.Math.MathUtilities;
 [BurstCompile]
 public struct ValknutGenJob : IJob
 {
-    private const float VALKNUT_RATIO = 3; //3.31508424658f;
+    private const float VALKNUT_RATIO = 3;
 
     public float P_InnerTriangleRadius;
     public float P_Width;
@@ -36,6 +36,10 @@ public struct ValknutGenJob : IJob
     private quaternion _rightRotate;
     private quaternion _leftRotate;
 
+    private float3 _normal;
+
+    private int2 _prevQuadStripIndices;
+
     public void Execute()
     {
         _startRay = new float3(0, 0, 1);
@@ -44,6 +48,8 @@ public struct ValknutGenJob : IJob
 
         float startUV = 1 - 1.0f / 6;
         _uv = new float2(0, startUV);
+
+        _normal = math.up();
 
         GenerateValknut();
     }
@@ -85,27 +91,6 @@ public struct ValknutGenJob : IJob
         return triangle;
     }
 
-    private void DrawTriangle(in Triangle triangle)
-    { 
-        Debug.DrawLine(x0z(triangle.Up),    x0z(triangle.Right), Color.white, 100);
-        Debug.DrawLine(x0z(triangle.Right), x0z(triangle.Left), Color.white, 100);
-        Debug.DrawLine(x0z(triangle.Left),  x0z(triangle.Up), Color.white, 100);
-    }
-
-    private void DrawDirs(in float4x3 dirs, in Triangle triangle)
-    {
-        float length = 2;
-        float d1 = 0.05f, d2 = 0.05f; 
-        Debug.DrawRay(x0z(triangle.Up + new float2(d1, d1))   , x0z(dirs[0].xy) * length, Color.red, 100);
-        Debug.DrawRay(x0z(triangle.Right + new float2(d2, d2)), x0z(dirs[0].zw) * length, Color.magenta, 100);
-
-        Debug.DrawRay(x0z(triangle.Right + new float2(0, -d1)), x0z(dirs[1].xy) * length, Color.red, 100);
-        Debug.DrawRay(x0z(triangle.Left  + new float2(0, -d2)), x0z(dirs[1].zw) * length, Color.magenta, 100);
-
-        Debug.DrawRay(x0z(triangle.Left + new float2(-d1, d1)), x0z(dirs[2].xy) * length, Color.red, 100);
-        Debug.DrawRay(x0z(triangle.Up   + new float2(-d2, d2)), x0z(dirs[2].zw) * length, Color.magenta, 100);
-    }
-
     private float4 Ray(float2 pos, float2 dir)
     {
         return new float4(pos, dir);
@@ -121,15 +106,10 @@ public struct ValknutGenJob : IJob
     }
     
 
-    /// <summary>
-    /// Perhaps direction vectors should be normalized
-    /// </summary>
     private void GenerateValknut()
     {
         Triangle centerTriangle = MakeTriangle(new float3(0, 0, P_InnerTriangleRadius));
         centerTriangle.Rotate(quaternion.AxisAngle(math.up(), TAU / 4));
-
-        // DrawTriangle(centerTriangle);
 
         float valknutRadius = P_InnerTriangleRadius * VALKNUT_RATIO;
 
@@ -142,46 +122,38 @@ public struct ValknutGenJob : IJob
         Triangle leftTriangle = MakeTriangle(new float3(0, 0, valknutRadius));
         leftTriangle.Offset(centerTriangle.Right);
 
-        
-        // DrawTriangle(in upTriangle);
-        // DrawTriangle(in rightTriangle);
-        // DrawTriangle(in leftTriangle);        
-
         float4x3 dirs  = CalculateDirs(upTriangle);
 
-        float4x3 urDir = new float4x3(dirs);
-        SwapDirs(new int2(0, 2), ref urDir);
+        float4x3 urDir = new float4x3(dirs[2], dirs[0], dirs[1]); 
 
         float2x3 urPos = new float2x3();
         urPos[0] = rightTriangle.Up;
-        urPos[1] = upTriangle.Left;
-        urPos[2] = upTriangle.Up;
-        float3x4 urEdges = ConstructTwoAngleSegment(urPos, in urDir);
-        ConstructOneAngleSegment(in urEdges, in urDir, x0z(upTriangle.Right));
+        urPos[1] = upTriangle.Up;
+        urPos[2] = upTriangle.Left;
+        float2x4 urEdges = ConstructTwoAngleSegment(urPos, in urDir);
+        ConstructOneAngleSegment(in urEdges, in urDir, upTriangle.Right);
         OffsetUV();
 
 
-        float4x3 rlDir = new float4x3(dirs);
-        SwapDirs(new int2(1, 2), ref rlDir);
+        float4x3 rlDir = new float4x3(dirs[0], dirs[1], dirs[2]);
 
         float2x3 rlPos = new float2x3();
         rlPos[0] = leftTriangle.Right;
-        rlPos[1] = rightTriangle.Up;
-        rlPos[2] = rightTriangle.Right;
-        float3x4 rlEdges = ConstructTwoAngleSegment(rlPos, in rlDir);
-        ConstructOneAngleSegment(in rlEdges, in rlDir, x0z(rightTriangle.Left));
+        rlPos[1] = rightTriangle.Right;
+        rlPos[2] = rightTriangle.Up;
+        float2x4 rlEdges = ConstructTwoAngleSegment(rlPos, in rlDir);
+        ConstructOneAngleSegment(in rlEdges, in rlDir, rightTriangle.Left);
         OffsetUV();
 
 
-        float4x3 luDir = new float4x3(dirs);
-        SwapDirs(new int2(0, 1), ref luDir);
+        float4x3 luDir = new float4x3(dirs[1], dirs[2], dirs[0]);
 
         float2x3 luPos = new float2x3();
         luPos[0] = upTriangle.Left;
-        luPos[1] = leftTriangle.Right;
-        luPos[2] = leftTriangle.Left;
-        float3x4 luEdges = ConstructTwoAngleSegment(luPos, in luDir);
-        ConstructOneAngleSegment(in luEdges, in luDir, x0z(leftTriangle.Up));
+        luPos[1] = leftTriangle.Left;
+        luPos[2] = leftTriangle.Right;
+        float2x4 luEdges = ConstructTwoAngleSegment(luPos, in luDir);
+        ConstructOneAngleSegment(in luEdges, in luDir, leftTriangle.Up);
         OffsetUV();
     }
 
@@ -192,140 +164,155 @@ public struct ValknutGenJob : IJob
         dirs[swaps.y] = t;
     }
 
-    private float3 ExtrudeVertex(float3 start, float3 direction)
+    private float2 ExtrudeVertex(float2 start, float2 direction)
     {
         return start + direction * P_Width;
     }
 
-    private float3 GapVertex(float3 start, float3 direction)
+    private float2 GapVertex(float2 start, float2 direction)
     { 
         return start + direction * P_GapSize;
     }
 
-    private float3 OffsetVertex(float3 vertex, float3 direction, float length)
+    private float2 OffsetVertex(float2 vertex, float2 direction, float length)
     {
         return vertex + direction * length;
     }
-    
+
     // TODO: swap dirs so the first one will be for left quad.
 
     /// <summary>
     /// poses[0]: vertex of triangle from which intersection
-    /// poses[1]: triangleVertex for leftQuad
-    /// poses[2]: trianglevertex for rightQuad;
-    /// dirs[0] is cutting direction, others were placed by trial-error
+    /// poses[1]: triangleVertex for s2
+    /// poses[2]: trianglevertex for s3;
+    /// dirs[0] is cutting direction, dirs[1] for s1, s2, dirs[2] for s3, s4
     /// </summary>
     /// <returns>
     /// edges with edges[0] and edges[2] on inner lines of one angle segment;
     /// edges[1] and edges[3] are on outer
     /// </returns>
-    private float3x4 ConstructTwoAngleSegment(float2x3 poses, in float4x3 dirs)
+    private float2x4 ConstructTwoAngleSegment(float2x3 poses, in float4x3 dirs)
     { 
         TwoAngleSegment tas = new TwoAngleSegment();
-        float3 intersect;
+        float2 intersect, v1, v2;
 
-        tas.LeftQuad = new float3x4();
-        IntersectRays(Ray(poses[0], dirs[0].zw), Ray(poses[2], dirs[2].xy), out intersect);
-        tas.LeftQuad[0] = GapVertex(intersect, x0z(dirs[2].zw));
-        tas.LeftQuad[1] = ExtrudeVertex(tas.LeftQuad[0], x0z(dirs[0].zw));
-        IntersectRays(Ray(poses[2], dirs[0].zw), Ray(tas.LeftQuad[1].xz, dirs[2].zw), out intersect);
-        tas.LeftQuad[2] = ExtrudeVertex(intersect, x0z(dirs[2].xy));
-        tas.LeftQuad[3] = x0z(poses[2]);
+        IntersectRays(Ray(poses[0], dirs[0].zw), Ray(poses[1], dirs[1].xy), out intersect);
+        v1 = GapVertex(intersect, dirs[1].zw);
+        v2 = ExtrudeVertex(v1, dirs[0].zw);
+        tas.s1 = new float2x2(v1, v2);
 
-        tas.CenterQuad = new float3x4();
-        tas.CenterQuad[0] = tas.LeftQuad[3];
-        tas.CenterQuad[1] = tas.LeftQuad[2];
-        IntersectRays(Ray(tas.CenterQuad[1].xz, dirs[0].zw), Ray(poses[1], dirs[1].zw), out intersect);
-        tas.CenterQuad[2] = ExtrudeVertex(intersect, x0z(dirs[0].xy));
-        tas.CenterQuad[3] = x0z(poses[1]);
-        
-        tas.RightQuad = new float3x4();
-        tas.RightQuad[0] = tas.CenterQuad[3];
-        tas.RightQuad[1] = tas.CenterQuad[2];
-        IntersectRays(Ray(poses[0], dirs[0].zw), Ray(poses[1], dirs[1].zw), out intersect);
-        tas.RightQuad[3] = GapVertex(intersect, x0z(dirs[1].xy));
-        tas.RightQuad[2] = ExtrudeVertex(tas.RightQuad[3], x0z(dirs[0].xy));
+        IntersectRays(Ray(poses[1], dirs[0].zw), Ray(tas.s1[1], dirs[1].zw), out intersect);
+        v1 = poses[1];
+        v2 = ExtrudeVertex(intersect, dirs[1].xy);
+        tas.s2 = new float2x2(v1, v2);
+
+        IntersectRays(Ray(tas.s2[1], dirs[0].zw), Ray(poses[2], dirs[2].zw), out intersect);
+        v1 = poses[2];
+        v2 = ExtrudeVertex(intersect, dirs[0].xy);
+        tas.s3 = new float2x2(v1, v2);
+
+        IntersectRays(Ray(poses[0], dirs[0].zw), Ray(poses[2], dirs[2].zw), out intersect);
+        v1 = GapVertex(intersect, dirs[2].xy);
+        v2 = ExtrudeVertex(v1, dirs[0].xy);
+        tas.s4 = new float2x2(v1, v2);
 
         AddTwoAngleSegmentMeshData(tas);
 
-        float3x4 edges = new float3x4();
-        edges[0] = tas.RightQuad[2];
-        edges[1] = tas.RightQuad[3];
-        edges[2] = tas.LeftQuad[0];
-        edges[3] = tas.LeftQuad[1];
+        float2x4 edges = new float2x4();
+        edges[0] = tas.s4[0];
+        edges[1] = tas.s4[1];
+        edges[2] = tas.s1[0];
+        edges[3] = tas.s1[1];
         return edges;
     }
 
-    private void ConstructOneAngleSegment(in float3x4 edges, in float4x3 dirs, float3 triangleVertex)
+    private void ConstructOneAngleSegment(in float2x4 edges, in float4x3 dirs, float2 triangleVertex)
     {
-        float3 intersectPos = float3.zero;
-        IntersectRays(Ray(edges[0].xz, dirs[1].zw), Ray(edges[3].xz, dirs[2].xy), out intersectPos);
         float offsetLength = P_GapSize * 2 + P_Width;
+        float2 intersect, v1, v2;
         
         OneAngleSegment oas = new OneAngleSegment();
-        oas.LeftQuad = new float3x4();
-        oas.LeftQuad[0] = OffsetVertex(edges[0], x0z(dirs[1].zw), offsetLength);
-        oas.LeftQuad[1] = OffsetVertex(edges[1], x0z(dirs[1].zw), offsetLength);
-        oas.LeftQuad[2] = triangleVertex;
-        oas.LeftQuad[3] = intersectPos;
+        v1 = OffsetVertex(edges[0], dirs[2].zw, offsetLength);
+        v2 = OffsetVertex(edges[1], dirs[2].zw, offsetLength);
+        oas.s1 = new float2x2(v1, v2);
+        
+        IntersectRays(Ray(edges[1], dirs[2].zw), Ray(edges[3], dirs[1].xy), out intersect);
+        v1 = triangleVertex;
+        v2 = intersect;
+        oas.s2 = new float2x2(v1, v2);
 
-        oas.RightQuad = new float3x4();
-        oas.RightQuad[0] = oas.LeftQuad[3];
-        oas.RightQuad[1] = oas.LeftQuad[2];
-        oas.RightQuad[2] = OffsetVertex(edges[2], x0z(dirs[2].xy), offsetLength);
-        oas.RightQuad[3] = OffsetVertex(edges[3], x0z(dirs[2].xy), offsetLength);
+        v1 = OffsetVertex(edges[2], dirs[1].xy, offsetLength);
+        v2 = OffsetVertex(edges[3], dirs[1].xy, offsetLength);
+        oas.s3 = new float2x2(v1, v2);
 
         AddOneAngleSegment(oas);
     }
 
     private struct TwoAngleSegment
     {
-        public float3x4 LeftQuad;
-        public float3x4 CenterQuad;
-        public float3x4 RightQuad;
+        public float2x2 s1;
+        public float2x2 s2;
+        public float2x2 s3;
+        public float2x2 s4;
     }
 
     private struct OneAngleSegment
     {
-        public float3x4 LeftQuad;
-        public float3x4 RightQuad;
+        public float2x2 s1;
+        public float2x2 s2;
+        public float2x2 s3;
     }
 
     
     private void AddOneAngleSegment(OneAngleSegment oneAngleSegment)
     {
         _segmentVertexCount = 0;
-        AddQuad(oneAngleSegment.LeftQuad);
-        AddQuad(oneAngleSegment.RightQuad);
+        StartQuadStrip(oneAngleSegment.s1);
+        ContinueQuadStrip(oneAngleSegment.s2);
+        ContinueQuadStrip(oneAngleSegment.s3);
     }
 
     private void AddTwoAngleSegmentMeshData(TwoAngleSegment twoAngleSegment)
     {
         _segmentVertexCount = 0;
-        // Debug.DrawRay((twoAngleSegment.LeftQuad[0] + twoAngleSegment.LeftQuad[2]) / 2, Vector3.up, Color.red, 100);
-        AddQuad(twoAngleSegment.LeftQuad);
-        AddQuad(twoAngleSegment.CenterQuad);
-        // Debug.DrawRay((twoAngleSegment.CenterQuad[0] + twoAngleSegment.CenterQuad[2]) / 2, Vector3.up * 2, Color.red, 100);
-        AddQuad(twoAngleSegment.RightQuad);
-        // Debug.DrawRay((twoAngleSegment.RightQuad[0] + twoAngleSegment.RightQuad[2]) / 2, Vector3.up * 3, Color.red, 100);
+        StartQuadStrip(twoAngleSegment.s1);
+        ContinueQuadStrip(twoAngleSegment.s2);
+        ContinueQuadStrip(twoAngleSegment.s3);
+        ContinueQuadStrip(twoAngleSegment.s4);
     }
 
-    private void AddQuad(float3x4 positions)
+    private void StartQuadStrip(float2x2 p)
     {
-        float3 normal = math.up();
-        short diagonal_1 = AddVertex(positions[0], normal);
-        AddVertex(positions[1], normal);
-        short diagonal_2 = AddVertex(positions[2], normal);
-
-        AddIndex(diagonal_1);
-        AddIndex(diagonal_2);
-        AddVertex(positions[3], normal);
+        _prevQuadStripIndices.x = AddVertex(p[0], _normal);
+        _prevQuadStripIndices.y = AddVertex(p[1], _normal);
     }
 
-    private short AddVertex(float3 pos, float3 normal)
+    private void ContinueQuadStrip(float2x2 p)
+    {
+        int2 newQuadStripIndices = int2.zero;
+        newQuadStripIndices.x = AddVertex(p[0], _normal);
+        newQuadStripIndices.y = AddVertex(p[1], _normal);
+
+        int4 quadIndices = new int4(_prevQuadStripIndices, newQuadStripIndices.yx);
+        AddQuadIndices(quadIndices);
+
+        _prevQuadStripIndices = newQuadStripIndices;
+    }
+
+    private void AddQuadIndices(int4 quadIndices)
+    {
+        AddIndex(quadIndices.x);
+        AddIndex(quadIndices.y);
+        AddIndex(quadIndices.z);
+        AddIndex(quadIndices.x);
+        AddIndex(quadIndices.z);
+        AddIndex(quadIndices.w);
+    }
+
+    private short AddVertex(float2 pos, float3 normal)
     { 
         VertexData vertex = new VertexData();
-        vertex.position = pos;
+        vertex.position = x0z(pos);
         vertex.normal = normal;
         vertex.uv = _uv;
         
@@ -333,13 +320,11 @@ public struct ValknutGenJob : IJob
         short addedVertexIndex = _segmentVertexCount;
         _segmentVertexCount++;
 
-        OutputIndices[_totalIndexCount++] = addedVertexIndex;
-
         return addedVertexIndex;
     }
 
-    private void AddIndex(short vertexIndex)
+    private void AddIndex(int vertexIndex)
     {
-        OutputIndices[_totalIndexCount++] = vertexIndex;
+        OutputIndices[_totalIndexCount++] = (short)vertexIndex;
     }
 }

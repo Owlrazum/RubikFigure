@@ -70,7 +70,7 @@ namespace Orazum.Math
             return toReturn;
         }
 
-        public static float3 x0z(float2 xy)
+        public static float3 x0z(in float2 xy)
         {
             return new float3(xy.x, 0, xy.y);
         }
