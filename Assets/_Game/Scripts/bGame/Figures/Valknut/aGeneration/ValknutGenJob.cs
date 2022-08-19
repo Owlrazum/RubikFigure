@@ -22,8 +22,8 @@ public struct ValknutGenJob : IJob
     [WriteOnly]
     public NativeArray<short> OutputIndices;
 
-    [WriteOnly]
-    public NativeArray<ValknutSegmentMesh> OutputSegmentMeshes;
+    // [WriteOnly]
+    // public NativeArray<ValknutSegmentMesh> OutputSegmentMeshes;
 
     private short _totalVertexCount;
     private short _totalIndexCount;
@@ -192,72 +192,88 @@ public struct ValknutGenJob : IJob
         dirs[swaps.y] = t;
     }
 
-   /// <summary>
-   /// poses[0]: vertex of triangle from which intersection
-   /// poses[1]: triangleVertex for leftQuad
-   /// poses[2]: trianglevertex for rightQuad;
-   /// dirs[0] is cutting direction, others were placed by trial-error
-   /// </summary>
-   /// <returns>
-   /// edges with edges[0] and edges[2] on inner lines of one angle segment;
-   /// edges[1] and edges[3] are on outer
-   /// </returns>
+    private float3 ExtrudeVertex(float3 start, float3 direction)
+    {
+        return start + direction * P_Width;
+    }
+
+    private float3 GapVertex(float3 start, float3 direction)
+    { 
+        return start + direction * P_GapSize;
+    }
+
+    private float3 OffsetVertex(float3 vertex, float3 direction, float length)
+    {
+        return vertex + direction * length;
+    }
+    
+    // TODO: swap dirs so the first one will be for left quad.
+
+    /// <summary>
+    /// poses[0]: vertex of triangle from which intersection
+    /// poses[1]: triangleVertex for leftQuad
+    /// poses[2]: trianglevertex for rightQuad;
+    /// dirs[0] is cutting direction, others were placed by trial-error
+    /// </summary>
+    /// <returns>
+    /// edges with edges[0] and edges[2] on inner lines of one angle segment;
+    /// edges[1] and edges[3] are on outer
+    /// </returns>
     private float3x4 ConstructTwoAngleSegment(float2x3 poses, in float4x3 dirs)
     { 
         TwoAngleSegment tas = new TwoAngleSegment();
         float3 intersect;
 
-        float4 triangleIntersectRay = Ray(poses[0], dirs[0].zw);
-
         tas.LeftQuad = new float3x4();
-        IntersectRays(triangleIntersectRay, Ray(poses[1], dirs[1].zw), out intersect);
-        tas.LeftQuad[3] = intersect + x0z(dirs[1].xy) * P_GapSize;
-        tas.LeftQuad[2] = tas.LeftQuad[3] + x0z(dirs[0].xy) * P_Width;
-        IntersectRays(Ray(poses[1], dirs[0].xy), Ray(tas.LeftQuad[2].xz, dirs[1].xy), out intersect);
-        tas.LeftQuad[1] = intersect + x0z(dirs[1].zw)* P_Width;
-        tas.LeftQuad[0] = x0z(poses[1]);
-
-        tas.RightQuad = new float3x4();
-        IntersectRays(triangleIntersectRay, Ray(poses[2], dirs[2].xy), out intersect);
-        tas.RightQuad[2] = intersect + x0z(dirs[2].zw) * P_GapSize;
-        tas.RightQuad[3] = tas.RightQuad[2] + x0z(dirs[0].zw) * P_Width;
-        IntersectRays(Ray(poses[2], dirs[0].zw), Ray(tas.RightQuad[3].xz, dirs[2].zw), out intersect);
-        tas.RightQuad[0] = intersect + x0z(dirs[2].xy) * P_Width;
-        tas.RightQuad[1] = x0z(poses[2]);
+        IntersectRays(Ray(poses[0], dirs[0].zw), Ray(poses[2], dirs[2].xy), out intersect);
+        tas.LeftQuad[0] = GapVertex(intersect, x0z(dirs[2].zw));
+        tas.LeftQuad[1] = ExtrudeVertex(tas.LeftQuad[0], x0z(dirs[0].zw));
+        IntersectRays(Ray(poses[2], dirs[0].zw), Ray(tas.LeftQuad[1].xz, dirs[2].zw), out intersect);
+        tas.LeftQuad[2] = ExtrudeVertex(intersect, x0z(dirs[2].xy));
+        tas.LeftQuad[3] = x0z(poses[2]);
 
         tas.CenterQuad = new float3x4();
-        tas.CenterQuad[0] = tas.LeftQuad[1];
-        tas.CenterQuad[1] = tas.LeftQuad[0];
-        tas.CenterQuad[2] = tas.RightQuad[1];
-        tas.CenterQuad[3] = tas.RightQuad[0];
+        tas.CenterQuad[0] = tas.LeftQuad[3];
+        tas.CenterQuad[1] = tas.LeftQuad[2];
+        IntersectRays(Ray(tas.CenterQuad[1].xz, dirs[0].zw), Ray(poses[1], dirs[1].zw), out intersect);
+        tas.CenterQuad[2] = ExtrudeVertex(intersect, x0z(dirs[0].xy));
+        tas.CenterQuad[3] = x0z(poses[1]);
+        
+        tas.RightQuad = new float3x4();
+        tas.RightQuad[0] = tas.CenterQuad[3];
+        tas.RightQuad[1] = tas.CenterQuad[2];
+        IntersectRays(Ray(poses[0], dirs[0].zw), Ray(poses[1], dirs[1].zw), out intersect);
+        tas.RightQuad[3] = GapVertex(intersect, x0z(dirs[1].xy));
+        tas.RightQuad[2] = ExtrudeVertex(tas.RightQuad[3], x0z(dirs[0].xy));
 
         AddTwoAngleSegmentMeshData(tas);
 
         float3x4 edges = new float3x4();
-        edges[0] = tas.LeftQuad[2];
-        edges[1] = tas.LeftQuad[3];
-        edges[2] = tas.RightQuad[3];
-        edges[3] = tas.RightQuad[2];
+        edges[0] = tas.RightQuad[2];
+        edges[1] = tas.RightQuad[3];
+        edges[2] = tas.LeftQuad[0];
+        edges[3] = tas.LeftQuad[1];
         return edges;
     }
 
     private void ConstructOneAngleSegment(in float3x4 edges, in float4x3 dirs, float3 triangleVertex)
     {
         float3 intersectPos = float3.zero;
-        IntersectRays(Ray(edges[2].xz, dirs[2].xy), Ray(edges[0].xz, dirs[1].zw), out intersectPos);
+        IntersectRays(Ray(edges[0].xz, dirs[1].zw), Ray(edges[3].xz, dirs[2].xy), out intersectPos);
+        float offsetLength = P_GapSize * 2 + P_Width;
         
         OneAngleSegment oas = new OneAngleSegment();
         oas.LeftQuad = new float3x4();
-        oas.LeftQuad[0] = triangleVertex;
-        oas.LeftQuad[1] = intersectPos;
-        oas.LeftQuad[2] = edges[2] + x0z(dirs[2].xy * (P_GapSize * 2 + P_Width));
-        oas.LeftQuad[3] = edges[3] + x0z(dirs[2].xy * (P_GapSize * 2 + P_Width));
+        oas.LeftQuad[0] = OffsetVertex(edges[0], x0z(dirs[1].zw), offsetLength);
+        oas.LeftQuad[1] = OffsetVertex(edges[1], x0z(dirs[1].zw), offsetLength);
+        oas.LeftQuad[2] = triangleVertex;
+        oas.LeftQuad[3] = intersectPos;
 
         oas.RightQuad = new float3x4();
-        oas.RightQuad[0] = triangleVertex;
-        oas.RightQuad[1] = intersectPos;
-        oas.RightQuad[2] = edges[0] + x0z(dirs[1].zw * (P_GapSize * 2 + P_Width));
-        oas.RightQuad[3] = edges[1] + x0z(dirs[1].zw * (P_GapSize * 2 + P_Width));
+        oas.RightQuad[0] = oas.LeftQuad[3];
+        oas.RightQuad[1] = oas.LeftQuad[2];
+        oas.RightQuad[2] = OffsetVertex(edges[2], x0z(dirs[2].xy), offsetLength);
+        oas.RightQuad[3] = OffsetVertex(edges[3], x0z(dirs[2].xy), offsetLength);
 
         AddOneAngleSegment(oas);
     }

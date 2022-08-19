@@ -38,9 +38,9 @@ namespace Orazum.Math
         /// <summary>
         /// intersection will be on xz, and y = 0
         /// </summary>
-        public static bool IntersectRays(float4 r1, float4 r2, out float3 intersection)
+        public static bool IntersectRays(float4 r1, float4 r2, out float2 intersection)
         {
-            intersection = float3.zero;
+            intersection = float2.zero;
             float det = CrossScalar(r1.zw, r2.zw);
             if (Mathf.Approximately(det, 0))
             {
@@ -54,7 +54,7 @@ namespace Orazum.Math
             float v = (d.y * r1.z - d.x * r1.w) / det;
             if (u > 0 && v > 0)
             {
-                intersection = new float3(r1.x + r1.z * u, 0, r1.y + r1.w * u);
+                intersection = new float2(r1.x + r1.z * u, r1.y + r1.w * u);
                 return true;
             }
             else
@@ -63,10 +63,10 @@ namespace Orazum.Math
             }
         }
 
-        public static bool IntersectRays(float4 r1, float4 r2, out float2 intersection)
+        public static bool IntersectRays(float4 r1, float4 r2, out float3 intersection)
         {
-            bool toReturn = IntersectRays(r1, r2, out float3 p);
-            intersection = p.xz;
+            bool toReturn = IntersectRays(r1, r2, out float2 p);
+            intersection = x0z(p);
             return toReturn;
         }
 
