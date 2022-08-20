@@ -3,8 +3,6 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Collections;
 
-using UnityEngine;
-
 using static Orazum.Math.MathUtilities;
 
 [BurstCompile]
@@ -25,18 +23,14 @@ public struct ValknutGenJob : IJob
     [WriteOnly]
     public NativeArray<ValknutSegmentMesh> OutputSegmentMeshes;
 
-    private short _segmentIndex;
-    private short _segmentVertexCount;
-    private short _totalVertexCount;
-    private short _totalIndexCount;
+    private MeshBuffersData _buffersData;
+    private int _segmentIndex;
 
-    private float2 _uv;
+    private float3x2 _normalAndUV;
 
     private float3 _startRay;
     private quaternion _rightRotate;
     private quaternion _leftRotate;
-
-    private int2 _prevQuadStripIndices;
 
     public void Execute()
     {
@@ -44,20 +38,21 @@ public struct ValknutGenJob : IJob
         _rightRotate = quaternion.AxisAngle(math.up(), TAU / 3);
         _leftRotate = quaternion.AxisAngle(math.up(), 2 * TAU / 3);
 
+        _buffersData = new MeshBuffersData();
         _segmentIndex = 0;
-        _segmentVertexCount = 0;
-        _totalVertexCount = 0;
-        _totalIndexCount = 0;
 
         float startUV = 1 - 1.0f / 6;
-        _uv = new float2(0, startUV);
+        _normalAndUV = new float3x2(
+            math.up(),
+            new float3(0, startUV, 0)
+        );
 
         GenerateValknut();
     }
 
     private void OffsetUV()
     {
-        _uv.y -= 1.0f / 3;
+        _normalAndUV[1].y -= 1.0f / 3;
     }
 
     private struct Triangle
@@ -89,6 +84,7 @@ public struct ValknutGenJob : IJob
             Right = math.rotate(_rightRotate, triangleVertex).xz,
             Left = math.rotate(_leftRotate, triangleVertex).xz
         };
+
         return triangle;
     }
 
@@ -158,13 +154,6 @@ public struct ValknutGenJob : IJob
         OffsetUV();
     }
 
-    private void SwapDirs(int2 swaps, ref float4x3 dirs)
-    {
-        float4 t = dirs[swaps.x];
-        dirs[swaps.x] = dirs[swaps.y];
-        dirs[swaps.y] = t;
-    }
-
     private float2 ExtrudeVertex(float2 start, float2 direction)
     {
         return start + direction * P_Width;
@@ -179,8 +168,6 @@ public struct ValknutGenJob : IJob
     {
         return vertex + direction * length;
     }
-
-    // TODO: swap dirs so the first one will be for left quad.
 
     /// <summary>
     /// poses[0]: vertex of triangle from which intersection
@@ -267,10 +254,12 @@ public struct ValknutGenJob : IJob
     
     private void AddOneAngleSegment(OneAngleSegment oneAngleSegment)
     {
-        _segmentVertexCount = 0;
-        StartQuadStrip(oneAngleSegment.s1);
-        ContinueQuadStrip(oneAngleSegment.s2);
-        ContinueQuadStrip(oneAngleSegment.s3);
+        _buffersData.LocalCount = int2.zero;
+        QuadStripVertexData quadStrip = new QuadStripVertexData(OutputVertices, OutputIndices);
+        quadStrip.SetNormalsAndUV(_normalAndUV);
+        quadStrip.Start(oneAngleSegment.s1, ref _buffersData);
+        quadStrip.Continue(oneAngleSegment.s2, ref _buffersData);
+        quadStrip.Continue(oneAngleSegment.s3, ref _buffersData);
 
         float4x4 stripsData = new float4x4(
             new float4(oneAngleSegment.s1[0], oneAngleSegment.s1[1]),
@@ -283,11 +272,13 @@ public struct ValknutGenJob : IJob
 
     private void AddTwoAngleSegmentMeshData(TwoAngleSegment twoAngleSegment)
     {
-        _segmentVertexCount = 0;
-        StartQuadStrip(twoAngleSegment.s1);
-        ContinueQuadStrip(twoAngleSegment.s2);
-        ContinueQuadStrip(twoAngleSegment.s3);
-        ContinueQuadStrip(twoAngleSegment.s4);
+        _buffersData.LocalCount = int2.zero;
+        QuadStripVertexData quadStrip = new QuadStripVertexData(OutputVertices, OutputIndices);
+        quadStrip.SetNormalsAndUV(_normalAndUV);
+        quadStrip.Start(twoAngleSegment.s1, ref _buffersData);
+        quadStrip.Continue(twoAngleSegment.s2, ref _buffersData);
+        quadStrip.Continue(twoAngleSegment.s3, ref _buffersData);
+        quadStrip.Continue(twoAngleSegment.s4, ref _buffersData);
 
         float4x4 stripsData = new float4x4(
             new float4(twoAngleSegment.s1[0], twoAngleSegment.s1[1]),
@@ -296,52 +287,5 @@ public struct ValknutGenJob : IJob
             new float4(twoAngleSegment.s4[0], twoAngleSegment.s4[1])
         );
         OutputSegmentMeshes[_segmentIndex++] = new ValknutSegmentMesh(in stripsData, stripSegmentsCount: 4);
-    }
-
-    private void StartQuadStrip(float2x2 p)
-    {
-        _prevQuadStripIndices.x = AddVertex(p[0]);
-        _prevQuadStripIndices.y = AddVertex(p[1]);
-    }
-
-    private void ContinueQuadStrip(float2x2 p)
-    {
-        int2 newQuadStripIndices = int2.zero;
-        newQuadStripIndices.x = AddVertex(p[0]);
-        newQuadStripIndices.y = AddVertex(p[1]);
-
-        int4 quadIndices = new int4(_prevQuadStripIndices, newQuadStripIndices.yx);
-        AddQuadIndices(quadIndices);
-
-        _prevQuadStripIndices = newQuadStripIndices;
-    }
-
-    private void AddQuadIndices(int4 quadIndices)
-    {
-        AddIndex(quadIndices.x);
-        AddIndex(quadIndices.y);
-        AddIndex(quadIndices.z);
-        AddIndex(quadIndices.x);
-        AddIndex(quadIndices.z);
-        AddIndex(quadIndices.w);
-    }
-
-    private short AddVertex(float2 pos)
-    { 
-        VertexData vertex = new VertexData();
-        vertex.position = x0z(pos);
-        vertex.normal = math.up();
-        vertex.uv = _uv;
-        
-        OutputVertices[_totalVertexCount++] = vertex;
-        short addedVertexIndex = _segmentVertexCount;
-        _segmentVertexCount++;
-
-        return addedVertexIndex;
-    }
-
-    private void AddIndex(int vertexIndex)
-    {
-        OutputIndices[_totalIndexCount++] = (short)vertexIndex;
     }
 }

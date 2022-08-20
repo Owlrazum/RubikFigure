@@ -14,6 +14,7 @@ public class ValknutSegment : FigureSegment
     /// </summary>
     public override void Initialize(NativeArray<VertexData> verticesArg, int puzzleIndexArg)
     {
+        base.Initialize(verticesArg, puzzleIndexArg);
         _puzzleIndex = puzzleIndexArg;
         if (_puzzleIndex % 2 == 0)
         { 
