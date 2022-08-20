@@ -8,8 +8,8 @@ using UnityEngine.Assertions;
 using UnityEngine.Rendering;
 
 using Unity.Mathematics;
-using Orazum.Collections;
 using Orazum.Utilities.ConstContainers;
+using Orazum.Meshing;
 
 public class ValknutGenerator : FigureGenerator
 {

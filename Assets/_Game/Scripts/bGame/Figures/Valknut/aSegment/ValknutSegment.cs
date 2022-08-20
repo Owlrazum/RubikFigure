@@ -1,5 +1,7 @@
 using Unity.Collections;
 
+using Orazum.Meshing;
+
 public class ValknutSegment : FigureSegment
 {
     protected override void InitializeMover()

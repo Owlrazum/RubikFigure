@@ -3,6 +3,7 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Collections;
 
+using Orazum.Meshing;
 using static Orazum.Math.MathUtilities;
 
 public enum VerticesMoveType

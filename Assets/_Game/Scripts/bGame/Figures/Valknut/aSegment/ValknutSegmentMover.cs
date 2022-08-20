@@ -6,6 +6,8 @@ using Unity.Mathematics;
 
 using UnityEngine;
 
+using Orazum.Meshing;
+
 using static Orazum.Math.MathUtilities;
 
 [RequireComponent(typeof(MeshFilter))]

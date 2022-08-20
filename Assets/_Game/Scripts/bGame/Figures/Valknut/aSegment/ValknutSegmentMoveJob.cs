@@ -3,6 +3,8 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Collections;
 
+using Orazum.Meshing;
+
 [BurstCompile]
 public struct ValknutSegmentMoveJob : IJob
 {

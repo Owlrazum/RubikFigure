@@ -6,6 +6,8 @@ using Unity.Collections;
 using UnityEngine;
 using UnityEngine.Assertions;
 
+using Orazum.Meshing;
+
 /// <summary>
 /// Segment of the Wheel
 /// </summary>

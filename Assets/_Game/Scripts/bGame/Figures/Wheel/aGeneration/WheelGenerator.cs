@@ -7,6 +7,7 @@ using UnityEngine.Rendering;
 
 using Unity.Mathematics;
 using Orazum.Collections;
+using Orazum.Meshing;
 using Orazum.Utilities.ConstContainers;
 
 public class WheelGenerator : FigureGenerator

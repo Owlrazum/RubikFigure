@@ -6,6 +6,7 @@ using UnityEngine.Rendering;
 
 using Unity.Mathematics;
 using Orazum.Collections;
+using Orazum.Meshing;
 
 public abstract class FigureGenerator : MonoBehaviour
 { 

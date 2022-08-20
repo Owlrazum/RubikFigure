@@ -8,6 +8,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 
 using Orazum.Collections;
+using Orazum.Meshing;
 
 [RequireComponent(typeof(MeshFilter))]
 public abstract class FigureSegmentMover : MonoBehaviour
