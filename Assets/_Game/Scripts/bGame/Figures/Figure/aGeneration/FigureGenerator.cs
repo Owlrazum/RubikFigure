@@ -33,58 +33,7 @@ public abstract class FigureGenerator : MonoBehaviour
     protected abstract void StartMeshGeneration();
     protected abstract void GenerateFigureGameObject();
 
-    protected struct BuffersData
-    {
-        private int2 _count;
-        private int2 _start;
-        
-        /// <summary>
-        /// x: vertex, y:index
-        /// </summary>
-        public int2 Count { get { return _count; } }
-        
-        /// <summary>
-        /// x: vertex, y:index
-        /// </summary>
-        public int2 Start { get { return _start; } }
-        
-        public void SetVertexCount(int vertexCount)
-        {
-            _count.x = vertexCount;
-        }
-        public void SetIndexCount(int indexCount)
-        {
-            _count.y = indexCount;
-        }
-
-        public void ResetVertexStart()
-        {
-            _start.x = 0;
-        }
-        public void ResetIndexStart()
-        {
-            _start.y = 0;
-        }
-
-        public void AddVertexCountToVertexStart()
-        {
-            _start.x += _count.x;
-        }
-        public void AddIndexCountToIndexStart()
-        {
-            _start.y += _count.y;
-        }
-
-        public void AddToVertexStart(int toAdd)
-        {
-            _start.x += toAdd;
-        }
-        public void AddToIndexStart(int toAdd)
-        {
-            _start.y += toAdd;
-        }
-    }
-    protected virtual void UpdateSegment(FigureSegment segment, BuffersData data, int puzzleIndex)
+    protected virtual void UpdateSegment(FigureSegment segment, in MeshBuffersData data, int puzzleIndex)
     {
         Mesh mesh = segment.MeshContainer.mesh;
         mesh.MarkDynamic();
@@ -109,7 +58,8 @@ public abstract class FigureGenerator : MonoBehaviour
 
         segment.Initialize(segmentVertices, puzzleIndex);
     }
-    protected virtual Mesh CreateSegmentPointMesh(BuffersData data)
+    
+    protected virtual Mesh CreateSegmentPointMesh(in MeshBuffersData data)
     {
         Mesh segmentPointMesh = new Mesh();
         segmentPointMesh.MarkDynamic();

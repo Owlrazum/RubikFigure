@@ -1,79 +1,61 @@
 using UnityEngine.Assertions;
 using Unity.Mathematics;
-using static Orazum.Math.MathUtilities;
 
 public struct ValknutSegmentMesh
 {
-    private bool _isHavingCenterQuad;
-    private float2x4 _leftQuad;
-    private float2x4 _centerQuad;
-    private float2x4 _rightQuad;
+    private int _stripSegmentsCount;
+    public int StripSegmentsCount { get { return _stripSegmentsCount; } }
 
-    public ValknutSegmentMesh(in float2x4 leftQuad, in float2x4 centerQuad, in float2x4 rightQuad)
+    private float2x2 _s1;
+    private float2x2 _s2;
+    private float2x2 _s3;
+    private float2x2 _s4;
+
+    public float2x2 this[int index]
     {
-        _isHavingCenterQuad = true;
-        
-        _leftQuad = leftQuad;
-        _centerQuad = centerQuad;
-        _rightQuad = rightQuad;
-    }
-
-    public ValknutSegmentMesh(in float2x4 leftQuad, in float2x4 rightQuad)
-    { 
-        _isHavingCenterQuad = false;
-        
-        _leftQuad = leftQuad;
-        _centerQuad = float2x4.zero;
-        _rightQuad = rightQuad;
-    }
-
-    public bool DoesHaveCenterQuad()
-    {
-        return _isHavingCenterQuad;
-    }
-
-    public float3 GetPointVertexPos(int pointVertexIndex)
-    {
-        int index = pointVertexIndex % 4;
-        switch (pointVertexIndex / 4)
+        get
         {
-            case 0:
-                return GetQuadVertexPos(in _leftQuad, index);
-            case 1:
-                if (_isHavingCenterQuad)
-                {
-                    return GetQuadVertexPos(in _centerQuad, index);
-                }
-                else
-                {
-                    return GetQuadVertexPos(in _rightQuad, index);
-                }
-            case 2:
-                Assert.IsFalse(_isHavingCenterQuad);
-                return GetQuadVertexPos(in _rightQuad, index);
+            switch (index)
+            {
+                case 0:
+                    return _s1;
+                case 1:
+                    return _s2;
+                case 2:
+                    return _s3;
+                case 3:
+                    return _s4;
+            }
+            throw new System.ArgumentOutOfRangeException($"Index {index} is should be in [0..StripSegmentsCount = {StripSegmentsCount})");
         }
-        throw new System.ArgumentOutOfRangeException($"pointVertexIndex {pointVertexIndex} should be in [0..11]");
+        private set
+        {
+            switch (index)
+            {
+                case 0:
+                    _s1 = value;
+                    break;
+                case 1:
+                    _s2 = value;
+                    break;
+                case 2:
+                    _s3 = value;
+                    break;
+                case 3:
+                    _s4 = value;
+                    break;
+            }
+        }
     }
 
-    private float3 GetQuadVertexPos(in float2x4 quad, int index)
+    public ValknutSegmentMesh(in float4x4 stripsData, int stripSegmentsCount)
     {
-        switch (index)
-        { 
-            case 0:
-                return x0z(quad[0]);
-            case 1:
-                return x0z(quad[1]);
-            case 2:
-                return x0z(quad[2]);
-            case 3:
-                return x0z(quad[3]);
-        }
+        Assert.IsTrue(stripSegmentsCount >= 0 && stripSegmentsCount < 4);
+        _stripSegmentsCount = stripSegmentsCount;
 
-        throw new System.ArgumentOutOfRangeException($"index {index} should be in [0..3]");
-    }
-
-    public int2 GetSegmentIndices(int pointVertexIndex)
-    {
-        return int2.zero;
+        _s1 = new float2x2(stripsData[0].xy, stripsData[0].zw);
+        _s2 = new float2x2(stripsData[1].xy, stripsData[1].zw);
+        _s3 = new float2x2(stripsData[2].xy, stripsData[2].zw);
+        _s4 = new float2x2(stripsData[3].xy, stripsData[3].zw);
     }
 }

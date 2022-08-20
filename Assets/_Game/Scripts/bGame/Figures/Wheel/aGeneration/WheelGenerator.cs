@@ -22,8 +22,8 @@ public class WheelGenerator : FigureGenerator
 
     private int _segmentCount;
 
-    private BuffersData _segmentBuffersData;
-    private BuffersData _segmentPointBuffersData;
+    private MeshBuffersData _segmentBuffersData;
+    private MeshBuffersData _segmentPointBuffersData;
 
     private float _innerRadius;
     private float _outerRadius;
@@ -58,14 +58,18 @@ public class WheelGenerator : FigureGenerator
         
         _segmentCount = _sideCount * _ringCount;
         
-        _segmentBuffersData = new BuffersData();
-        _segmentBuffersData.SetVertexCount( 4 * _segmentResolution);
-        _segmentBuffersData.SetIndexCount(6 * _segmentResolution);
+        _segmentBuffersData = new MeshBuffersData();
+        _segmentBuffersData.Count = new int2(
+            2 * (_segmentResolution + 1),
+            6 * _segmentResolution
+        );
         FigureSegment.InitializeVertexCount(_segmentBuffersData.Count.x);
 
-        _segmentPointBuffersData = new BuffersData();
-        _segmentPointBuffersData.SetVertexCount(_segmentBuffersData.Count.x * 4 + 8);
-        _segmentPointBuffersData.SetIndexCount(_segmentBuffersData.Count.y * 4 + 12);
+        _segmentPointBuffersData = new MeshBuffersData();
+        _segmentPointBuffersData.Count = new int2(
+            _segmentBuffersData.Count.x * 2, 
+            _segmentBuffersData.Count.y * 4 + 12
+        );
 
         _innerRadius = generationParams.InnerRadius;
         _outerRadius = generationParams.OuterRadius;
@@ -166,8 +170,7 @@ public class WheelGenerator : FigureGenerator
 
         Mesh[] segmentPointMeshes = CreateSegmentPointMeshes();
 
-        _segmentBuffersData.ResetVertexStart();
-        _segmentBuffersData.ResetIndexStart();
+        _segmentBuffersData.Start = int2.zero;
 
         for (int side = 0; side < _sideCount; side++)
         {
@@ -178,8 +181,7 @@ public class WheelGenerator : FigureGenerator
                 FigureSegmentPoint currentPoint = _segmentPoints[side, ring];
                 currentPoint.InitializeAfterMeshesGenerated(segmentPointMeshes[ring], _segments[side, ring], new int2(side, ring));
 
-                _segmentBuffersData.AddVertexCountToVertexStart();
-                _segmentBuffersData.AddIndexCountToIndexStart();
+                _segmentBuffersData.Start += _segmentBuffersData.Count;
             }
         }
 
@@ -204,16 +206,14 @@ public class WheelGenerator : FigureGenerator
     {
         Mesh[] meshes = new Mesh[_ringCount];
 
-        _segmentPointBuffersData.ResetVertexStart();
-        _segmentPointBuffersData.ResetIndexStart();
+        _segmentPointBuffersData.Start = int2.zero;
 
         for (int i = 0; i < meshes.Length; i++)
         {
             Mesh segmentPointMesh = CreateSegmentPointMesh(_segmentPointBuffersData);
             meshes[i] = segmentPointMesh;
 
-            _segmentPointBuffersData.AddVertexCountToVertexStart();
-            _segmentPointBuffersData.AddIndexCountToIndexStart();
+            _segmentPointBuffersData.Start += _segmentPointBuffersData.Count;
         }
 
         return meshes;

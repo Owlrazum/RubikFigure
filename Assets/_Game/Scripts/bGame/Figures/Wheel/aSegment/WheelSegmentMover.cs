@@ -84,20 +84,11 @@ public class WheelSegmentMover : FigureSegmentMover
 
         for (int i = 0; i < vertexPositions.Count; i++)
         {
-            int2 indices = vertexPositions.GetSegmentIndices(i);
             float3 targetPos = vertexPositions.GetPointVertexPos(i);
 
-            data = _vertices[indices.x];
+            data = _vertices[i];
             data.position = targetPos;
-            _vertices[indices.x] = data;
-            if (indices.y < 0)
-            {
-                continue;
-            }
-
-            data = _vertices[indices.y];
-            data.position = targetPos;
-            _vertices[indices.y] = data;
+            _vertices[i] = data;
         }
 
         AssignVertices(_vertices, _vertices.Length);

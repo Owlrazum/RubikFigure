@@ -1,22 +1,17 @@
 {
-    "name": "aAssemblyWheel",
+    "name": "aAssemblyMeshing",
     "rootNamespace": "",
     "references": [
-        "GUID:2665a8d13d1b3f18800f46e256720795",
         "GUID:d8b63aba1907145bea998dd612889d6b",
         "GUID:b556b07a0f21145aca381d4ae36ffb7e",
-        "GUID:c9baafb1b2dee4869908eae54e7884d6",
-        "GUID:78c4c26ee56af4ebf9c230bddfebb69b",
-        "GUID:c2b7f7435cee847fdb9a017be3af267f",
-        "GUID:cda7be8dc7c07426a98cab7ae784b071",
-        "GUID:4e4358349a1834223be1aa0e19af80b5"
+        ""
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,
     "precompiledReferences": [],
-    "autoReferenced": false,
+    "autoReferenced": true,
     "defineConstraints": [],
     "versionDefines": [],
     "noEngineReferences": false

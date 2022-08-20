@@ -23,7 +23,7 @@ public abstract class FigureSegment : MonoBehaviour
     // private SegmentSelectionRespond _selectionRespond;
 
     public MeshFilter MeshContainer { get { return _mover.MeshContainer; } }
-    private int _puzzleIndex;
+    protected int _puzzleIndex;
     public int PuzzleIndex { get { return _puzzleIndex; } }
 
     private int2 _segmentIndex;
@@ -36,7 +36,7 @@ public abstract class FigureSegment : MonoBehaviour
     }
     protected abstract void InitializeMover();
 
-    public void Initialize(NativeArray<VertexData> verticesArg, int puzzleIndexArg)
+    public virtual void Initialize(NativeArray<VertexData> verticesArg, int puzzleIndexArg)
     { 
         _mover.Initialize(verticesArg);
         _puzzleIndex = puzzleIndexArg;

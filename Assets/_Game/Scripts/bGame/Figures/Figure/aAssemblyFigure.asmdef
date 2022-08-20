@@ -2,10 +2,11 @@
     "name": "aAssemblyFigure",
     "rootNamespace": "",
     "references": [
+        "GUID:d8b63aba1907145bea998dd612889d6b",
         "GUID:b556b07a0f21145aca381d4ae36ffb7e",
         "GUID:c9baafb1b2dee4869908eae54e7884d6",
-        "GUID:d8b63aba1907145bea998dd612889d6b",
-        "GUID:78c4c26ee56af4ebf9c230bddfebb69b"
+        "GUID:78c4c26ee56af4ebf9c230bddfebb69b",
+        "GUID:4e4358349a1834223be1aa0e19af80b5"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

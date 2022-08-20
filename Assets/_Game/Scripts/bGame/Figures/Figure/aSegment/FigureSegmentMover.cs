@@ -43,7 +43,7 @@ public abstract class FigureSegmentMover : MonoBehaviour
         CollectionUtilities.DisposeIfNeeded(_vertices);
     }
 
-    public void Initialize(NativeArray<VertexData> verticesArg)
+    public virtual void Initialize(NativeArray<VertexData> verticesArg)
     {
         _vertices = verticesArg;
 

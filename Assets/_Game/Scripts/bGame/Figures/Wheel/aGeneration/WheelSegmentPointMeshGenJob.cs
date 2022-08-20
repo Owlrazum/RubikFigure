@@ -33,6 +33,8 @@ public struct WheelSegmentPointMeshGenJob : IJob
     private float _startAngle; 
     private float _angleResolutionDelta;
 
+    private int4 _prevCubeStripIndices;
+
     public void Execute()
     {
         _startAngle = TAU / 4;
@@ -48,108 +50,123 @@ public struct WheelSegmentPointMeshGenJob : IJob
 
         for (int ring = 0; ring < P_RingCount; ring++)
         {
-            AddSegment(radiuses);
+            AddSegmentPoint(radiuses);
 
             radiuses.x = radiuses.y;
             radiuses.y += radiusDelta;
         }
     }
 
-    private void AddSegment(float2 radii)
+    private void AddSegmentPoint(float2 radii)
     {
         _pointVertexCount = 0;
         _pointIndexCount = 0;
+
+        float3 upDelta = new float3(0, P_Height, 0);
+        float3 currentRay = _startRay;
+        float3x4 cubeStrip = new float3x4(
+            currentRay * radii.x, 
+            currentRay * radii.y,
+            currentRay * radii.y + upDelta,
+            currentRay * radii.x + upDelta
+        );
+        StartCubeStrip(cubeStrip);
         
         quaternion q = quaternion.AxisAngle(math.up(), _angleResolutionDelta);
-        float3x2 rays = new float3x2(
-            _startRay,
-            math.rotate(q, _startRay)
-        );
-
-        float3 h = math.up() * P_Height;
-
-        float3x4 leftQuad = new float3x4(
-            rays[0] * radii.y,
-            rays[0] * radii.y + h,
-            rays[0] * radii.x + h,
-            rays[0] * radii.x
-        );
-        AddQuad(leftQuad);
 
         for (int i = 0; i < P_SegmentResolution; i++)
         {
-            float3x4 botQuad = new float3x4(
-                rays[1] * radii.x,
-                rays[1] * radii.y,
-                rays[0] * radii.y,
-                rays[0] * radii.x
-            );
-            AddQuad(botQuad);
+            currentRay =  math.rotate(q, currentRay);
+            cubeStrip[0] = currentRay * radii.x;
+            cubeStrip[1] = currentRay * radii.y;
+            cubeStrip[2] = currentRay * radii.y + upDelta;
+            cubeStrip[3] = currentRay * radii.x + upDelta;
 
-            float3x4 topQuad = new float3x4(
-                rays[0] * radii.x + h,
-                rays[0] * radii.y + h,
-                rays[1] * radii.y + h,
-                rays[1] * radii.x + h
-            );
-            AddQuad(topQuad);
-
-            float3x4 backQuad = new float3x4(
-                rays[0] * radii.x,
-                rays[0] * radii.x + h,
-                rays[1] * radii.x + h,
-                rays[1] * radii.x
-            );
-            AddQuad(backQuad);
-
-            float3x4 forwQuad = new float3x4(
-                rays[1] * radii.y,
-                rays[1] * radii.y + h,
-                rays[0] * radii.y + h,
-                rays[0] * radii.y
-            );
-            AddQuad(forwQuad);
-            
-            // UnityEngine.Debug.DrawRay(UnityEngine.Vector3.zero, rays[0] * 100, UnityEngine.Color.red, 100);
-            // UnityEngine.Debug.DrawRay(UnityEngine.Vector3.zero, rays[1] * 100, UnityEngine.Color.red, 100);
-            rays[0] = rays[1];
-            rays[1] = math.rotate(q, rays[1]);
+            if (i == P_SegmentResolution - 1)
+            {
+                FinishCubeStrip(cubeStrip);
+            }
+            else
+            { 
+                ContinueCubeStrip(cubeStrip);
+            }
         }
-
-        float3x4 rightQuad = new float3x4(
-            rays[0] * radii.x,
-            rays[0] * radii.x + h,
-            rays[0] * radii.y + h,
-            rays[0] * radii.y
-        );
-        AddQuad(rightQuad);
     }
 
-    private void AddQuad(float3x4 positions)
-    { 
-        short diagonal_1 = AddVertex(positions[0]);
-        AddVertex(positions[1]);
-        short diagonal_2 = AddVertex(positions[2]);
+    private void StartCubeStrip(float3x4 p)
+    {
+        _prevCubeStripIndices.x = AddVertex(p[0]);
+        _prevCubeStripIndices.y = AddVertex(p[1]);
+        _prevCubeStripIndices.z = AddVertex(p[2]);
+        _prevCubeStripIndices.w = AddVertex(p[3]);
+        AddQuadIndices(_prevCubeStripIndices);
+    }
 
-        AddIndex(diagonal_1);
-        AddIndex(diagonal_2);
-        AddVertex(positions[3]);
+    private void ContinueCubeStrip(float3x4 p)
+    {
+        int4 newCubeStripIndices = int4.zero;
+        newCubeStripIndices.x = AddVertex(p[0]);
+        newCubeStripIndices.y = AddVertex(p[1]);
+        newCubeStripIndices.z = AddVertex(p[2]);
+        newCubeStripIndices.w = AddVertex(p[3]);
+
+        int4 quadIndices;
+        quadIndices = new int4(newCubeStripIndices.xy, _prevCubeStripIndices.yx);
+        AddQuadIndices(quadIndices);
+        quadIndices = new int4(newCubeStripIndices.yz, _prevCubeStripIndices.zy);
+        AddQuadIndices(quadIndices);
+        quadIndices = new int4(newCubeStripIndices.zw, _prevCubeStripIndices.wz);
+        AddQuadIndices(quadIndices);
+        quadIndices = new int4(_prevCubeStripIndices.xw, newCubeStripIndices.wx);
+        AddQuadIndices(quadIndices);
+
+        _prevCubeStripIndices = newCubeStripIndices;
+    }
+
+    private void FinishCubeStrip(float3x4 p)
+    { 
+        int4 newCubeStripIndices = int4.zero;
+        newCubeStripIndices.x = AddVertex(p[0]);
+        newCubeStripIndices.y = AddVertex(p[1]);
+        newCubeStripIndices.z = AddVertex(p[2]);
+        newCubeStripIndices.w = AddVertex(p[3]);
+
+        int4 quadIndices;
+        quadIndices = new int4(newCubeStripIndices.xy, _prevCubeStripIndices.yx);
+        AddQuadIndices(quadIndices);
+        quadIndices = new int4(newCubeStripIndices.yz, _prevCubeStripIndices.zy);
+        AddQuadIndices(quadIndices);
+        quadIndices = new int4(newCubeStripIndices.zw, _prevCubeStripIndices.wz);
+        AddQuadIndices(quadIndices);
+        quadIndices = new int4(_prevCubeStripIndices.xw, newCubeStripIndices.wx);
+        AddQuadIndices(quadIndices);
+        quadIndices = new int4(newCubeStripIndices.wzyx);
+        AddQuadIndices(quadIndices);
+
+        _prevCubeStripIndices = newCubeStripIndices;
+    }
+
+    private void AddQuadIndices(int4 quadIndices)
+    {
+        AddIndex(quadIndices.x);
+        AddIndex(quadIndices.y);
+        AddIndex(quadIndices.z);
+        AddIndex(quadIndices.x);
+        AddIndex(quadIndices.z);
+        AddIndex(quadIndices.w);
     }
 
     private short AddVertex(float3 pos)
     { 
         OutputVertices[_totalVertexCount++] = pos;
-        short addedVertexIndex = _pointVertexCount++;
-
-        OutputIndices[_totalIndexCount++] = addedVertexIndex;
-        _pointIndexCount++;
+        short addedVertexIndex = _pointVertexCount;
+        _pointVertexCount++;
 
         return addedVertexIndex;
     }
 
-    private void AddIndex(short vertexIndex)
+    private void AddIndex(int vertexIndex)
     {
-        OutputIndices[_totalIndexCount++] = vertexIndex;
-        _pointIndexCount++;
+        OutputIndices[_totalIndexCount++] = (short)vertexIndex;
     }
 }

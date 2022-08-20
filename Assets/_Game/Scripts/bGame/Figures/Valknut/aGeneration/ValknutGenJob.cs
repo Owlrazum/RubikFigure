@@ -22,21 +22,19 @@ public struct ValknutGenJob : IJob
     [WriteOnly]
     public NativeArray<short> OutputIndices;
 
-    // [WriteOnly]
-    // public NativeArray<ValknutSegmentMesh> OutputSegmentMeshes;
+    [WriteOnly]
+    public NativeArray<ValknutSegmentMesh> OutputSegmentMeshes;
 
+    private short _segmentIndex;
+    private short _segmentVertexCount;
     private short _totalVertexCount;
     private short _totalIndexCount;
-
-    private short _segmentVertexCount;
 
     private float2 _uv;
 
     private float3 _startRay;
     private quaternion _rightRotate;
     private quaternion _leftRotate;
-
-    private float3 _normal;
 
     private int2 _prevQuadStripIndices;
 
@@ -46,10 +44,13 @@ public struct ValknutGenJob : IJob
         _rightRotate = quaternion.AxisAngle(math.up(), TAU / 3);
         _leftRotate = quaternion.AxisAngle(math.up(), 2 * TAU / 3);
 
+        _segmentIndex = 0;
+        _segmentVertexCount = 0;
+        _totalVertexCount = 0;
+        _totalIndexCount = 0;
+
         float startUV = 1 - 1.0f / 6;
         _uv = new float2(0, startUV);
-
-        _normal = math.up();
 
         GenerateValknut();
     }
@@ -270,6 +271,14 @@ public struct ValknutGenJob : IJob
         StartQuadStrip(oneAngleSegment.s1);
         ContinueQuadStrip(oneAngleSegment.s2);
         ContinueQuadStrip(oneAngleSegment.s3);
+
+        float4x4 stripsData = new float4x4(
+            new float4(oneAngleSegment.s1[0], oneAngleSegment.s1[1]),
+            new float4(oneAngleSegment.s2[0], oneAngleSegment.s2[1]),
+            new float4(oneAngleSegment.s3[0], oneAngleSegment.s3[1]),
+            float4.zero
+        );
+        OutputSegmentMeshes[_segmentIndex++] = new ValknutSegmentMesh(in stripsData, stripSegmentsCount: 3);
     }
 
     private void AddTwoAngleSegmentMeshData(TwoAngleSegment twoAngleSegment)
@@ -279,19 +288,27 @@ public struct ValknutGenJob : IJob
         ContinueQuadStrip(twoAngleSegment.s2);
         ContinueQuadStrip(twoAngleSegment.s3);
         ContinueQuadStrip(twoAngleSegment.s4);
+
+        float4x4 stripsData = new float4x4(
+            new float4(twoAngleSegment.s1[0], twoAngleSegment.s1[1]),
+            new float4(twoAngleSegment.s2[0], twoAngleSegment.s2[1]),
+            new float4(twoAngleSegment.s3[0], twoAngleSegment.s3[1]),
+            new float4(twoAngleSegment.s4[0], twoAngleSegment.s4[1])
+        );
+        OutputSegmentMeshes[_segmentIndex++] = new ValknutSegmentMesh(in stripsData, stripSegmentsCount: 4);
     }
 
     private void StartQuadStrip(float2x2 p)
     {
-        _prevQuadStripIndices.x = AddVertex(p[0], _normal);
-        _prevQuadStripIndices.y = AddVertex(p[1], _normal);
+        _prevQuadStripIndices.x = AddVertex(p[0]);
+        _prevQuadStripIndices.y = AddVertex(p[1]);
     }
 
     private void ContinueQuadStrip(float2x2 p)
     {
         int2 newQuadStripIndices = int2.zero;
-        newQuadStripIndices.x = AddVertex(p[0], _normal);
-        newQuadStripIndices.y = AddVertex(p[1], _normal);
+        newQuadStripIndices.x = AddVertex(p[0]);
+        newQuadStripIndices.y = AddVertex(p[1]);
 
         int4 quadIndices = new int4(_prevQuadStripIndices, newQuadStripIndices.yx);
         AddQuadIndices(quadIndices);
@@ -309,11 +326,11 @@ public struct ValknutGenJob : IJob
         AddIndex(quadIndices.w);
     }
 
-    private short AddVertex(float2 pos, float3 normal)
+    private short AddVertex(float2 pos)
     { 
         VertexData vertex = new VertexData();
         vertex.position = x0z(pos);
-        vertex.normal = normal;
+        vertex.normal = math.up();
         vertex.uv = _uv;
         
         OutputVertices[_totalVertexCount++] = vertex;

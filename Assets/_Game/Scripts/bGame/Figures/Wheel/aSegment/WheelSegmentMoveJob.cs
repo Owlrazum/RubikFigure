@@ -52,22 +52,12 @@ public struct WheelSegmentMoveJob : IJob
 
         for (int i = 0; i < P_VertexPositions.Count; i++)
         {
-            int2 indices = P_VertexPositions.GetSegmentIndices(i);
             float3 targetPos = P_VertexPositions.GetPointVertexPos(i);
 
-            data = InputVertices[indices.x];
-            data.position = math.lerp(InputVertices[indices.x].position,
+            data = InputVertices[i];
+            data.position = math.lerp(InputVertices[i].position,
                 targetPos, P_LerpParam);
-            OutputVertices[indices.x] = data;
-            if (indices.y < 0)
-            {
-                continue;
-            }
-
-            data = InputVertices[indices.y];
-            data.position = math.lerp(InputVertices[indices.y].position,
-                targetPos, P_LerpParam);
-            OutputVertices[indices.y] = data;
+            OutputVertices[i] = data;
         }
     }
 
@@ -77,7 +67,6 @@ public struct WheelSegmentMoveJob : IJob
 
         for (int i = 0; i < P_VertexPositions.Count; i++)
         {
-            int2 indices = P_VertexPositions.GetSegmentIndices(i);
             float3 targetPos = P_VertexPositions.GetPointVertexPos(i);
 
             float innerHeight = 0, outerHeight = 0;
@@ -90,22 +79,13 @@ public struct WheelSegmentMoveJob : IJob
                 float levLerpParam = (P_LerpParam - 0.5f) * 2;
             }
 
-            data = InputVertices[indices.x];
+            data = InputVertices[i];
 
-            data.position = math.lerp(InputVertices[indices.x].position,
+            data.position = math.lerp(InputVertices[i].position,
                 targetPos, P_LerpParam);
             // data.position = 
 
-            OutputVertices[indices.x] = data;
-            if (indices.y < 0)
-            {
-                continue;
-            }
-
-            data = InputVertices[indices.y];
-            data.position = math.lerp(InputVertices[indices.y].position,
-                targetPos, P_LerpParam);
-            OutputVertices[indices.y] = data;
+            OutputVertices[i] = data;
         }
     }
 

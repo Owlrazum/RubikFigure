@@ -17,14 +17,14 @@ public class ValknutGenerator : FigureGenerator
     private const int QUADS_COUNT_TWO_ANGLE_SEGMENT = 3;
     private const int QUADS_COUNT_ONE_ANGLE_SEGMENT = 2;
 
-    private const int VERTEX_COUNT_TWO_ANGLE_SEGMNET = (QUADS_COUNT_TWO_ANGLE_SEGMENT + 1) * 2;
-    private const int INDEX_COUNT_TWO_ANGLE_SEGMNET  = QUADS_COUNT_TWO_ANGLE_SEGMENT * 6;
+    private const int VERTEX_COUNT_TWO_ANGLE_SEGMENT = (QUADS_COUNT_TWO_ANGLE_SEGMENT + 1) * 2;
+    private const int INDEX_COUNT_TWO_ANGLE_SEGMENT  = QUADS_COUNT_TWO_ANGLE_SEGMENT * 6;
 
-    private const int VERTEX_COUNT_ONE_ANGLE_SEGMNET = (QUADS_COUNT_ONE_ANGLE_SEGMENT + 1) * 2;
-    private const int INDEX_COUNT_ONE_ANGLE_SEGMNET  = QUADS_COUNT_ONE_ANGLE_SEGMENT * 6;
+    private const int VERTEX_COUNT_ONE_ANGLE_SEGMENT = (QUADS_COUNT_ONE_ANGLE_SEGMENT + 1) * 2;
+    private const int INDEX_COUNT_ONE_ANGLE_SEGMENT  = QUADS_COUNT_ONE_ANGLE_SEGMENT * 6;
 
-    private const int VERTEX_COUNT_VALKNUT_TRIANGLE = VERTEX_COUNT_TWO_ANGLE_SEGMNET + VERTEX_COUNT_ONE_ANGLE_SEGMNET;
-    private const int INDEX_COUNT_VALKNUT_TRIANGLE = INDEX_COUNT_TWO_ANGLE_SEGMNET + INDEX_COUNT_ONE_ANGLE_SEGMNET;
+    private const int VERTEX_COUNT_VALKNUT_TRIANGLE = VERTEX_COUNT_TWO_ANGLE_SEGMENT + VERTEX_COUNT_ONE_ANGLE_SEGMENT;
+    private const int INDEX_COUNT_VALKNUT_TRIANGLE = INDEX_COUNT_TWO_ANGLE_SEGMENT + INDEX_COUNT_ONE_ANGLE_SEGMENT;
 
     private const int TOTAL_VERTEX_COUNT = VERTEX_COUNT_VALKNUT_TRIANGLE * 3;
     private const int TOTAL_INDEX_COUNT = INDEX_COUNT_VALKNUT_TRIANGLE * 3;
@@ -42,6 +42,8 @@ public class ValknutGenerator : FigureGenerator
     private Valknut _valknut;
 
     private List<FigureSegment> _segments;
+
+    private NativeArray<ValknutSegmentMesh> _segmentMeshes;
 
     private void Awake()
     {
@@ -75,7 +77,8 @@ public class ValknutGenerator : FigureGenerator
 
     protected override void StartMeshGeneration()
     {
-        _figureVertices = new NativeArray<VertexData>(TOTAL_VERTEX_COUNT, Allocator.Persistent);
+        _segmentMeshes = new NativeArray<ValknutSegmentMesh>(SEGMENTS_COUNT, Allocator.TempJob);
+        _figureVertices = new NativeArray<VertexData>(TOTAL_VERTEX_COUNT, Allocator.TempJob);
         _figureIndices = new NativeArray<short>(TOTAL_INDEX_COUNT, Allocator.TempJob);
 
         ValknutGenJob valknutGenJob = new ValknutGenJob()
@@ -85,7 +88,9 @@ public class ValknutGenerator : FigureGenerator
             P_GapSize = _gapSize,
 
             OutputVertices = _figureVertices,
-            OutputIndices = _figureIndices
+            OutputIndices = _figureIndices,
+
+            OutputSegmentMeshes = _segmentMeshes
         };
         _figureMeshGenJobHandle = valknutGenJob.Schedule();
 
@@ -155,33 +160,30 @@ public class ValknutGenerator : FigureGenerator
 
         Mesh[] segmentPointMeshes = CreateSegmentPointMeshes();
 
-        BuffersData segmentBuffersData = new BuffersData();
-        segmentBuffersData.ResetVertexStart();
-        segmentBuffersData.ResetIndexStart();
-        segmentBuffersData.SetVertexCount(VERTEX_COUNT_TWO_ANGLE_SEGMNET);
-        segmentBuffersData.SetIndexCount(INDEX_COUNT_TWO_ANGLE_SEGMNET);
+        int2 tasBuffersCount = new int2(VERTEX_COUNT_TWO_ANGLE_SEGMENT, INDEX_COUNT_TWO_ANGLE_SEGMENT);
+        int2 oasBuffersCount = new int2(VERTEX_COUNT_ONE_ANGLE_SEGMENT, INDEX_COUNT_ONE_ANGLE_SEGMENT);
+        MeshBuffersData segmentBuffersData = new MeshBuffersData();
+        segmentBuffersData.Start = int2.zero;
+        segmentBuffersData.Count = tasBuffersCount;
 
         for (int i = 0; i < SEGMENTS_COUNT; i++)
         { 
             UpdateSegment(_segments[i], segmentBuffersData, 0);
             if (i % 2 == 0)
             {
-                segmentBuffersData.AddToVertexStart(VERTEX_COUNT_TWO_ANGLE_SEGMNET);
-                segmentBuffersData.AddToIndexStart(INDEX_COUNT_TWO_ANGLE_SEGMNET);
-                segmentBuffersData.SetVertexCount(VERTEX_COUNT_ONE_ANGLE_SEGMNET);
-                segmentBuffersData.SetIndexCount(INDEX_COUNT_ONE_ANGLE_SEGMNET);
+                segmentBuffersData.Start += tasBuffersCount;
+                segmentBuffersData.Count = oasBuffersCount;
             }
             else
-            { 
-                segmentBuffersData.AddToVertexStart(VERTEX_COUNT_ONE_ANGLE_SEGMNET);
-                segmentBuffersData.AddToIndexStart(INDEX_COUNT_ONE_ANGLE_SEGMNET);
-                segmentBuffersData.SetVertexCount(VERTEX_COUNT_TWO_ANGLE_SEGMNET);
-                segmentBuffersData.SetIndexCount(INDEX_COUNT_TWO_ANGLE_SEGMNET);
+            {
+                segmentBuffersData.Start += oasBuffersCount;
+                segmentBuffersData.Count = tasBuffersCount; 
             }
         }
 
         _figureVertices.Dispose();
         _figureIndices.Dispose();
+        _segmentMeshes.Dispose();
 
         // _segmentPointsVertices.Dispose();
         // _segmentPointsIndices.Dispose();
