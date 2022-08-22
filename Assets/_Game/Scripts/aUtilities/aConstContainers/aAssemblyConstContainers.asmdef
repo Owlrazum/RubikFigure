@@ -1,0 +1,14 @@
+{
+    "name": "aAssemblyConstContainers",
+    "rootNamespace": "Orazum.Utilities.Containers",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

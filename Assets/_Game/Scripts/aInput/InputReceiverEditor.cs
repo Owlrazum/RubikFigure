@@ -53,7 +53,7 @@ public class InputReceiverEditor : MonoBehaviour
             _pressPos = Input.mousePosition;
             Ray ray = _renderingCamera.ScreenPointToRay(_pressPos);
             if (Physics.Raycast(ray, out RaycastHit hitInfo, 1000,
-               LayerUtilities.SEGMENT_POINTS_LAYER_MASK, QueryTriggerInteraction.Collide))
+               LayerUtilities.SegmentPointsLayerMask, QueryTriggerInteraction.Collide))
             {
                 _isSegmentSelected = true;
                 InputDelegatesContainer.SelectSegmentCommand?.Invoke(hitInfo.collider);

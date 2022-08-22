@@ -50,7 +50,7 @@ public struct ValknutSegmentMesh
 
     public ValknutSegmentMesh(in float4x4 stripsData, int stripSegmentsCount)
     {
-        Assert.IsTrue(stripSegmentsCount >= 0 && stripSegmentsCount < 4);
+        Assert.IsTrue(stripSegmentsCount >= 0 && stripSegmentsCount <= 4);
         _stripSegmentsCount = stripSegmentsCount;
 
         _s1 = new float2x2(stripsData[0].xy, stripsData[0].zw);

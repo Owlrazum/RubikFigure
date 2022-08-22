@@ -12,7 +12,7 @@ using static Orazum.Math.MathUtilities;
 [RequireComponent(typeof(MeshFilter))]
 public class WheelSegmentMover : FigureSegmentMover
 { 
-    private const float CLOCK_MOVE_BUFFER_LERP_VALUE = 0.4f;
+    private const float ClockMoveBufferLerpValue = 0.4f;
 
     private bool _wasJobScheduled;
     private bool _wasMoveCompleted;
@@ -100,7 +100,7 @@ public class WheelSegmentMover : FigureSegmentMover
         float lerpParam = 0;
         WheelSegmentMoveJob segmentMoveJob = new WheelSegmentMoveJob()
         {
-            P_ClockMoveBufferLerpValue = CLOCK_MOVE_BUFFER_LERP_VALUE,
+            P_ClockMoveBufferLerpValue = ClockMoveBufferLerpValue,
             P_VertexPositions = verticesMove.VertexPositions,
             P_VertexCountInOneSegment = _vertices.Length,
 

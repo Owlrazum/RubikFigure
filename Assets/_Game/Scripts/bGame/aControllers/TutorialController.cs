@@ -1,14 +1,13 @@
 using UnityEngine;
+using Orazum.Utilities.ConstContainers;
 
 public class TutorialController : MonoBehaviour
 {
     private bool shouldShowTutorial;
 
-    private const string pref_AT_LEAST_ONE_LEVEL_COMPLETED = "AtLeastOneLevelCompleted";
-
     private void Awake()
     { 
-        shouldShowTutorial = PlayerPrefs.GetInt(pref_AT_LEAST_ONE_LEVEL_COMPLETED, 0) == 0;
+        shouldShowTutorial = PlayerPrefs.GetInt(PlayerPrefsContainer.AtLeastOneLevelCompleted, 0) == 0;
 
         GameDelegatesContainer.EventLevelCompleted += OnLevelCompleted;
 
@@ -26,7 +25,7 @@ public class TutorialController : MonoBehaviour
     { 
         if (shouldShowTutorial)
         { 
-            PlayerPrefs.SetInt(pref_AT_LEAST_ONE_LEVEL_COMPLETED, 1);
+            PlayerPrefs.SetInt(PlayerPrefsContainer.AtLeastOneLevelCompleted, 1);
             shouldShowTutorial = false;
         }
     }

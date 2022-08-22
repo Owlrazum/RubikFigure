@@ -9,7 +9,7 @@ using static Orazum.Math.MathUtilities;
 [BurstCompile]
 public struct ValknutGenJob : IJob
 {
-    private const float VALKNUT_RATIO = 3;
+    private const float ValknutRatio = 3;
 
     public float P_InnerTriangleRadius;
     public float P_Width;
@@ -109,7 +109,7 @@ public struct ValknutGenJob : IJob
         Triangle centerTriangle = MakeTriangle(new float3(0, 0, P_InnerTriangleRadius));
         centerTriangle.Rotate(quaternion.AxisAngle(math.up(), TAU / 4));
 
-        float valknutRadius = P_InnerTriangleRadius * VALKNUT_RATIO;
+        float valknutRadius = P_InnerTriangleRadius * ValknutRatio;
 
         Triangle upTriangle = MakeTriangle(new float3(0, 0, valknutRadius));
         upTriangle.Offset(centerTriangle.Left);

@@ -24,18 +24,19 @@ public abstract class FigureIdleState : FigureState
         InputDelegatesContainer.SetShouldRespond(false);
     }
 
-    private void OnSelectSegmentCommand(Collider segmentPointCollider)
+    private void OnSelectSegmentCommand(Collider collider)
     {
-        bool isFound = segmentPointCollider.TryGetComponent(out FigureSegmentPoint segmentPoint);
+        Debug.Log("OnSelectedSegmentCommand");
+        bool isFound = collider.TryGetComponent(out FigureSegmentPointCollider segmentPointCollider);
         Assert.IsTrue(isFound);
-        if (segmentPoint.Segment == null)
+        if (segmentPointCollider.ParentPoint.Segment == null)
         {
             _currentSelectedPoint = null;
             Debug.LogWarning("No segment located here");
             return;
         }
 
-        _currentSelectedPoint = segmentPoint;
+        _currentSelectedPoint = segmentPointCollider.ParentPoint;
         _currentSelectedPoint.Segment.HighlightRender();
     }
 

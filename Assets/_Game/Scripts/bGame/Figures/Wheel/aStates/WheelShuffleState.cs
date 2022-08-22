@@ -10,8 +10,8 @@ using rnd = Unity.Mathematics.Random;
 
 public class WheelShuffleState : FigureState
 { 
-    private const int FAST_STEPS = 0;
-    private const float FAST_SPEED = 10;
+    private const int FastSteps = 0;
+    private const float FastSpeed = 10;
     private float _fastShuffleTime;
 
     private float _shuffleLerpSpeed;
@@ -37,7 +37,7 @@ public class WheelShuffleState : FigureState
         _shufflePauseTime = figureParams.ShufflePauseTime;
 
         _shuffleStepsAmount = figureParams.ShuffleStepsAmount;
-        _fastShuffleTime = 1 / FAST_SPEED + _shufflePauseTime / 10;
+        _fastShuffleTime = 1 / FastSpeed + _shufflePauseTime / 10;
         _shuffleTime = 1 / _shuffleLerpSpeed + _shufflePauseTime;
 
         _randomGenerator = rnd.CreateFromIndex((uint)System.DateTime.Now.Millisecond);
@@ -75,11 +75,11 @@ public class WheelShuffleState : FigureState
     public override void ProcessState()
     {
         _currentShuffleTimer += Time.deltaTime;
-        if (_currentStep < FAST_STEPS)
+        if (_currentStep < FastSteps)
         {
             if (_currentShuffleTimer >= _fastShuffleTime)
             {
-                Shuffle(FAST_SPEED);
+                Shuffle(FastSpeed);
                 _currentShuffleTimer = 0;
                 _currentStep++;
             }

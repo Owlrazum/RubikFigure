@@ -10,7 +10,7 @@ namespace Orazum.Collections
     /// </summary>
     public static class Algorithms
     {
-        public const int MAX_ITERATION_COUNT = 10000;
+        public const int MaxIterationCount = 10000;
 
         public static void Shuffle<T>(this IList<T> list)
         {

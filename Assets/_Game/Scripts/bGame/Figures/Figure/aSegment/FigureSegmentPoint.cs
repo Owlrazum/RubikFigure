@@ -3,12 +3,10 @@ using UnityEngine;
 using UnityEngine.Assertions;
 
 [RequireComponent(typeof(MeshFilter))]
-[RequireComponent(typeof(MeshCollider))]
 [RequireComponent(typeof(MeshRenderer))]
 public class FigureSegmentPoint : MonoBehaviour
 {
     private MeshFilter _meshFilter;
-    private MeshCollider _meshCollider;
     private MeshRenderer _meshRenderer;
 
     [SerializeField]
@@ -17,23 +15,40 @@ public class FigureSegmentPoint : MonoBehaviour
     private void Awake()
     {
         TryGetComponent(out _meshFilter);
-        TryGetComponent(out _meshCollider);
         TryGetComponent(out _meshRenderer);
+
+        _meshRenderer.sharedMaterial = _emptyMaterial;
     }
 
     public FigureSegment Segment { get; set; }
     public int2 Index { get; private set; }
-    public void InitializeAfterMeshesGenerated(Mesh mesh, FigureSegment segment, int2 index)
+    public void InitializeWithSingleMesh(Mesh mesh, FigureSegment segment, int2 index)
     {
         Assert.IsNotNull(segment.MeshContainer.mesh);
         Segment = segment;
         Index = index;
 
         _meshFilter.mesh = mesh;
-        _meshCollider.sharedMesh = mesh;
-        _meshCollider.isTrigger = true;
+        var collider = gameObject.AddComponent<FigureSegmentPointCollider>();
+        collider.Initialize(mesh, this);
+    }
 
-        _meshRenderer.sharedMaterial = _emptyMaterial;
+    public void InitializeWithMultiMesh(Mesh renderMesh, Mesh[] colliderMultiMesh, FigureSegment segment, int2 index)
+    {
+        Assert.IsNotNull(segment.MeshContainer.mesh);
+        Segment = segment;
+        Index = index;
+
+        _meshFilter.mesh = renderMesh;
+
+        for (int i = 0; i < colliderMultiMesh.Length; i++)
+        {
+            GameObject meshSegment = new GameObject($"pointSegment_{i}");
+            meshSegment.layer = gameObject.layer;
+            var collider = meshSegment.AddComponent<FigureSegmentPointCollider>();
+            collider.Initialize(colliderMultiMesh[i], this);
+            meshSegment.transform.parent = transform;
+        }
     }
 
     public override string ToString()

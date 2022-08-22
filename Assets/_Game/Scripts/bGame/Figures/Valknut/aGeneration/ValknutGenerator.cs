@@ -13,21 +13,36 @@ using Orazum.Meshing;
 
 public class ValknutGenerator : FigureGenerator
 {
-    private const int SEGMENTS_COUNT = 3 + 3; // three outer and three inner;
-    private const int QUADS_COUNT_TWO_ANGLE_SEGMENT = 3;
-    private const int QUADS_COUNT_ONE_ANGLE_SEGMENT = 2;
+    private const int SegmentsCount = 3 + 3; // three outer and three inner;
+    private const int SegmentQuadsCountTAS = 3;
+    private const int SegmentQuadsCountOAS = 2;
 
-    private const int VERTEX_COUNT_TWO_ANGLE_SEGMENT = (QUADS_COUNT_TWO_ANGLE_SEGMENT + 1) * 2;
-    private const int INDEX_COUNT_TWO_ANGLE_SEGMENT  = QUADS_COUNT_TWO_ANGLE_SEGMENT * 6;
+    private const int SegmentVertexCountTAS = (SegmentQuadsCountTAS + 1) * 2;
+    private const int SegmentVertexCountOAS = (SegmentQuadsCountOAS + 1) * 2;
+    private const int SegmentIndexCountTAS  = SegmentQuadsCountTAS * 6;
+    private const int SegmentIndexCountOAS  = SegmentQuadsCountOAS * 6;
 
-    private const int VERTEX_COUNT_ONE_ANGLE_SEGMENT = (QUADS_COUNT_ONE_ANGLE_SEGMENT + 1) * 2;
-    private const int INDEX_COUNT_ONE_ANGLE_SEGMENT  = QUADS_COUNT_ONE_ANGLE_SEGMENT * 6;
+    private const int SegmentTotalVertexCount = (SegmentVertexCountTAS + SegmentVertexCountOAS) * 3;
+    private const int SegmentTotalIndexCount = (SegmentIndexCountTAS + SegmentIndexCountOAS) * 3;
 
-    private const int VERTEX_COUNT_VALKNUT_TRIANGLE = VERTEX_COUNT_TWO_ANGLE_SEGMENT + VERTEX_COUNT_ONE_ANGLE_SEGMENT;
-    private const int INDEX_COUNT_VALKNUT_TRIANGLE = INDEX_COUNT_TWO_ANGLE_SEGMENT + INDEX_COUNT_ONE_ANGLE_SEGMENT;
+    private const int PointRendererVertexCountTAS = SegmentVertexCountTAS * 2;
+    private const int PointRendererVertexCountOAS = SegmentVertexCountOAS * 2;
+    private const int PointRendererTotalVertexCount = SegmentTotalVertexCount * 2;
 
-    private const int TOTAL_VERTEX_COUNT = VERTEX_COUNT_VALKNUT_TRIANGLE * 3;
-    private const int TOTAL_INDEX_COUNT = INDEX_COUNT_VALKNUT_TRIANGLE * 3;
+    private const int PointRendererIndexCountTAS = (SegmentQuadsCountTAS * 4 + 2) * 6;
+    private const int PointRendererIndexCountOAS = (SegmentQuadsCountOAS * 4 + 2) * 6;
+    private const int PointRendererTotalIndexCount =  (PointRendererIndexCountTAS + PointRendererIndexCountOAS) * 3;
+
+    private const int CubeVertexCount = 8;
+    private const int CubeIndexCount = 6 * 6;
+
+    private const int PointColliderVertexCountTAS = SegmentQuadsCountTAS * CubeVertexCount;
+    private const int PointColliderVertexCountOAS = SegmentQuadsCountOAS * CubeVertexCount;
+    private const int PointColliderTotalVertexCount = (PointColliderVertexCountTAS + PointColliderVertexCountOAS) * 3;
+
+    private const int PointColliderIndexCountTAS = SegmentQuadsCountTAS * CubeIndexCount;
+    private const int PointColliderIndexCountOAS = SegmentQuadsCountOAS * CubeIndexCount;
+    private const int PointColliderTotalIndexCount = (PointColliderIndexCountTAS + PointColliderIndexCountOAS) * 3;
 
     [SerializeField]
     private FigureParamsSO _figureParams;
@@ -41,45 +56,33 @@ public class ValknutGenerator : FigureGenerator
 
     private Valknut _valknut;
 
-    private List<FigureSegment> _segments;
+    private List<ValknutSegment> _segments;
+    private List<FigureSegmentPoint> _segmentPoints;
 
     private NativeArray<ValknutSegmentMesh> _segmentMeshes;
 
     private void Awake()
     {
-        _segments = new List<FigureSegment>();
         StartGeneration(_figureParams.FigureGenParamsSO);
     }
-
-    private void Start()
-    {
-        FinishGeneration(_figureParams);
-    }
-
     protected override void InitializeParameters(FigureGenParamsSO figureGenParams)
     {
         ValknutGenParamsSO generationParams =  figureGenParams as ValknutGenParamsSO;
-        // _segmentBuffersData.SetVertexCount(4 * QUADS_COUNT);
-        // _segmentBuffersData.SetIndexCount(6 * QUADS_COUNT);
-        // Segment.InitializeVertexCount(_segmentBuffersData.Count.x);
-
-        // _segmentPointBuffersData = new BuffersData();
-        // _segmentPointBuffersData.SetVertexCount(_segmentBuffersData.Count.x * 4 + 8);
-        // _segmentPointBuffersData.SetIndexCount(_segmentBuffersData.Count.y * 4 + 12);
-
+        
         _innerTriangleRadius = generationParams.InnerTriangleRadius;       
         _width = generationParams.Width;
         _gapSize = generationParams.GapSize;
 
+        _segmentPointHeight = generationParams.Height;
+
         _segmentPrefab = generationParams.SegmentPrefab;
         _segmentPointPrefab = generationParams.SegmentPointPrefab;
     }
-
     protected override void StartMeshGeneration()
     {
-        _segmentMeshes = new NativeArray<ValknutSegmentMesh>(SEGMENTS_COUNT, Allocator.TempJob);
-        _figureVertices = new NativeArray<VertexData>(TOTAL_VERTEX_COUNT, Allocator.TempJob);
-        _figureIndices = new NativeArray<short>(TOTAL_INDEX_COUNT, Allocator.TempJob);
+        _segmentMeshes = new NativeArray<ValknutSegmentMesh>(SegmentsCount, Allocator.TempJob);
+        _figureVertices = new NativeArray<VertexData>(SegmentTotalVertexCount, Allocator.TempJob);
+        _figureIndices = new NativeArray<short>(SegmentTotalIndexCount, Allocator.TempJob);
 
         ValknutGenJob valknutGenJob = new ValknutGenJob()
         {
@@ -94,30 +97,32 @@ public class ValknutGenerator : FigureGenerator
         };
         _figureMeshGenJobHandle = valknutGenJob.Schedule();
 
-        // _segmentPointsVertices = new NativeArray<float3>(_segmentPointBuffersData.Count.x * _ringCount, Allocator.TempJob);
-        // _segmentPointsIndices = new NativeArray<short>(_segmentPointBuffersData.Count.y * _ringCount, Allocator.TempJob);
+        _pointsRenderVertices = new NativeArray<float3>(PointRendererTotalVertexCount, Allocator.TempJob);
+        _pointsRenderIndices = new NativeArray<short>(PointRendererTotalIndexCount, Allocator.TempJob);
 
-        // _segmentPointMeshGenJob = new SegmentPointMeshGenJob()
-        // {
-        //     P_SideCount = _sideCount,
-        //     P_RingCount = _ringCount,
-        //     P_SegmentResolution = _segmentResolution,
-        //     P_InnerCircleRadius = _innerRadius,
-        //     P_OuterCircleRadius = _outerRadius,
-        //     P_Height = _segmentPointHeight,
+        _pointsColliderVertices = new NativeArray<float3>(PointColliderTotalVertexCount, Allocator.TempJob);
+        _pointsColliderIndices = new NativeArray<short>(PointColliderTotalIndexCount, Allocator.TempJob);
 
-        //     OutputVertices = _segmentPointsVertices,
-        //     OutputIndices = _segmentPointsIndices
-        // };
-        // _segmentPointsMeshGenJobHandle = _segmentPointMeshGenJob.Schedule();
+        ValknutSegmentPointGenJob valknutSegmentPointGenJob = new ValknutSegmentPointGenJob()
+        {
+            P_InnerTriangleRadius = _innerTriangleRadius,
+            P_Width = _width,
+            P_GapSize = _gapSize,
+            P_Height = _segmentPointHeight,
+
+            OutputCollidersVertices = _pointsColliderVertices,
+            OutputCollidersIndices  = _pointsColliderIndices,
+            OutputRenderVertices    = _pointsRenderVertices,
+            OutputRenderIndices     = _pointsRenderIndices 
+        };
+        _segmentPointsMeshGenJobHandle = valknutSegmentPointGenJob.Schedule();
 
         JobHandle.ScheduleBatchedJobs();
     }
-
     protected override void GenerateFigureGameObject()
     {
         GameObject valknutGb = new GameObject("Valknut", typeof(Valknut));
-        valknutGb.layer = LayerUtilities.FIGURE_LAYER;
+        valknutGb.layer = LayerUtilities.FigureLayer;
         Transform parentWheel = valknutGb.transform;
 
         GameObject segmentPointsParentGb = new GameObject("SegmentPoints");
@@ -130,54 +135,77 @@ public class ValknutGenerator : FigureGenerator
         segmentsParent.parent = parentWheel;
         segmentsParent.SetSiblingIndex(1);
 
-        // _segmentPoints = new Array2D<SegmentPoint>(_sideCount, _ringCount);
-        // _segments = new Array2D<Segment>(_sideCount, _ringCount);
+        _segments = new List<ValknutSegment>();
+        _segmentPoints = new List<FigureSegmentPoint>();
 
-        for (int segmentIndex = 0; segmentIndex < SEGMENTS_COUNT; segmentIndex++)
+        for (int segmentIndex = 0; segmentIndex < SegmentsCount; segmentIndex++)
         {
             GameObject segmentGb = Instantiate(_segmentPrefab);
             segmentGb.transform.parent = segmentsParent;
-            FigureSegment segment = segmentGb.AddComponent<ValknutSegment>();
+            ValknutSegment segment = segmentGb.AddComponent<ValknutSegment>();
             _segments.Add(segment);
-            Assert.IsNotNull(segment);
-        }
 
-        // GameObject segmentPointGb = Instantiate(_segmentPointPrefab);
-        // segmentPointGb.layer = LayerUtilities.SEGMENT_POINTS_LAYER;
-        // segmentPointGb.name = "Point[" + side + "," + ring + "]";
-        // segmentPointGb.transform.parent = segmentPointsParent;
-        // SegmentPoint segmentPoint = segmentPointGb.GetComponent<SegmentPoint>();
-        // Assert.IsNotNull(segmentPoint);
-        // _segmentPoints[side, ring] = segmentPoint;
+            GameObject segmentPointGb = Instantiate(_segmentPointPrefab);
+            segmentPointGb.layer = LayerUtilities.SegmentPointsLayer;
+            segmentGb.name = "Segment";
+            segmentPointGb.transform.parent = segmentPointsParent;
+            FigureSegmentPoint segmentPoint = segmentPointGb.GetComponent<FigureSegmentPoint>();
+            Assert.IsNotNull(segmentPoint);
+            _segmentPoints.Add(segmentPoint);
+            
+        }
 
         _valknut = valknutGb.GetComponent<Valknut>();
     }
 
+    private void Start()
+    {
+        FinishGeneration(_figureParams);
+    }
     public override Figure FinishGeneration(FigureParamsSO figureParams)
     {
         _figureMeshGenJobHandle.Complete();
         _segmentPointsMeshGenJobHandle.Complete();
 
-        Mesh[] segmentPointMeshes = CreateSegmentPointMeshes();
+        int2 tasSegmentBuffersCount = new int2(SegmentVertexCountTAS, SegmentIndexCountTAS);
+        int2 oasSegmentBuffersCount = new int2(SegmentVertexCountOAS, SegmentIndexCountOAS);
+        MeshBuffersData buffersData = new MeshBuffersData();
+        buffersData.Start = int2.zero;
+        buffersData.Count = tasSegmentBuffersCount;
 
-        int2 tasBuffersCount = new int2(VERTEX_COUNT_TWO_ANGLE_SEGMENT, INDEX_COUNT_TWO_ANGLE_SEGMENT);
-        int2 oasBuffersCount = new int2(VERTEX_COUNT_ONE_ANGLE_SEGMENT, INDEX_COUNT_ONE_ANGLE_SEGMENT);
-        MeshBuffersData segmentBuffersData = new MeshBuffersData();
-        segmentBuffersData.Start = int2.zero;
-        segmentBuffersData.Count = tasBuffersCount;
+        int2 tasPointRendererBuffersCount = new int2(PointRendererVertexCountTAS, PointRendererIndexCountTAS);
+        int2 oasPointRendererBuffersCount = new int2(PointRendererVertexCountOAS, PointRendererIndexCountOAS);
+        MeshBuffersData pointBuffersData = new MeshBuffersData();
+        pointBuffersData.Start = int2.zero;
+        pointBuffersData.Count = tasPointRendererBuffersCount;
 
-        for (int i = 0; i < SEGMENTS_COUNT; i++)
+        int2 tasPointColliderBuffersCount = new int2(PointColliderVertexCountTAS, PointColliderIndexCountTAS);
+        int2 oasPointColliderBuffersCount = new int2(PointColliderVertexCountOAS, PointColliderIndexCountOAS);
+        MeshBuffersData multiMeshBuffersData = new MeshBuffersData();
+        multiMeshBuffersData.Start = int2.zero;
+        multiMeshBuffersData.Count = new int2(CubeVertexCount, CubeIndexCount);
+
+        for (int i = 0; i < SegmentsCount; i++)
         { 
-            UpdateSegment(_segments[i], segmentBuffersData, 0);
+            UpdateSegment(_segments[i], buffersData, 0);
+            Mesh[] multiMesh = CreateColliderMultiMesh(ref multiMeshBuffersData, i % 2 == 0);
+            Mesh renderMesh = CreateSegmentPointRenderMesh(in pointBuffersData);
+            _segmentPoints[i].InitializeWithMultiMesh(renderMesh, multiMesh, _segments[i], new int2(i, 0));
             if (i % 2 == 0)
             {
-                segmentBuffersData.Start += tasBuffersCount;
-                segmentBuffersData.Count = oasBuffersCount;
+                buffersData.Start += tasSegmentBuffersCount;
+                buffersData.Count = oasSegmentBuffersCount;
+
+                pointBuffersData.Start += tasPointRendererBuffersCount;
+                pointBuffersData.Count = oasPointRendererBuffersCount;
             }
             else
             {
-                segmentBuffersData.Start += oasBuffersCount;
-                segmentBuffersData.Count = tasBuffersCount; 
+                buffersData.Start += oasSegmentBuffersCount;
+                buffersData.Count = tasSegmentBuffersCount; 
+
+                pointBuffersData.Start += oasPointRendererBuffersCount;
+                pointBuffersData.Count = tasPointRendererBuffersCount;
             }
         }
 
@@ -185,27 +213,24 @@ public class ValknutGenerator : FigureGenerator
         _figureIndices.Dispose();
         _segmentMeshes.Dispose();
 
-        // _segmentPointsVertices.Dispose();
-        // _segmentPointsIndices.Dispose();
+        _pointsRenderVertices.Dispose();
+        _pointsRenderIndices.Dispose();
+        _pointsColliderVertices.Dispose();
+        _pointsColliderIndices.Dispose();
 
         return _valknut;
     }
 
-    private Mesh[] CreateSegmentPointMeshes()
+    private Mesh[] CreateColliderMultiMesh(ref MeshBuffersData buffersData, bool isTas)
     {
-        Mesh[] meshes = new Mesh[0];
+        int meshCount = isTas ? 3 : 2;
+        Mesh[] meshes = new Mesh[meshCount];
 
-        // _segmentPointBuffersData.ResetVertexStart();
-        // _segmentPointBuffersData.ResetIndexStart();
-
-        // for (int i = 0; i < meshes.Length; i++)
-        // {
-        //     Mesh segmentPointMesh = CreateSegmentPointMesh(_segmentPointBuffersData);
-        //     meshes[i] = segmentPointMesh;
-
-        //     _segmentPointBuffersData.AddVertexCountToVertexStart();
-        //     _segmentPointBuffersData.AddIndexCountToIndexStart();
-        // }
+        for (int i = 0; i < meshes.Length; i++)
+        { 
+            meshes[i] = CreateSegmentPointColliderMesh(buffersData);
+            buffersData.Start += buffersData.Count;
+        }
 
         return meshes;
     }

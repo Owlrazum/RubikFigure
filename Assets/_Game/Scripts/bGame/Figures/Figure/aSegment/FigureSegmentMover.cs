@@ -13,7 +13,7 @@ using Orazum.Meshing;
 [RequireComponent(typeof(MeshFilter))]
 public abstract class FigureSegmentMover : MonoBehaviour
 { 
-    public const MeshUpdateFlags MESH_UPDATE_FLAGS = MeshUpdateFlags.Default;
+    public const MeshUpdateFlags MoveMeshUpdateFlags = MeshUpdateFlags.Default;
 
     private MeshFilter _meshFilter;
     public MeshFilter MeshContainer { get { return _meshFilter; } }
@@ -67,7 +67,7 @@ public abstract class FigureSegmentMover : MonoBehaviour
         Mesh newMesh = _meshFilter.mesh;
         newMesh.SetVertexBufferData(toAssign, 0, 0,
             vertexCount, 0,
-            MESH_UPDATE_FLAGS
+            MoveMeshUpdateFlags
         );
 
         newMesh.RecalculateNormals();

@@ -12,7 +12,7 @@ public class VibrationController : MonoBehaviour
     [Space]
     [SerializeField]
     [Tooltip("In milliseconds")]
-    private const int vibrationTime = 50;
+    private int vibrationTime = 50;
 
     [Header("Custom Vibrations")]
     [Space]

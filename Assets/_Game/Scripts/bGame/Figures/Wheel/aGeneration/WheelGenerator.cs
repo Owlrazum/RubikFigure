@@ -102,8 +102,8 @@ public class WheelGenerator : FigureGenerator
         };
         _figureMeshGenJobHandle = wheelMeshGenJob.Schedule();
 
-        _segmentPointsVertices = new NativeArray<float3>(_segmentPointBuffersData.Count.x * _ringCount, Allocator.TempJob);
-        _segmentPointsIndices = new NativeArray<short>(_segmentPointBuffersData.Count.y * _ringCount, Allocator.TempJob);
+        _pointsRenderVertices = new NativeArray<float3>(_segmentPointBuffersData.Count.x * _ringCount, Allocator.TempJob);
+        _pointsRenderIndices = new NativeArray<short>(_segmentPointBuffersData.Count.y * _ringCount, Allocator.TempJob);
 
         WheelSegmentPointMeshGenJob segmentPointMeshGenJob = new WheelSegmentPointMeshGenJob()
         {
@@ -114,8 +114,8 @@ public class WheelGenerator : FigureGenerator
             P_OuterCircleRadius = _outerRadius,
             P_Height = _segmentPointHeight,
 
-            OutputVertices = _segmentPointsVertices,
-            OutputIndices = _segmentPointsIndices
+            OutputVertices = _pointsRenderVertices,
+            OutputIndices = _pointsRenderIndices
         };
         _segmentPointsMeshGenJobHandle = segmentPointMeshGenJob.Schedule();
 
@@ -125,7 +125,7 @@ public class WheelGenerator : FigureGenerator
     protected override void GenerateFigureGameObject()
     {
         GameObject wheelGb = new GameObject("Wheel", typeof(Wheel), typeof(WheelStatesController));
-        wheelGb.layer = LayerUtilities.FIGURE_LAYER;
+        wheelGb.layer = LayerUtilities.FigureLayer;
         Transform parentWheel = wheelGb.transform;
 
         GameObject segmentPointsParentGb = new GameObject("SegmentPoints");
@@ -151,7 +151,7 @@ public class WheelGenerator : FigureGenerator
                 _segments[side, ring] = segment;
 
                 GameObject segmentPointGb = Instantiate(_segmentPointPrefab);
-                segmentPointGb.layer = LayerUtilities.SEGMENT_POINTS_LAYER;
+                segmentPointGb.layer = LayerUtilities.SegmentPointsLayer;
                 segmentPointGb.name = "Point[" + side + "," + ring + "]";
                 segmentPointGb.transform.parent = segmentPointsParent;
                 FigureSegmentPoint segmentPoint = segmentPointGb.GetComponent<FigureSegmentPoint>();
@@ -180,7 +180,7 @@ public class WheelGenerator : FigureGenerator
                 UpdateSegment(_segments[side, ring], _segmentBuffersData, side);
 
                 FigureSegmentPoint currentPoint = _segmentPoints[side, ring];
-                currentPoint.InitializeAfterMeshesGenerated(segmentPointMeshes[ring], _segments[side, ring], new int2(side, ring));
+                currentPoint.InitializeWithSingleMesh(segmentPointMeshes[ring], _segments[side, ring], new int2(side, ring));
 
                 _segmentBuffersData.Start += _segmentBuffersData.Count;
             }
@@ -197,8 +197,8 @@ public class WheelGenerator : FigureGenerator
         _figureIndices.Dispose();
         _segmentMeshes.Dispose();
 
-        _segmentPointsVertices.Dispose();
-        _segmentPointsIndices.Dispose();
+        _pointsRenderVertices.Dispose();
+        _pointsRenderIndices.Dispose();
 
         return _wheel;
     }
@@ -211,7 +211,7 @@ public class WheelGenerator : FigureGenerator
 
         for (int i = 0; i < meshes.Length; i++)
         {
-            Mesh segmentPointMesh = CreateSegmentPointMesh(_segmentPointBuffersData);
+            Mesh segmentPointMesh = CreateSegmentPointRenderMesh(_segmentPointBuffersData);
             meshes[i] = segmentPointMesh;
 
             _segmentPointBuffersData.Start += _segmentPointBuffersData.Count;

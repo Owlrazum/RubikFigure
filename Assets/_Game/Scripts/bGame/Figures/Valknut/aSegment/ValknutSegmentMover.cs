@@ -2,18 +2,15 @@ using System;
 using System.Collections;
 
 using Unity.Jobs;
-using Unity.Mathematics;
 
 using UnityEngine;
-
-using Orazum.Meshing;
 
 using static Orazum.Math.MathUtilities;
 
 [RequireComponent(typeof(MeshFilter))]
 public class ValknutSegmentMover : FigureSegmentMover
 { 
-    private const float CLOCK_MOVE_BUFFER_LERP_VALUE = 0.4f;
+    private const float ClockMoveBufferLerpValue = 0.4f;
 
     private bool _wasJobScheduled;
     private bool _wasMoveCompleted;
@@ -37,7 +34,7 @@ public class ValknutSegmentMover : FigureSegmentMover
         float lerpParam = 0;
         ValknutSegmentMoveJob segmentMoveJob = new ValknutSegmentMoveJob()
         {
-            P_ClockMoveBufferLerpValue = CLOCK_MOVE_BUFFER_LERP_VALUE,
+            P_ClockMoveBufferLerpValue = ClockMoveBufferLerpValue,
             P_VertexPositions = verticesMove.VertexPositions,
             P_VertexCountInOneSegment = _vertices.Length,
 
