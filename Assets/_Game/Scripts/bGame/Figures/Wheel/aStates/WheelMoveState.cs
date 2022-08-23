@@ -4,179 +4,93 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Assertions;
 
+using Orazum.Math;
+
 using static Orazum.Math.MathUtilities;
 
-public class WheelMoveState : FigureState
+public class WheelMoveState : FigureMoveState
 {
-    private SwipeCommand _currentSwipeCommand;
-    private FigureSegmentPoint _currentSelectedPoint;
-    private WheelVerticesMove _verticesMove; // we store it once to avoid gc. SegemntToMove presence determines logic.
-    private WheelRotationMove _rotationMove; // same as above.
-    private float _moveLerpSpeed;
-    private bool _isMoving;
-
     private Wheel _wheel;
 
-    public WheelMoveState(float moveLerpSpeedArg, Wheel wheelArg)
+    public WheelMoveState( WheelStatesController statesController, Wheel wheel, float moveLerpSpeed)
+        : base (statesController, wheel, moveLerpSpeed)
     {
-        _wheel = wheelArg;
-
-        _moveLerpSpeed = moveLerpSpeedArg;
-        _verticesMove = new WheelVerticesMove();
-        _rotationMove = new WheelRotationMove();
-
-        WheelDelegates.MoveState += GetThisState;
+        _wheel = wheel;
+        _movesToMake = new List<FigureSegmentMove>(wheel.SideCount);
     }
 
-    public void PrepareForMove(SwipeCommand swipeCommand, FigureSegmentPoint selectedSegmentPoint)
+     protected override List<FigureSegmentMove> DetermineMovesFromInput(Vector3 worldPos, Vector3 worldDir)
     {
-        _currentSwipeCommand = swipeCommand;
-        _currentSelectedPoint = selectedSegmentPoint;
-    }
+        _movesToMake.Clear();
+        Debug.Log("Determining");
 
-    public override void OnEnter()
-    {
-        Assert.IsNotNull(_currentSwipeCommand);
-        Assert.IsNotNull(_currentSelectedPoint.Segment);
-
-        Camera renderingCamera = InputDelegatesContainer.GetRenderingCamera();
-        Vector3 center = _wheel.transform.position;
-        float planeDistance = (center - renderingCamera.transform.position).magnitude;
-        Vector3 viewStartPos = new Vector3(_currentSwipeCommand.ViewStartPos.x,
-            _currentSwipeCommand.ViewStartPos.y, planeDistance);
-        Vector3 viewEndPos = new Vector3(_currentSwipeCommand.ViewEndPos.x,
-            _currentSwipeCommand.ViewEndPos.y, planeDistance);
-
-        Vector3 worldStartPos = renderingCamera.ViewportToWorldPoint(viewStartPos);
-        Vector3 worldEndPos = renderingCamera.ViewportToWorldPoint(viewEndPos);
-        Vector3 worldDir = (worldEndPos - worldStartPos).normalized;
-
-        FigureSegmentMove _moveToMake = DetermineMoveFromInput(center, worldStartPos, worldDir);
-        Debug.Log("Make Rotation moves " + _moveToMake);
-        if (_moveToMake is WheelRotationMove rotationMove)
-        {
-            MakeRotationMoves(_currentSelectedPoint.Index.y, rotationMove.Type);
-            _isMoving = true;
-            return;
-        }
-        else if (_moveToMake is WheelVerticesMove verticesMove)
-        {
-            _moveToMake.AssignFromIndex(_currentSelectedPoint.Index);
-            if (_wheel.IsMovePossibleFromIndex(verticesMove, out int2 toIndex))
-            {
-                _moveToMake.AssignToIndex(toIndex);
-                _wheel.MakeVerticesMove(in verticesMove, _moveLerpSpeed, OnCurrentMoveCompleted);
-                _isMoving = true;
-                return;
-            }
-        }
-        
-        _isMoving = false;
-    }
-
-    private FigureSegmentMove DetermineMoveFromInput(Vector3 circleCenter, Vector3 worldPos, Vector3 worldDir)
-    {
-        Vector3 DirToCenter = (circleCenter - worldPos).normalized;
+        Vector3 DirToCenter = (_figureCenter - worldPos).normalized;
         float rotateAngleDeg = Mathf.Atan2(DirToCenter.z, DirToCenter.x) * Mathf.Rad2Deg;
         Quaternion rotation = Quaternion.AngleAxis(rotateAngleDeg, Vector3.up);
         worldDir = rotation * worldDir;
         float swipeAngle = Mathf.Atan2(worldDir.z, worldDir.x);
         if (swipeAngle > -TAU / 12 && swipeAngle < TAU / 12)
         {
-            _verticesMove.AssignType(WheelVerticesMove.TypeType.Down);
-            return _verticesMove;
+            return ConstructVerticesMove(_currentSelectedPoint.Index, VertOrder.Down);
         }
         else if (swipeAngle > TAU / 12 && swipeAngle < 5 * TAU / 12)
         {
-            _rotationMove.AssignType(WheelRotationMove.TypeType.Clockwise);
-            return _rotationMove;
+            return ConstructRotationMoves(_currentSelectedPoint.Index.y, ClockOrder.CW);
         }
         else if (swipeAngle > -5 * TAU / 12 && swipeAngle < -TAU / 12)
         {
-            _rotationMove.AssignType(WheelRotationMove.TypeType.CounterClockwise);
-            return _rotationMove;
+            return ConstructRotationMoves(_currentSelectedPoint.Index.y, ClockOrder.CCW);
         }
         else
         {
-            _verticesMove.AssignType(WheelVerticesMove.TypeType.Up);
-            return _verticesMove;
+            return ConstructVerticesMove(_currentSelectedPoint.Index, VertOrder.Up);
         }
     }
 
-    private void MakeRotationMoves(int ringIndex, WheelRotationMove.TypeType type)
+    private List<FigureSegmentMove> ConstructVerticesMove(int2 index, VertOrder vertOrder)
+    {
+        if (_wheel.IsValidIndexVertOrder(index, vertOrder))
+        {
+            WheelVerticesMove verticesMove = new WheelVerticesMove();
+            verticesMove.AssignFromIndex(index);
+            verticesMove.AssignToIndex(_wheel.MoveIndexVertOrder(index, vertOrder));
+            verticesMove.AssignLerpSpeed(_moveLerpSpeed);
+            _movesToMake.Add(verticesMove);
+            return _movesToMake;
+        }
+        else
+        {
+            return null;
+        }
+    }
+
+    private List<FigureSegmentMove> ConstructRotationMoves(int ringIndex, ClockOrder clockOrder)
     {
         int2 index = new int2(0, ringIndex);
-        int2 nextIndex = int2.zero; 
-        if (type == WheelRotationMove.TypeType.Clockwise)
-        { 
-            nextIndex = _wheel.MoveIndexClockwise(index);
-        }
-        else if (type == WheelRotationMove.TypeType.CounterClockwise)
-        { 
-            nextIndex = _wheel.MoveIndexCounterClockwise(index);
-        }
-        List<WheelRotationMove> rotationMoves = new List<WheelRotationMove>(_wheel.SideCount);
+        int2 nextIndex = new int2(0, ringIndex);
+        MoveIndexInRotationOrder(ref nextIndex, clockOrder);
+
         for (int i = 0; i < _wheel.SideCount; i++)
         {
             index = nextIndex;
-            if (type == WheelRotationMove.TypeType.Clockwise)
-            {
-                nextIndex = _wheel.MoveIndexClockwise(index);
-            }
-            else if (type == WheelRotationMove.TypeType.CounterClockwise)
-            {
-                nextIndex = _wheel.MoveIndexCounterClockwise(index);
-            }
+            MoveIndexInRotationOrder(ref nextIndex, clockOrder);
             if (_wheel.IsPointEmpty(index))
             {
                 continue;
             }
             WheelRotationMove rotationMove = new WheelRotationMove();
-            rotationMove.AssignType(type);
             rotationMove.AssignFromIndex(index);
             rotationMove.AssignToIndex(nextIndex);
-
-            rotationMoves.Add(rotationMove);
+            rotationMove.AssignLerpSpeed(_moveLerpSpeed);
+            _movesToMake.Add(rotationMove);
         }
 
-        _wheel.MakeRotationMoves(rotationMoves, _moveLerpSpeed, OnCurrentMoveCompleted);
+        return _movesToMake;
     }
 
-    private void OnCurrentMoveCompleted()
+    private void MoveIndexInRotationOrder(ref int2 index, ClockOrder clockOrder)
     {
-        _isMoving = false;
-        WheelDelegates.ActionCheckWheelCompletion();
-    }
-
-    public override FigureState HandleTransitions()
-    {
-        if (_isMoving)
-        {
-            return null;
-        }
-        else
-        { 
-            return WheelDelegates.IdleState();
-        }
-    }
-
-    public override void ProcessState()
-    {
-    }
-
-    public override void OnDestroy()
-    {
-        WheelDelegates.MoveState -= GetThisState;
-    }
-
-    private WheelMoveState GetThisState()
-    {
-        return this;
-    }
-
-    public override string ToString()
-    {
-        return "MoveState";
+        index = _wheel.MoveIndexInClockOrder(index, clockOrder);
     }
 }
 

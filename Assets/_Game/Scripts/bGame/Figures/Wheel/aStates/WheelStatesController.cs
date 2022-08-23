@@ -1,21 +1,19 @@
-using Unity.Mathematics;
 using UnityEngine.Assertions;
 
 public class WheelStatesController : FigureStatesController
 {
     private Wheel _wheel;
 
-    public override void Initialize(Figure figureArg, FigureParamsSO figureParams, int2[] emptyIndices)
+    public override void Initialize(Figure figureArg, FigureParamsSO figureParams)
     {
         _wheel = figureArg as Wheel;
         Assert.IsNotNull(_wheel);
 
-        WheelIdleState idleState = new WheelIdleState();
-        WheelMoveState moveState = new WheelMoveState(figureParams.MoveLerpSpeed, _wheel);
-        WheelShuffleState shuffleState = new WheelShuffleState(figureParams, _wheel);
-        shuffleState.PrepareForShuffle(emptyIndices);
+        IdleState = new WheelIdleState(this, _wheel);
+        MoveState = new WheelMoveState(this, _wheel, figureParams.MoveLerpSpeed);
+        ShuffleState = new WheelShuffleState(this, _wheel, figureParams);
 
-        _currentState = shuffleState;
+        _currentState = ShuffleState;
         _currentState.OnEnter();
 
         StartCoroutine(StateSwitchSequence());

@@ -21,6 +21,7 @@ public abstract class FigureSegment : MonoBehaviour
     }
 
     protected FigureSegmentMover _mover;
+    public FigureSegmentMover Mover { get { return _mover; } }
     protected FigureSegmentRenderer _renderer;
     // private SegmentSelectionRespond _selectionRespond;
 
@@ -37,7 +38,7 @@ public abstract class FigureSegment : MonoBehaviour
         TryGetComponent(out _renderer);
     }
     protected abstract void InitializeMover();
-
+    
     public virtual void Initialize(NativeArray<VertexData> verticesArg, int puzzleIndexArg)
     { 
         _mover.Initialize(verticesArg);
@@ -46,10 +47,9 @@ public abstract class FigureSegment : MonoBehaviour
 
     public void StartMove(
         FigureSegmentMove move,
-        float lerpSpeed,
         Action OnMoveToDestinationCompleted)
     {
-        _mover.StartMove(move, lerpSpeed, OnMoveToDestinationCompleted);
+        _mover.StartMove(move, OnMoveToDestinationCompleted);
     }
 
     public void HighlightRender()

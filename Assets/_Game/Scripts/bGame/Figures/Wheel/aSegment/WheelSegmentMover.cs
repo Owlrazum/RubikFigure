@@ -19,10 +19,9 @@ public class WheelSegmentMover : FigureSegmentMover
 
     public override void StartMove(
         FigureSegmentMove move,
-        float lerpSpeed,
         Action OnMoveToDestinationCompleted)
     {
-        base.StartMove(move, lerpSpeed, OnMoveToDestinationCompleted);
+        base.StartMove(move, OnMoveToDestinationCompleted);
         _wasMoveCompleted = false;
 
         if (move is WheelRotationMove rotationMove)
@@ -64,7 +63,7 @@ public class WheelSegmentMover : FigureSegmentMover
     {
         transform.localPosition = teleportMove.StartTeleportPosition;
         transform.localRotation = teleportMove.TargetOrientation;
-        TeleportVertices(teleportMove.VertexPositions);
+        TeleportVertices(teleportMove.SegmentMesh);
 
         float lerpParam = 0;
         while (lerpParam < 1)
@@ -101,14 +100,14 @@ public class WheelSegmentMover : FigureSegmentMover
         WheelSegmentMoveJob segmentMoveJob = new WheelSegmentMoveJob()
         {
             P_ClockMoveBufferLerpValue = ClockMoveBufferLerpValue,
-            P_VertexPositions = verticesMove.VertexPositions,
+            P_VertexPositions = verticesMove.SegmentMesh,
             P_VertexCountInOneSegment = _vertices.Length,
 
             InputVertices = _vertices,
             OutputVertices = _currentVertices
         };
 
-        segmentMoveJob.P_VertexPositions = verticesMove.VertexPositions;
+        segmentMoveJob.P_VertexPositions = verticesMove.SegmentMesh;
 
         while (lerpParam < 1)
         {

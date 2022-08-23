@@ -17,10 +17,9 @@ public class ValknutSegmentMover : FigureSegmentMover
 
     public override void StartMove(
         FigureSegmentMove move,
-        float lerpSpeed,
         Action OnMoveToDestinationCompleted)
     {
-        base.StartMove(move, lerpSpeed, OnMoveToDestinationCompleted);
+        base.StartMove(move, OnMoveToDestinationCompleted);
         _wasMoveCompleted = false;
 
         if (move is ValknutVerticesMove verticesMove)

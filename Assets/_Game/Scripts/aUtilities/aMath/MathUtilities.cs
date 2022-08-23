@@ -4,6 +4,24 @@ using UnityEngine;
 
 namespace Orazum.Math
 {
+    public enum ClockOrder
+    { 
+        CW, // Clockwise
+        CCW // CounterClockwise
+    }
+
+    public enum VertOrder
+    { 
+        Up,
+        Down
+    }
+
+    public enum HorizOrder
+    { 
+        Right,
+        Left
+    }
+
     public static class MathUtilities
     {
         public const float Epsilon = 1E-5F;

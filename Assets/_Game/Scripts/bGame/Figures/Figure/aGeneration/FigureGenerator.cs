@@ -115,5 +115,8 @@ public abstract class FigureGenerator : MonoBehaviour
 
         CollectionUtilities.DisposeIfNeeded(_pointsRenderVertices);
         CollectionUtilities.DisposeIfNeeded(_pointsRenderIndices);
+
+        CollectionUtilities.DisposeIfNeeded(_pointsColliderVertices);
+        CollectionUtilities.DisposeIfNeeded(_pointsColliderIndices);
     }
 }

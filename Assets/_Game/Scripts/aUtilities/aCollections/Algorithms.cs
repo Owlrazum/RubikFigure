@@ -27,6 +27,12 @@ namespace Orazum.Collections
 
         public static T[] RandomDerangement<T>(in T[] list)
         {
+            if (list.Length == 2)
+            {
+                list.Swap(0, 1);
+                return list;
+            }
+
             List<int> marks = new List<int>(list.Length - 1);
             List<int> possible = new List<int>(list.Length - 1);
 

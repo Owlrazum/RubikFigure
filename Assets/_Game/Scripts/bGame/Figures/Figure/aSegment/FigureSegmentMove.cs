@@ -1,9 +1,12 @@
 using Unity.Mathematics;
 
-public abstract class FigureSegmentMove
+public class FigureSegmentMove
 {
-    public int2 FromIndex { get; private set; }
-    public int2 ToIndex { get; private set; }
+    public int2 FromIndex { get; protected set; }
+    public int2 ToIndex { get; protected set; }
+    public float LerpSpeed { get; protected set; }
+
+    public FigureSegmentMover Mover { get; protected set; }
 
     public void AssignFromIndex(int2 fromIndex)
     {
@@ -13,6 +16,16 @@ public abstract class FigureSegmentMove
     public void AssignToIndex(int2 toIndex)
     {
         ToIndex = toIndex;
+    }
+
+    public void AssignLerpSpeed(float lerpSpeed)
+    {
+        LerpSpeed = lerpSpeed;
+    }
+
+    public void AssignMover(FigureSegmentMover mover)
+    {
+        Mover = mover;
     }
 
     public FigureSegmentMove()

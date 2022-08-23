@@ -20,9 +20,9 @@ public class WheelTeleportMove : FigureSegmentMove
         StartTeleportPosition = teleportPosition;
     }
 
-    public WheelSegmentMesh VertexPositions { get; private set; }
-    public void AssignVertexPositions(WheelSegmentMesh vertexPositions)
+    public WheelSegmentMesh SegmentMesh { get; private set; }
+    public void AssignSegmentMesh(WheelSegmentMesh segmentMesh)
     {
-        VertexPositions = vertexPositions;
+        SegmentMesh = segmentMesh;
     }
 }

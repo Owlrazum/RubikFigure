@@ -1,3 +1,5 @@
+using Unity.Mathematics;
+
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "WheelGenParams", menuName = "Figure/WheelGenParams", order = 1)]
@@ -18,6 +20,8 @@ public class WheelGenParamsSO : FigureGenParamsSO
     [SerializeField]
     private int _ringCount;
     public int RingCount { get { return _ringCount; } }
+
+    public override int2 Dimensions {get { return new int2(_sideCount, _ringCount); } }
 
     [SerializeField]
     private int _segmentResolution;

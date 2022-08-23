@@ -54,11 +54,10 @@ public abstract class FigureSegmentMover : MonoBehaviour
 
     public virtual void StartMove(
         FigureSegmentMove move,
-        float _lerpSpeed,
         Action OnMoveToDestinationCompleted)
     {
         _currentToIndex = move.ToIndex;
-        _currentLerpSpeed = _lerpSpeed;
+        _currentLerpSpeed = move.LerpSpeed;
         _moveCompleteAction = OnMoveToDestinationCompleted;
     }
 

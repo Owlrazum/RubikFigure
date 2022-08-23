@@ -6,7 +6,11 @@ public abstract class FigureStatesController : MonoBehaviour
 { 
     protected FigureState _currentState;
 
-    public abstract void Initialize(Figure figureArg, FigureParamsSO figureParams, int2[] emptyIndices);
+    public FigureIdleState IdleState { get; protected set; }
+    public FigureMoveState MoveState { get; protected set; }
+    public FigureShuffleState ShuffleState { get; protected set; }
+
+    public abstract void Initialize(Figure figureArg, FigureParamsSO figureParams);
 
     protected IEnumerator StateSwitchSequence()
     {

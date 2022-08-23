@@ -6,11 +6,4 @@ public class WheelSegment : FigureSegment
     {
         _mover = gameObject.AddComponent<WheelSegmentMover>();
     }
-
-    public WheelSegmentMover GetSegmentMoverForTeleport()
-    {
-        var toReturn = _mover as WheelSegmentMover;
-        Assert.IsNotNull(toReturn);
-        return toReturn;
-    }
 }

@@ -5,8 +5,11 @@ public abstract class FigureIdleState : FigureState
 { 
     protected SwipeCommand _currentSwipeCommand;
     protected FigureSegmentPoint _currentSelectedPoint;
+    public FigureIdleState(FigureStatesController statesController, Figure figure) 
+        : base(statesController, figure)
+    { 
 
-    public abstract FigureState MoveToAnotherStateOnInput();
+    }
 
     public override void OnEnter()
     {
@@ -59,15 +62,15 @@ public abstract class FigureIdleState : FigureState
         }
         else
         {
-            FigureState anotherState = MoveToAnotherStateOnInput();
-            Assert.IsNotNull(anotherState);
+            FigureMoveState moveState = _statesController.MoveState;
+            moveState.PrepareForMove(_currentSwipeCommand, _currentSelectedPoint);
             _currentSwipeCommand = null;
             OnDeselectSegmentCommand();
-            return anotherState;
+            return moveState;
         }
     }
 
-    public override void OnDestroy()
+    public virtual void OnDestroy()
     {
         if (InputDelegatesContainer.SelectSegmentCommand == null)
         { 

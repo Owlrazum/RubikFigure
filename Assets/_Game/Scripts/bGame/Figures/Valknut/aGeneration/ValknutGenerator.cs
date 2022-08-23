@@ -13,7 +13,7 @@ using Orazum.Meshing;
 
 public class ValknutGenerator : FigureGenerator
 {
-    private const int SegmentsCount = 3 + 3; // three outer and three inner;
+    private const int SegmentsCount = Valknut.TrianglesCount * Valknut.TriangleSegmentsCount; // three outer and three inner;
     private const int SegmentQuadsCountTAS = 3;
     private const int SegmentQuadsCountOAS = 2;
 
@@ -121,7 +121,7 @@ public class ValknutGenerator : FigureGenerator
     }
     protected override void GenerateFigureGameObject()
     {
-        GameObject valknutGb = new GameObject("Valknut", typeof(Valknut));
+        GameObject valknutGb = new GameObject("Valknut", typeof(Valknut), typeof(ValknutStatesController));
         valknutGb.layer = LayerUtilities.FigureLayer;
         Transform parentWheel = valknutGb.transform;
 
@@ -220,7 +220,6 @@ public class ValknutGenerator : FigureGenerator
 
         return _valknut;
     }
-
     private Mesh[] CreateColliderMultiMesh(ref MeshBuffersData buffersData, bool isTas)
     {
         int meshCount = isTas ? 3 : 2;

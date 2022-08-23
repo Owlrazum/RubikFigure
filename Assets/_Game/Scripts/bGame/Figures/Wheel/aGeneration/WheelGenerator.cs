@@ -186,9 +186,9 @@ public class WheelGenerator : FigureGenerator
             }
         }
 
+        _wheel.AssignSegmentMeshes(_segmentMeshes.ToArray());
         _wheel.Initialize(
             _segmentPoints, 
-            _segmentMeshes.ToArray(), 
             _wheelStatesController,
             figureParams    
         );
