@@ -16,7 +16,6 @@ public abstract class FigureShuffleState : FigureState
     private int2 _shuffleStep;
     private int2 _dims;
 
-    private rnd _randomGenerator;
     protected int2[][] _shuffleIndices;
 
     public FigureShuffleState(FigureStatesController statesController, Figure figure, FigureParamsSO figureParams)
@@ -28,7 +27,6 @@ public abstract class FigureShuffleState : FigureState
         _shuffleStep = new int2(0, figureParams.ShuffleStepsAmount);
         _dims = figureParams.FigureGenParamsSO.Dimensions;
 
-        _randomGenerator = rnd.CreateFromIndex((uint)System.DateTime.Now.Millisecond);
         _shuffleIndices = new int2[_dims.y][];
         for (int row = 0; row < _dims.y; row++)
         {

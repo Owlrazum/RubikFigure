@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.Assertions;
 
-public abstract class FigureIdleState : FigureState
+public class FigureIdleState : FigureState
 { 
     protected SwipeCommand _currentSwipeCommand;
     protected FigureSegmentPoint _currentSelectedPoint;

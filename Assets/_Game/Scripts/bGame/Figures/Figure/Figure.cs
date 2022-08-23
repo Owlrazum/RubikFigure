@@ -91,25 +91,25 @@ public abstract class Figure : MonoBehaviour
         return _segmentPoints;
     }
 
-    public int2 MoveIndexInClockOrder(int2 index, ClockOrder clockOrder)
+    public int2 MoveIndexInClockOrder(int2 index, ClockOrderType clockOrder)
     {
         switch (clockOrder)
         { 
-            case ClockOrder.CW:
+            case ClockOrderType.CW:
                 index.x = index.x + 1 < _dims.x ? index.x + 1 : 0;
                 return index;
-            case ClockOrder.CCW:
+            case ClockOrderType.CCW:
                 index.x = index.x - 1 >= 0 ? index.x - 1 : _dims.x - 1;
                 return index;
         }
 
         throw new ArgumentException("Unknown clock order type");
     }
-    public bool IsValidIndexClockOrder(int2 index, ClockOrder clockOrder)
+    public bool IsValidIndexClockOrder(int2 index, ClockOrderType clockOrder)
     { 
         switch (clockOrder)
         {
-            case ClockOrder.CW:
+            case ClockOrderType.CW:
                 index.x++;
                 if (index.x >= _dims.x)
                 {
@@ -117,7 +117,7 @@ public abstract class Figure : MonoBehaviour
                 }
 
                 return IsPointEmpty(index);
-            case ClockOrder.CCW:
+            case ClockOrderType.CCW:
                 index.x--;
                 if (index.x < 0)
                 {

@@ -7,7 +7,6 @@ using static Orazum.Math.MathUtilities;
 
 public class WheelShuffleState : FigureShuffleState
 {
-    private Wheel _wheel;
     public WheelShuffleState(WheelStatesController statesController, Wheel wheel, FigureParamsSO figureParams)
     : base (statesController, wheel, figureParams)
     {

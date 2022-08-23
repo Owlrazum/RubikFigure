@@ -29,9 +29,6 @@ public class WheelGenerator : FigureGenerator
     private float _innerRadius;
     private float _outerRadius;
 
-    private GameObject _segmentPrefab;
-    private GameObject _segmentPointPrefab;
-
     private Wheel _wheel;
     private WheelStatesController _wheelStatesController;
     private Array2D<WheelSegment> _segments;
@@ -52,6 +49,8 @@ public class WheelGenerator : FigureGenerator
 
     protected override void InitializeParameters(FigureGenParamsSO figureGenParams)
     {
+        base.InitializeParameters(figureGenParams);
+
         WheelGenParamsSO generationParams =  figureGenParams as WheelGenParamsSO;
         _sideCount = generationParams.SideCount;
         _ringCount = generationParams.RingCount;
@@ -74,11 +73,6 @@ public class WheelGenerator : FigureGenerator
 
         _innerRadius = generationParams.InnerRadius;
         _outerRadius = generationParams.OuterRadius;
-
-        _segmentPointHeight = generationParams.Height;
-
-        _segmentPrefab = generationParams.SegmentPrefab;
-        _segmentPointPrefab = generationParams.SegmentPointPrefab;
     }
 
     protected override void StartMeshGeneration()
@@ -145,10 +139,12 @@ public class WheelGenerator : FigureGenerator
         {
             for (int side = 0; side < _sideCount; side++)
             {
+                int2 index = new int2(side, ring);
+                
                 GameObject segmentGb = Instantiate(_segmentPrefab);
                 segmentGb.transform.parent = segmentsParent;
                 WheelSegment segment = segmentGb.AddComponent<WheelSegment>();
-                _segments[side, ring] = segment;
+                _segments[index] = segment;
 
                 GameObject segmentPointGb = Instantiate(_segmentPointPrefab);
                 segmentPointGb.layer = LayerUtilities.SegmentPointsLayer;
@@ -156,7 +152,9 @@ public class WheelGenerator : FigureGenerator
                 segmentPointGb.transform.parent = segmentPointsParent;
                 FigureSegmentPoint segmentPoint = segmentPointGb.GetComponent<FigureSegmentPoint>();
                 Assert.IsNotNull(segmentPoint);
-                _segmentPoints[side, ring] = segmentPoint;
+                segmentPoint.Segment = segment;
+                segmentPoint.AssignIndex(index);
+                _segmentPoints[index] = segmentPoint;
             }
         }
 
@@ -180,7 +178,7 @@ public class WheelGenerator : FigureGenerator
                 UpdateSegment(_segments[side, ring], _segmentBuffersData, side);
 
                 FigureSegmentPoint currentPoint = _segmentPoints[side, ring];
-                currentPoint.InitializeWithSingleMesh(segmentPointMeshes[ring], _segments[side, ring], new int2(side, ring));
+                currentPoint.InitializeWithSingleMesh(segmentPointMeshes[ring]);
 
                 _segmentBuffersData.Start += _segmentBuffersData.Count;
             }

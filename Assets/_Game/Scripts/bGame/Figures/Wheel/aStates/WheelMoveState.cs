@@ -35,11 +35,11 @@ public class WheelMoveState : FigureMoveState
         }
         else if (swipeAngle > TAU / 12 && swipeAngle < 5 * TAU / 12)
         {
-            return ConstructRotationMoves(_currentSelectedPoint.Index.y, ClockOrder.CW);
+            return ConstructRotationMoves(_currentSelectedPoint.Index.y, ClockOrderType.CW);
         }
         else if (swipeAngle > -5 * TAU / 12 && swipeAngle < -TAU / 12)
         {
-            return ConstructRotationMoves(_currentSelectedPoint.Index.y, ClockOrder.CCW);
+            return ConstructRotationMoves(_currentSelectedPoint.Index.y, ClockOrderType.CCW);
         }
         else
         {
@@ -64,7 +64,7 @@ public class WheelMoveState : FigureMoveState
         }
     }
 
-    private List<FigureSegmentMove> ConstructRotationMoves(int ringIndex, ClockOrder clockOrder)
+    private List<FigureSegmentMove> ConstructRotationMoves(int ringIndex, ClockOrderType clockOrder)
     {
         int2 index = new int2(0, ringIndex);
         int2 nextIndex = new int2(0, ringIndex);
@@ -88,7 +88,7 @@ public class WheelMoveState : FigureMoveState
         return _movesToMake;
     }
 
-    private void MoveIndexInRotationOrder(ref int2 index, ClockOrder clockOrder)
+    private void MoveIndexInRotationOrder(ref int2 index, ClockOrderType clockOrder)
     {
         index = _wheel.MoveIndexInClockOrder(index, clockOrder);
     }

@@ -10,6 +10,7 @@ using UnityEngine.Rendering;
 using Unity.Mathematics;
 using Orazum.Utilities.ConstContainers;
 using Orazum.Meshing;
+using Orazum.Collections;
 
 public class ValknutGenerator : FigureGenerator
 {
@@ -51,13 +52,12 @@ public class ValknutGenerator : FigureGenerator
     private float _width;
     private float _gapSize;
 
-    private GameObject _segmentPrefab;
-    private GameObject _segmentPointPrefab;
-
     private Valknut _valknut;
 
-    private List<ValknutSegment> _segments;
-    private List<FigureSegmentPoint> _segmentPoints;
+    private int2 _dims;
+
+    private Array2D<ValknutSegment> _segments;
+    private Array2D<FigureSegmentPoint> _segmentPoints;
 
     private NativeArray<ValknutSegmentMesh> _segmentMeshes;
 
@@ -67,16 +67,15 @@ public class ValknutGenerator : FigureGenerator
     }
     protected override void InitializeParameters(FigureGenParamsSO figureGenParams)
     {
+        base.InitializeParameters(figureGenParams);
+
         ValknutGenParamsSO generationParams =  figureGenParams as ValknutGenParamsSO;
         
         _innerTriangleRadius = generationParams.InnerTriangleRadius;       
         _width = generationParams.Width;
         _gapSize = generationParams.GapSize;
 
-        _segmentPointHeight = generationParams.Height;
-
-        _segmentPrefab = generationParams.SegmentPrefab;
-        _segmentPointPrefab = generationParams.SegmentPointPrefab;
+        _dims = new int2(3, 2);
     }
     protected override void StartMeshGeneration()
     {
@@ -135,24 +134,30 @@ public class ValknutGenerator : FigureGenerator
         segmentsParent.parent = parentWheel;
         segmentsParent.SetSiblingIndex(1);
 
-        _segments = new List<ValknutSegment>();
-        _segmentPoints = new List<FigureSegmentPoint>();
+        _segments = new Array2D<ValknutSegment>(_dims);
+        _segmentPoints = new Array2D<FigureSegmentPoint>(_dims);
 
-        for (int segmentIndex = 0; segmentIndex < SegmentsCount; segmentIndex++)
+        for (int triangle = 0; triangle < _dims.x; triangle++)
         {
-            GameObject segmentGb = Instantiate(_segmentPrefab);
-            segmentGb.transform.parent = segmentsParent;
-            ValknutSegment segment = segmentGb.AddComponent<ValknutSegment>();
-            _segments.Add(segment);
+            for (int part = 0; part < _dims.y; part++)
+            {
+                int2 index = new int2(triangle, part);
 
-            GameObject segmentPointGb = Instantiate(_segmentPointPrefab);
-            segmentPointGb.layer = LayerUtilities.SegmentPointsLayer;
-            segmentGb.name = "Segment";
-            segmentPointGb.transform.parent = segmentPointsParent;
-            FigureSegmentPoint segmentPoint = segmentPointGb.GetComponent<FigureSegmentPoint>();
-            Assert.IsNotNull(segmentPoint);
-            _segmentPoints.Add(segmentPoint);
-            
+                GameObject segmentGb = Instantiate(_segmentPrefab);
+                segmentGb.transform.parent = segmentsParent;
+                ValknutSegment segment = segmentGb.AddComponent<ValknutSegment>();
+                _segments[index] = segment;
+
+                GameObject segmentPointGb = Instantiate(_segmentPointPrefab);
+                segmentPointGb.layer = LayerUtilities.SegmentPointsLayer;
+                segmentGb.name = "Segment";
+                segmentPointGb.transform.parent = segmentPointsParent;
+                FigureSegmentPoint segmentPoint = segmentPointGb.GetComponent<FigureSegmentPoint>();
+                Assert.IsNotNull(segmentPoint);
+                segmentPoint.Segment = segment;
+                segmentPoint.AssignIndex(index);
+                _segmentPoints[index] = segmentPoint;
+            }
         }
 
         _valknut = valknutGb.GetComponent<Valknut>();
@@ -185,27 +190,32 @@ public class ValknutGenerator : FigureGenerator
         multiMeshBuffersData.Start = int2.zero;
         multiMeshBuffersData.Count = new int2(CubeVertexCount, CubeIndexCount);
 
-        for (int i = 0; i < SegmentsCount; i++)
-        { 
-            UpdateSegment(_segments[i], buffersData, 0);
-            Mesh[] multiMesh = CreateColliderMultiMesh(ref multiMeshBuffersData, i % 2 == 0);
-            Mesh renderMesh = CreateSegmentPointRenderMesh(in pointBuffersData);
-            _segmentPoints[i].InitializeWithMultiMesh(renderMesh, multiMesh, _segments[i], new int2(i, 0));
-            if (i % 2 == 0)
+        for (int triangle = 0; triangle < _dims.x; triangle++)
+        {
+            for (int part = 0; part < _dims.y; part++)
             {
-                buffersData.Start += tasSegmentBuffersCount;
-                buffersData.Count = oasSegmentBuffersCount;
+                int2 index = new int2(triangle, part);
 
-                pointBuffersData.Start += tasPointRendererBuffersCount;
-                pointBuffersData.Count = oasPointRendererBuffersCount;
-            }
-            else
-            {
-                buffersData.Start += oasSegmentBuffersCount;
-                buffersData.Count = tasSegmentBuffersCount; 
+                UpdateSegment(_segments[index], buffersData, 0);
+                Mesh[] multiMesh = CreateColliderMultiMesh(ref multiMeshBuffersData, part == 0);
+                Mesh renderMesh = CreateSegmentPointRenderMesh(in pointBuffersData);
+                _segmentPoints[index].InitializeWithMultiMesh(renderMesh, multiMesh);
+                if (part == 0)
+                {
+                    buffersData.Start += tasSegmentBuffersCount;
+                    buffersData.Count = oasSegmentBuffersCount;
 
-                pointBuffersData.Start += oasPointRendererBuffersCount;
-                pointBuffersData.Count = tasPointRendererBuffersCount;
+                    pointBuffersData.Start += tasPointRendererBuffersCount;
+                    pointBuffersData.Count = oasPointRendererBuffersCount;
+                }
+                else
+                {
+                    buffersData.Start += oasSegmentBuffersCount;
+                    buffersData.Count = tasSegmentBuffersCount;
+
+                    pointBuffersData.Start += oasPointRendererBuffersCount;
+                    pointBuffersData.Count = tasPointRendererBuffersCount;
+                }
             }
         }
 

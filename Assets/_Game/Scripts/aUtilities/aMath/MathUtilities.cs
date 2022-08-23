@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Orazum.Math
 {
-    public enum ClockOrder
+    public enum ClockOrderType
     { 
         CW, // Clockwise
         CCW // CounterClockwise

@@ -20,25 +20,24 @@ public class FigureSegmentPoint : MonoBehaviour
         _meshRenderer.sharedMaterial = _emptyMaterial;
     }
 
-    public FigureSegment Segment { get; set; }
     public int2 Index { get; private set; }
-    public void InitializeWithSingleMesh(Mesh mesh, FigureSegment segment, int2 index)
+    public void AssignIndex(int2 index)
     {
-        Assert.IsNotNull(segment.MeshContainer.mesh);
-        Segment = segment;
         Index = index;
+    }
 
+    public FigureSegment Segment { get; set; }
+    public void InitializeWithSingleMesh(Mesh mesh)
+    {
+        Assert.IsNotNull(Segment.MeshContainer.mesh);
         _meshFilter.mesh = mesh;
         var collider = gameObject.AddComponent<FigureSegmentPointCollider>();
         collider.Initialize(mesh, this);
     }
 
-    public void InitializeWithMultiMesh(Mesh renderMesh, Mesh[] colliderMultiMesh, FigureSegment segment, int2 index)
+    public void InitializeWithMultiMesh(Mesh renderMesh, Mesh[] colliderMultiMesh)
     {
-        Assert.IsNotNull(segment.MeshContainer.mesh);
-        Segment = segment;
-        Index = index;
-
+        Assert.IsNotNull(Segment.MeshContainer.mesh);
         _meshFilter.mesh = renderMesh;
 
         for (int i = 0; i < colliderMultiMesh.Length; i++)

@@ -2,16 +2,14 @@ using UnityEngine.Assertions;
 
 public class WheelStatesController : FigureStatesController
 {
-    private Wheel _wheel;
-
-    public override void Initialize(Figure figureArg, FigureParamsSO figureParams)
+    public override void Initialize(Figure figure, FigureParamsSO figureParams)
     {
-        _wheel = figureArg as Wheel;
-        Assert.IsNotNull(_wheel);
+        Wheel wheel = figure as Wheel;
+        Assert.IsNotNull(wheel);
 
-        IdleState = new WheelIdleState(this, _wheel);
-        MoveState = new WheelMoveState(this, _wheel, figureParams.MoveLerpSpeed);
-        ShuffleState = new WheelShuffleState(this, _wheel, figureParams);
+        IdleState = new FigureIdleState(this, wheel);
+        MoveState = new WheelMoveState(this, wheel, figureParams.MoveLerpSpeed);
+        ShuffleState = new WheelShuffleState(this, wheel, figureParams);
 
         _currentState = ShuffleState;
         _currentState.OnEnter();

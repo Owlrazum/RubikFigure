@@ -1,5 +1,4 @@
 using System.Collections;
-using Unity.Mathematics;
 using UnityEngine;
 
 public abstract class FigureStatesController : MonoBehaviour
@@ -10,7 +9,7 @@ public abstract class FigureStatesController : MonoBehaviour
     public FigureMoveState MoveState { get; protected set; }
     public FigureShuffleState ShuffleState { get; protected set; }
 
-    public abstract void Initialize(Figure figureArg, FigureParamsSO figureParams);
+    public abstract void Initialize(Figure figure, FigureParamsSO figureParams);
 
     protected IEnumerator StateSwitchSequence()
     {

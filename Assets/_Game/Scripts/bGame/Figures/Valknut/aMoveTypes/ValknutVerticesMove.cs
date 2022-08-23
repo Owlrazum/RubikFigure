@@ -1,15 +1,11 @@
+using Orazum.Math;
+
 public class ValknutVerticesMove : FigureSegmentMove
 {
-    public enum TypeType
-    { 
-        Up,
-        Down
-    }
-
-    public TypeType Type { get; private set; }
-    public void AssignType(TypeType type)
+    public ClockOrderType ClockOrder { get; private set; }
+    public void AssignClockOrder(ClockOrderType clockOrder)
     {
-        Type = type;
+        ClockOrder = clockOrder;
     }
 
     public ValknutSegmentMesh VertexPositions { get; private set; }

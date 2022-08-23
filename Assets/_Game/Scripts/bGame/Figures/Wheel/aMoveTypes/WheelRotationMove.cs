@@ -26,7 +26,7 @@ public class WheelRotationMove : FigureSegmentMove
         Rotation = rotation;
     }
 
-    public ClockOrder RotationOrder { get; set; }
+    public ClockOrderType RotationOrder { get; set; }
 
     public override string ToString()
     {

@@ -9,10 +9,13 @@ using Orazum.Collections;
 using Orazum.Meshing;
 
 public abstract class FigureGenerator : MonoBehaviour
-{ 
+{
     protected const MeshUpdateFlags GenerationMeshUpdateFlags = MeshUpdateFlags.Default;
 
     protected float _segmentPointHeight;
+
+    protected GameObject _segmentPrefab;
+    protected GameObject _segmentPointPrefab;
 
     protected JobHandle _figureMeshGenJobHandle;
     protected NativeArray<VertexData> _figureVertices;
@@ -20,9 +23,9 @@ public abstract class FigureGenerator : MonoBehaviour
 
     protected JobHandle _segmentPointsMeshGenJobHandle;
     protected NativeArray<float3> _pointsRenderVertices;
-    protected NativeArray<short>  _pointsRenderIndices;
+    protected NativeArray<short> _pointsRenderIndices;
     protected NativeArray<float3> _pointsColliderVertices;
-    protected NativeArray<short>  _pointsColliderIndices;
+    protected NativeArray<short> _pointsColliderIndices;
 
     public abstract Figure FinishGeneration(FigureParamsSO figureParams);
 
@@ -32,7 +35,13 @@ public abstract class FigureGenerator : MonoBehaviour
         StartMeshGeneration();
         GenerateFigureGameObject();
     }
-    protected abstract void InitializeParameters(FigureGenParamsSO figureGenParams);
+    protected virtual void InitializeParameters(FigureGenParamsSO figureGenParams)
+    { 
+        _segmentPointHeight = figureGenParams.Height;
+
+        _segmentPrefab = figureGenParams.SegmentPrefab;
+        _segmentPointPrefab = figureGenParams.SegmentPointPrefab;
+    }
     protected abstract void StartMeshGeneration();
     protected abstract void GenerateFigureGameObject();
 
