@@ -6,8 +6,11 @@ using Unity.Collections;
 using Orazum.Meshing;
 using static Orazum.Math.MathUtilities;
 
+/// <summary>
+/// SPM - SegmentPointMeshes
+/// </summary>
 [BurstCompile]
-public struct ValknutSegmentPointGenJob : IJob
+public struct ValknutGenJobSPM : IJob
 {
     private const float ValknutRatio = 3;
 

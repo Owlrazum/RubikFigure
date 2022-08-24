@@ -1,52 +1,31 @@
 using Unity.Burst;
 using Unity.Jobs;
 using Unity.Mathematics;
-using Unity.Collections;
+
+using UnityEngine;
 
 using Orazum.Meshing;
 
-[BurstCompile]
+// [BurstCompile]
 public struct ValknutSegmentMoveJob : IJob
 {
-    public int P_VertexCountInOneSegment;
-    public float P_ClockMoveBufferLerpValue; // Assert that it is less than 0.5f;
-
     public float P_LerpParam;
-    public ValknutSegmentMesh P_VertexPositions;
+    public QuadStripTransition InputQuadStripTransition;
+    public MeshBuffersData BuffersData;
 
-    [ReadOnly]
-    public NativeArray<VertexData> InputVertices;
-
-    [WriteOnly]
-    public NativeArray<VertexData> OutputVertices;
+    public ValknutSegmentMoveJob(ref MeshBuffersData buffersData, ref QuadStripTransition quadStripTransition)
+    {
+        P_LerpParam = 0;
+        BuffersData = buffersData;
+        InputQuadStripTransition = quadStripTransition;
+    }
 
     public void Execute()
     {
-        MoveSegmentUpDown();
-    }
-    
-    private void MoveSegmentUpDown()
-    {
-        VertexData data;
-
-        // for (int i = 0; i < P_VertexPositions.Count; i++)
-        // {
-        //     int2 indices = P_VertexPositions.GetSegmentIndices(i);
-        //     float3 targetPos = P_VertexPositions.GetPointVertexPos(i);
-
-        //     data = InputVertices[indices.x];
-        //     data.position = math.lerp(InputVertices[indices.x].position,
-        //         targetPos, P_LerpParam);
-        //     OutputVertices[indices.x] = data;
-        //     if (indices.y < 0)
-        //     {
-        //         continue;
-        //     }
-
-        //     data = InputVertices[indices.y];
-        //     data.position = math.lerp(InputVertices[indices.y].position,
-        //         targetPos, P_LerpParam);
-        //     OutputVertices[indices.y] = data;
-        // }
+        Debug.Log("Executing");
+        // BuffersData.Count = int2.zero;
+        // BuffersData.Start = int2.zero;
+        InputQuadStripTransition.UpdateWithLerpPos(P_LerpParam, ref BuffersData);
+        Debug.Log($"Finishing job with {BuffersData.ToString()}");
     }
 }

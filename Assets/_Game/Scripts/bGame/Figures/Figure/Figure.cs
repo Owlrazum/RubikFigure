@@ -130,25 +130,25 @@ public abstract class Figure : MonoBehaviour
         throw new ArgumentException("Unknown clock order type");
     }
     
-    public int2 MoveIndexVertOrder(int2 index, VertOrder vertOrder)
+    public int2 MoveIndexVertOrder(int2 index, VertOrderType vertOrder)
     {
         switch(vertOrder)
         {
-            case VertOrder.Up:
+            case VertOrderType.Up:
                 index.y++;
                 return index;
-            case VertOrder.Down:
+            case VertOrderType.Down:
                 index.y--;
                 return index;
         }
 
         throw new ArgumentException("Unknown vertical order type");
     }
-    public bool IsValidIndexVertOrder(int2 index, VertOrder vertOrder)
+    public bool IsValidIndexVertOrder(int2 index, VertOrderType vertOrder)
     {
         switch(vertOrder)
         {
-            case VertOrder.Up:
+            case VertOrderType.Up:
                 index.y++;
                 if (index.y >= _dims.y)
                 {
@@ -158,7 +158,7 @@ public abstract class Figure : MonoBehaviour
                 
                 bool isEmpty = IsPointEmpty(index);
                 return isEmpty;
-            case VertOrder.Down:
+            case VertOrderType.Down:
                 index.y--;
                 if (index.y < 0)
                 {

@@ -256,7 +256,7 @@ public struct ValknutGenJob : IJob
     private void AddOneAngleSegment(OneAngleSegment oneAngleSegment)
     {
         _buffersData.LocalCount = int2.zero;
-        QuadStripVertexData quadStrip = new QuadStripVertexData(OutputVertices, OutputIndices);
+        QuadStripBuilderVertexData quadStrip = new QuadStripBuilderVertexData(OutputVertices, OutputIndices);
         quadStrip.SetNormalsAndUV(_normalAndUV);
         quadStrip.Start(oneAngleSegment.s1, ref _buffersData);
         quadStrip.Continue(oneAngleSegment.s2, ref _buffersData);
@@ -274,7 +274,7 @@ public struct ValknutGenJob : IJob
     private void AddTwoAngleSegmentMeshData(TwoAngleSegment twoAngleSegment)
     {
         _buffersData.LocalCount = int2.zero;
-        QuadStripVertexData quadStrip = new QuadStripVertexData(OutputVertices, OutputIndices);
+        QuadStripBuilderVertexData quadStrip = new QuadStripBuilderVertexData(OutputVertices, OutputIndices);
         quadStrip.SetNormalsAndUV(_normalAndUV);
         quadStrip.Start(twoAngleSegment.s1, ref _buffersData);
         quadStrip.Continue(twoAngleSegment.s2, ref _buffersData);
@@ -290,3 +290,30 @@ public struct ValknutGenJob : IJob
         OutputSegmentMeshes[_segmentIndex++] = new ValknutSegmentMesh(in stripsData, stripSegmentsCount: 4);
     }
 }
+
+/*
+
+float3x2 prev = float3x2.zero;
+            float3x2 next = new float3x2(transitionPositions[0], transitionPositions[1]);
+
+            for (int i = 2; i <= gapIndex.x; i += 2)
+            {
+                prev = next;
+                next = new float3x2(transitionPositions[i], transitionPositions[i + 1]);
+                _transitionLength.x += math.length(next[0] - prev[0]);
+                _transitionLength.y += math.length(next[1] - prev[1]);
+            }
+
+            prev = next;
+            next = new float3x2(transitionPositions[gapIndex.x + 2], transitionPositions[gapIndex.x + 3]);
+            _transitionLength.x += math.length(next[0] - prev[0]);
+            _transitionLength.y += math.length(next[1] - prev[1]);
+
+            for (int i = gapIndex.y; i < transitionPositions.Length; i += 2)
+            { 
+                next = new float3x2(transitionPositions[i], transitionPositions[i + 1]);
+                prev = new float3x2(transitionPositions[i - 2], transitionPositions[i - 1]);
+                _transitionLength.x += math.length(next[0] - prev[0]);
+                _transitionLength.y += math.length(next[1] - prev[1]);
+            }
+*/

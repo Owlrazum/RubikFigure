@@ -90,7 +90,7 @@ public struct WheelGenJob : IJob
     {
         _buffersData.LocalCount = int2.zero;
 
-        QuadStripVertexData quadStrip = new QuadStripVertexData(OutputVertices, OutputIndices);
+        QuadStripBuilderVertexData quadStrip = new QuadStripBuilderVertexData(OutputVertices, OutputIndices);
         quadStrip.SetNormalsAndUV(_normalAndUV);
 
         float3 currentRay = _startRay;

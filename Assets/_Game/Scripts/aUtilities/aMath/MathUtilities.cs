@@ -4,24 +4,6 @@ using UnityEngine;
 
 namespace Orazum.Math
 {
-    public enum ClockOrderType
-    { 
-        CW, // Clockwise
-        CCW // CounterClockwise
-    }
-
-    public enum VertOrder
-    { 
-        Up,
-        Down
-    }
-
-    public enum HorizOrder
-    { 
-        Right,
-        Left
-    }
-
     public static class MathUtilities
     {
         public const float Epsilon = 1E-5F;
@@ -51,6 +33,18 @@ namespace Orazum.Math
         public static float CrossScalar(float2 lhs, float2 rhs)
         {
             return rhs.x * lhs.y - rhs.y * lhs.x;
+        }
+        
+        #region Ray Intersection
+        public static float4 Ray(float2 origin, float2 direction)
+        {
+            return new float4(origin, direction);
+        }
+
+        public static float4x2 GetSegmentRays(in float2x2 start, in float2x2 end)
+        {
+            return new float4x2(Ray(end[0], end[0] - start[0]),
+                                Ray(end[1], end[1] - start[1]));
         }
 
         /// <summary>
@@ -87,6 +81,15 @@ namespace Orazum.Math
             intersection = x0z(p);
             return toReturn;
         }
+
+        public static bool IntersectSegmentRays(in float4x2 r1, in float4x2 r2, out float2x2 intersection)
+        {
+            intersection = new float2x2();
+            bool first = IntersectRays(r1[0], r2[0], out intersection[0]);
+            bool second = IntersectRays(r1[1], r2[1], out intersection[1]);
+            return first && second;
+        }
+        #endregion
 
         public static float3 x0z(in float2 xy)
         {

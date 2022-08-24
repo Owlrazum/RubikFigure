@@ -1,10 +1,15 @@
 using System;
 using System.Collections;
 
+using Unity.Mathematics;
+using Unity.Collections;
 using Unity.Jobs;
 
 using UnityEngine;
+using UnityEngine.Assertions;
 
+using Orazum.Meshing;
+using Orazum.Collections;
 using static Orazum.Math.MathUtilities;
 
 [RequireComponent(typeof(MeshFilter))]
@@ -14,6 +19,35 @@ public class ValknutSegmentMover : FigureSegmentMover
 
     private bool _wasJobScheduled;
     private bool _wasMoveCompleted;
+
+    private NativeArray<VertexData> _vertices;
+    private NativeArray<short> _indices;
+
+    private MeshBuffersData _buffersData;
+    private QuadStripTransition _quadStripTransition;
+
+    private ValknutSegmentMoveJob _moveJob;
+
+    public override void Initialize(NativeArray<VertexData> verticesArg)
+    {
+        verticesArg.Dispose();
+
+        _vertices = new NativeArray<VertexData>(
+            (ValknutGenerator.MaxRangesCountForOneSegment + 1) * 2, Allocator.Persistent);
+        _indices = new NativeArray<short>(ValknutGenerator.MaxRangesCountForOneSegment * 6, Allocator.Persistent);
+
+        _buffersData = new MeshBuffersData();
+        _quadStripTransition = new QuadStripTransition(ref _vertices, ref _indices);
+        _moveJob = new ValknutSegmentMoveJob(ref _buffersData, ref _quadStripTransition);
+    }
+
+    protected override void OnDestroy()
+    {
+        base.OnDestroy();
+
+        CollectionUtilities.DisposeIfNeeded(_vertices);
+        CollectionUtilities.DisposeIfNeeded(_indices);
+    }
 
     public override void StartMove(
         FigureSegmentMove move,
@@ -31,17 +65,20 @@ public class ValknutSegmentMover : FigureSegmentMover
     private IEnumerator MoveSequence(ValknutVerticesMove verticesMove)
     {
         float lerpParam = 0;
-        ValknutSegmentMoveJob segmentMoveJob = new ValknutSegmentMoveJob()
-        {
-            P_ClockMoveBufferLerpValue = ClockMoveBufferLerpValue,
-            P_VertexPositions = verticesMove.VertexPositions,
-            P_VertexCountInOneSegment = _vertices.Length,
+        Assert.IsTrue(verticesMove.TransitionPositions.IsCreated);
+        Assert.IsTrue(verticesMove.LerpRanges.IsCreated);
+        _quadStripTransition.AssignTransitionData(
+            verticesMove.TransitionPositions,
+            verticesMove.LerpRanges
+        );
+        // _moveJob.InputQuadStripTransition.AssignTransitionData(
+        //     verticesMove.TransitionPositions,
+        //     verticesMove.LerpRanges
+        // );
 
-            InputVertices = _vertices,
-            OutputVertices = _currentVertices
-        };
-
-        segmentMoveJob.P_VertexPositions = verticesMove.VertexPositions;
+        // _moveJob.P_LerpParam = EaseInOut(0.5f);
+        // _segmentMoveJobHandle = _moveJob.Schedule(_segmentMoveJobHandle);
+        // _wasJobScheduled = true;
 
         while (lerpParam < 1)
         {
@@ -50,9 +87,16 @@ public class ValknutSegmentMover : FigureSegmentMover
             {
                 lerpParam = 1;
             }
-            segmentMoveJob.P_LerpParam = EaseInOut(lerpParam);
-            _segmentMoveJobHandle = segmentMoveJob.Schedule(_segmentMoveJobHandle);
-            _wasJobScheduled = true;
+
+            _quadStripTransition.UpdateWithLerpPos(EaseInOut(lerpParam), ref _buffersData);
+            AssignMeshBuffers(_vertices, _indices, _buffersData);
+            _buffersData.Count = int2.zero;
+            _buffersData.Start = int2.zero;
+            _buffersData.LocalCount = int2.zero;
+            // print(EaseInOut(lerpParam));
+            // _moveJob.P_LerpParam = EaseInOut(lerpParam);
+            // _segmentMoveJobHandle = _moveJob.Schedule(_segmentMoveJobHandle);
+            // _wasJobScheduled = true;
             yield return null;
         }
 
@@ -63,20 +107,19 @@ public class ValknutSegmentMover : FigureSegmentMover
     {
         if (_wasMoveCompleted)
         {
-            _segmentMoveJobHandle.Complete();
-            AssignVertices(_currentVertices, _vertices.Length);
+            // _segmentMoveJobHandle.Complete();
+            AssignMeshBuffers(_vertices, _indices, _moveJob.BuffersData);
 
-            for (int i = 0; i < _vertices.Length; i++)
-            {
-                _vertices[i] = _currentVertices[i];
-            }
             _moveCompleteAction?.Invoke();
             _wasMoveCompleted = false;
         }
         else if (_wasJobScheduled)
         {
             _segmentMoveJobHandle.Complete();
-            AssignVertices(_currentVertices, _vertices.Length);
+            print($"{_moveJob.BuffersData} ; {_buffersData}");
+            // MeshBuffersData buffersData = new MeshBuffersData();
+            // buffersData.Count = new int2(10, 24);
+            AssignMeshBuffers(_vertices, _indices, _buffersData);
             
             _wasJobScheduled = false;
         }

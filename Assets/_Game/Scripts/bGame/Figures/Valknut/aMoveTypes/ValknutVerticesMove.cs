@@ -1,16 +1,31 @@
-using Orazum.Math;
+using Unity.Mathematics;
+using Unity.Collections;
 
 public class ValknutVerticesMove : FigureSegmentMove
 {
-    public ClockOrderType ClockOrder { get; private set; }
-    public void AssignClockOrder(ClockOrderType clockOrder)
+    public ValknutVerticesMove()
     {
-        ClockOrder = clockOrder;
+        FromIndex = new int2(-1, -1);
+        ToIndex = new int2(-1, -1);
     }
 
-    public ValknutSegmentMesh VertexPositions { get; private set; }
-    public void AssignVertexPositions(ValknutSegmentMesh segmentVertexPositions)
+    public ValknutVerticesMove(FigureSegmentMove move)
     {
-        VertexPositions = segmentVertexPositions;
+        FromIndex = move.FromIndex;
+        ToIndex = move.ToIndex;
+        LerpSpeed = move.LerpSpeed;
+        Mover = move.Mover;
+    }
+
+    public NativeArray<float4x2>.ReadOnly TransitionPositions { get; private set; }
+    public void AssignTransitionPositions(NativeArray<float4x2>.ReadOnly transitionPositions)
+    {
+        TransitionPositions = transitionPositions;
+    }
+
+    public NativeArray<float3>.ReadOnly LerpRanges { get; private set; }
+    public void AssignTransitionLerpRanges(NativeArray<float3>.ReadOnly lerpRanges)
+    {
+        LerpRanges = lerpRanges;
     }
 }

@@ -31,7 +31,7 @@ public class WheelMoveState : FigureMoveState
         float swipeAngle = Mathf.Atan2(worldDir.z, worldDir.x);
         if (swipeAngle > -TAU / 12 && swipeAngle < TAU / 12)
         {
-            return ConstructVerticesMove(_currentSelectedPoint.Index, VertOrder.Down);
+            return ConstructVerticesMove(_currentSelectedPoint.Index, VertOrderType.Down);
         }
         else if (swipeAngle > TAU / 12 && swipeAngle < 5 * TAU / 12)
         {
@@ -43,11 +43,11 @@ public class WheelMoveState : FigureMoveState
         }
         else
         {
-            return ConstructVerticesMove(_currentSelectedPoint.Index, VertOrder.Up);
+            return ConstructVerticesMove(_currentSelectedPoint.Index, VertOrderType.Up);
         }
     }
 
-    private List<FigureSegmentMove> ConstructVerticesMove(int2 index, VertOrder vertOrder)
+    private List<FigureSegmentMove> ConstructVerticesMove(int2 index, VertOrderType vertOrder)
     {
         if (_wheel.IsValidIndexVertOrder(index, vertOrder))
         {

@@ -7,7 +7,6 @@ using Unity.Collections;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-using Orazum.Collections;
 using Orazum.Meshing;
 
 [RequireComponent(typeof(MeshFilter))]
@@ -17,9 +16,6 @@ public abstract class FigureSegmentMover : MonoBehaviour
 
     private MeshFilter _meshFilter;
     public MeshFilter MeshContainer { get { return _meshFilter; } }
-
-    protected NativeArray<VertexData> _vertices;
-    protected NativeArray<VertexData> _currentVertices;
 
     protected JobHandle _segmentMoveJobHandle;
 
@@ -39,18 +35,9 @@ public abstract class FigureSegmentMover : MonoBehaviour
         {
             _segmentMoveJobHandle.Complete();
         }
-
-        CollectionUtilities.DisposeIfNeeded(_currentVertices);
-        CollectionUtilities.DisposeIfNeeded(_vertices);
     }
 
-    public virtual void Initialize(NativeArray<VertexData> verticesArg)
-    {
-        _vertices = verticesArg;
-
-        _currentVertices =
-            new NativeArray<VertexData>(_vertices.Length, Allocator.Persistent);
-    }
+    public abstract void Initialize(NativeArray<VertexData> verticesArg);
 
     public virtual void StartMove(
         FigureSegmentMove move,
@@ -71,6 +58,31 @@ public abstract class FigureSegmentMover : MonoBehaviour
 
         newMesh.RecalculateNormals();
         _meshFilter.mesh = newMesh;
+    }
+
+    protected void AssignMeshBuffers(
+        NativeArray<VertexData> vertices, 
+        NativeArray<short> indices,
+        in MeshBuffersData buffersData
+    )
+    { 
+        Mesh mesh = MeshContainer.mesh;
+        mesh.MarkDynamic();
+
+        mesh.SetVertexBufferParams(buffersData.Count.x, VertexData.VertexBufferMemoryLayout);
+        mesh.SetIndexBufferParams(buffersData.Count.y, IndexFormat.UInt16);
+
+        mesh.SetVertexBufferData(vertices, buffersData.Start.x, 0, buffersData.Count.x, 0, MoveMeshUpdateFlags);
+        mesh.SetIndexBufferData(indices, buffersData.Start.y, 0, buffersData.Count.y, MoveMeshUpdateFlags);
+
+        mesh.subMeshCount = 1;
+        SubMeshDescriptor subMesh = new SubMeshDescriptor(
+            indexStart: 0,
+            indexCount: buffersData.Count.y
+        );
+        mesh.SetSubMesh(0, subMesh);
+
+        mesh.RecalculateBounds();
     }
 
     public void Appear()

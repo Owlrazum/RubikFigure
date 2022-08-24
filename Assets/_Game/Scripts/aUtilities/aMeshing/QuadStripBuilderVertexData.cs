@@ -5,17 +5,24 @@ using static Orazum.Math.MathUtilities;
 
 namespace Orazum.Meshing
 {
-    public struct QuadStrip
+    public struct QuadStripBuilderVertexData
     {
-        private NativeArray<float3> _vertices;
+        private NativeArray<VertexData> _vertices;
         private NativeArray<short> _indices;
+        private float3x2 _normalAndUV;
 
         private int2 _prevIndices;
-        public QuadStrip(NativeArray<float3> vertices, NativeArray<short> indices)
+        public QuadStripBuilderVertexData(NativeArray<VertexData> vertices, NativeArray<short> indices)
         {
             _vertices = vertices;
             _indices = indices;
+            _normalAndUV = float3x2.zero;
             _prevIndices = int2.zero;
+        }
+
+        public void SetNormalsAndUV(in float3x2 normalAndUV)
+        {
+            _normalAndUV = normalAndUV;
         }
 
         public void Start(float2x2 p, ref MeshBuffersData buffersData)
@@ -48,7 +55,12 @@ namespace Orazum.Meshing
 
         private short AddVertex(float2 pos, ref MeshBuffersData buffersData)
         { 
-            _vertices[buffersData.Count.x++] = x0z(pos);
+            VertexData vertex = new VertexData();
+            vertex.position = x0z(pos);
+            vertex.normal = _normalAndUV[0];
+            vertex.uv = _normalAndUV[1].xy;
+            
+            _vertices[buffersData.Count.x++] = vertex;
             short addedVertexIndex = (short)buffersData.LocalCount.x;
             buffersData.LocalCount.x++;
 

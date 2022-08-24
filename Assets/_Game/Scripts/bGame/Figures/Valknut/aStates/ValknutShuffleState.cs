@@ -1,6 +1,7 @@
 using Unity.Mathematics;
 
 using UnityEngine;
+using UnityEngine.Assertions;
 
 using rnd = UnityEngine.Random;
 
@@ -15,7 +16,13 @@ public class ValknutShuffleState : FigureShuffleState
 
     protected override FigureSegmentMove[] Shuffle(float lerpSpeed)
     {
-        return base.Shuffle(lerpSpeed);
+        FigureSegmentMove[] moves = base.Shuffle(lerpSpeed);
+        ConvertToVerticesMoves(moves);
+        Debug.Log(moves);
+        FigureSegmentMove[] move = new FigureSegmentMove[1];
+        move[0] = moves[0];
+        _figure.MakeMoves(move, null);
+        return null;
     }
 
     protected override void ShuffleIndices()
@@ -41,6 +48,15 @@ public class ValknutShuffleState : FigureShuffleState
                 _shuffleIndices[0][triangle] = _shuffleIndices[1][triangle];
                 _shuffleIndices[1][triangle] = t;
             }
+        }
+    }
+
+    private void ConvertToVerticesMoves(FigureSegmentMove[] moves)
+    { 
+        for (int i = 0; i < moves.Length; i++)
+        {
+            moves[i] = new ValknutVerticesMove(moves[i]);
+            Assert.IsNotNull(moves[i]);
         }
     }
 }

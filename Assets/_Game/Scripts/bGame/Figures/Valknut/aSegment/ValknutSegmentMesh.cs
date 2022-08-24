@@ -1,5 +1,7 @@
 using UnityEngine.Assertions;
 using Unity.Mathematics;
+using Orazum.Math;
+using static Orazum.Math.MathUtilities;
 
 public struct ValknutSegmentMesh
 {
@@ -57,5 +59,61 @@ public struct ValknutSegmentMesh
         _s2 = new float2x2(stripsData[1].xy, stripsData[1].zw);
         _s3 = new float2x2(stripsData[2].xy, stripsData[2].zw);
         _s4 = new float2x2(stripsData[3].xy, stripsData[3].zw);
+    }
+
+    public float4x2 GetRays(ClockOrderType clockOrder, DirectionOrderType directionOrder)
+    {
+        float2x2 start = float2x2.zero;
+        float2x2 end = float2x2.zero;
+        switch (directionOrder)
+        {
+            case DirectionOrderType.Start:
+                GetSegmentsForStartRay(out start, out end);
+                break;
+            case DirectionOrderType.End:
+                GetSegmentsForEndRay(clockOrder, out start, out end);
+                break;
+            default:
+                throw new System.ArgumentOutOfRangeException("Unknown direction type");
+        }
+
+        return GetSegmentRays(in start, in end);
+    }
+
+    // we use only cw order because of the way the valknut transitions work.
+    // there is no need in computing the end;
+    private void GetSegmentsForStartRay(out float2x2 start, out float2x2 end)
+    { 
+        start = _s2;
+        end = _s1;
+    }
+
+    private void GetSegmentsForEndRay(ClockOrderType clockOrder, out float2x2 start, out float2x2 end)
+    {
+        start = float2x2.zero;
+        end = float2x2.zero;
+        switch (clockOrder)
+        { 
+            case ClockOrderType.CW:
+            int lastIndex = _stripSegmentsCount - 1;
+                switch (lastIndex)
+                { 
+                    case 2:
+                        start = _s2;
+                        end = _s3;
+                        break;
+                    case 3:
+                        start = _s3;
+                        end = _s4;
+                        break;
+                }
+                break;
+            case ClockOrderType.CCW:
+                start = _s2;
+                end = _s1;
+                break;
+            default:
+                throw new System.ArgumentOutOfRangeException("Unknown clockOrder type");
+        }
     }
 }

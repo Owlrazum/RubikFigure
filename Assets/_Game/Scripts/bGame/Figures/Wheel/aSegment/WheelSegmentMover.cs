@@ -1,12 +1,14 @@
 using System;
 using System.Collections;
 
+using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 
 using UnityEngine;
 
 using Orazum.Meshing;
+using Orazum.Collections;
 using static Orazum.Math.MathUtilities;
 
 [RequireComponent(typeof(MeshFilter))]
@@ -16,6 +18,25 @@ public class WheelSegmentMover : FigureSegmentMover
 
     private bool _wasJobScheduled;
     private bool _wasMoveCompleted;
+
+    private NativeArray<VertexData> _vertices;
+    private NativeArray<VertexData> _currentVertices;
+
+    public override void Initialize(NativeArray<VertexData> verticesArg)
+    {
+        _vertices = verticesArg;
+
+        _currentVertices =
+            new NativeArray<VertexData>(_vertices.Length, Allocator.Persistent);
+    }
+
+    protected override void OnDestroy()
+    {
+        base.OnDestroy();
+
+        CollectionUtilities.DisposeIfNeeded(_currentVertices);
+        CollectionUtilities.DisposeIfNeeded(_vertices);
+    }
 
     public override void StartMove(
         FigureSegmentMove move,

@@ -12,16 +12,24 @@ using Orazum.Utilities.ConstContainers;
 using Orazum.Meshing;
 using Orazum.Collections;
 
+using Orazum.Math;
+using static Orazum.Math.ClockOrderConversions;
+
 public class ValknutGenerator : FigureGenerator
 {
+    public const int MaxRangesCountForOneSegment = 6;
+
+    private const int TrianglesCount = 3;
+    private const int PartsCount = 2;
+
     private const int SegmentsCount = Valknut.TrianglesCount * Valknut.TriangleSegmentsCount; // three outer and three inner;
     private const int SegmentQuadsCountTAS = 3;
     private const int SegmentQuadsCountOAS = 2;
 
     private const int SegmentVertexCountTAS = (SegmentQuadsCountTAS + 1) * 2;
     private const int SegmentVertexCountOAS = (SegmentQuadsCountOAS + 1) * 2;
-    private const int SegmentIndexCountTAS  = SegmentQuadsCountTAS * 6;
-    private const int SegmentIndexCountOAS  = SegmentQuadsCountOAS * 6;
+    private const int SegmentIndexCountTAS = SegmentQuadsCountTAS * 6;
+    private const int SegmentIndexCountOAS = SegmentQuadsCountOAS * 6;
 
     private const int SegmentTotalVertexCount = (SegmentVertexCountTAS + SegmentVertexCountOAS) * 3;
     private const int SegmentTotalIndexCount = (SegmentIndexCountTAS + SegmentIndexCountOAS) * 3;
@@ -32,7 +40,7 @@ public class ValknutGenerator : FigureGenerator
 
     private const int PointRendererIndexCountTAS = (SegmentQuadsCountTAS * 4 + 2) * 6;
     private const int PointRendererIndexCountOAS = (SegmentQuadsCountOAS * 4 + 2) * 6;
-    private const int PointRendererTotalIndexCount =  (PointRendererIndexCountTAS + PointRendererIndexCountOAS) * 3;
+    private const int PointRendererTotalIndexCount = (PointRendererIndexCountTAS + PointRendererIndexCountOAS) * 3;
 
     private const int CubeVertexCount = 8;
     private const int CubeIndexCount = 6 * 6;
@@ -53,13 +61,20 @@ public class ValknutGenerator : FigureGenerator
     private float _gapSize;
 
     private Valknut _valknut;
+    private ValknutStatesController _valknutStatesController;
 
     private int2 _dims;
 
     private Array2D<ValknutSegment> _segments;
     private Array2D<FigureSegmentPoint> _segmentPoints;
 
+    private JobHandle _dataJobHandle;
+
     private NativeArray<ValknutSegmentMesh> _segmentMeshes;
+    private NativeArray<int3x2> _transitionDataJobIndexData;
+    private NativeArray<float4x2> _transitionPositions;
+    private NativeArray<float3> _lerpRanges;
+
 
     private void Awake()
     {
@@ -69,9 +84,9 @@ public class ValknutGenerator : FigureGenerator
     {
         base.InitializeParameters(figureGenParams);
 
-        ValknutGenParamsSO generationParams =  figureGenParams as ValknutGenParamsSO;
-        
-        _innerTriangleRadius = generationParams.InnerTriangleRadius;       
+        ValknutGenParamsSO generationParams = figureGenParams as ValknutGenParamsSO;
+
+        _innerTriangleRadius = generationParams.InnerTriangleRadius;
         _width = generationParams.Width;
         _gapSize = generationParams.GapSize;
 
@@ -96,13 +111,34 @@ public class ValknutGenerator : FigureGenerator
         };
         _figureMeshGenJobHandle = valknutGenJob.Schedule();
 
+
+        _transitionDataJobIndexData = new NativeArray<int3x2>(TotalTransitionsCount, Allocator.Persistent);
+        _transitionPositions = new NativeArray<float4x2>(TotalRangesCount, Allocator.Persistent);
+        _lerpRanges = new NativeArray<float3>(TotalRangesCount, Allocator.Persistent);
+        GenerateDataJobIndexData();
+        // string log = "";
+        // for (int i = 0; i < TotalTransitionsCount; i++)
+        // {
+        //     log += $"{_dataJobIndexData[i][0]} {_dataJobIndexData[i][1]}\n";
+        // }
+        // Debug.Log(log);
+
+        ValknutGenJobData transitionDataJob = new ValknutGenJobData()
+        {
+            InputSegmentMeshes = _segmentMeshes,
+            InputIndexData = _transitionDataJobIndexData,
+            OutputTransitionPositions = _transitionPositions,
+            OutputLerpRanges = _lerpRanges
+        };
+        _dataJobHandle = transitionDataJob.ScheduleParallel(TotalTransitionsCount, 32, _figureMeshGenJobHandle);
+
         _pointsRenderVertices = new NativeArray<float3>(PointRendererTotalVertexCount, Allocator.TempJob);
         _pointsRenderIndices = new NativeArray<short>(PointRendererTotalIndexCount, Allocator.TempJob);
 
         _pointsColliderVertices = new NativeArray<float3>(PointColliderTotalVertexCount, Allocator.TempJob);
         _pointsColliderIndices = new NativeArray<short>(PointColliderTotalIndexCount, Allocator.TempJob);
 
-        ValknutSegmentPointGenJob valknutSegmentPointGenJob = new ValknutSegmentPointGenJob()
+        ValknutGenJobSPM valknutSegmentPointGenJob = new ValknutGenJobSPM()
         {
             P_InnerTriangleRadius = _innerTriangleRadius,
             P_Width = _width,
@@ -110,14 +146,64 @@ public class ValknutGenerator : FigureGenerator
             P_Height = _segmentPointHeight,
 
             OutputCollidersVertices = _pointsColliderVertices,
-            OutputCollidersIndices  = _pointsColliderIndices,
-            OutputRenderVertices    = _pointsRenderVertices,
-            OutputRenderIndices     = _pointsRenderIndices 
+            OutputCollidersIndices = _pointsColliderIndices,
+            OutputRenderVertices = _pointsRenderVertices,
+            OutputRenderIndices = _pointsRenderIndices
         };
         _segmentPointsMeshGenJobHandle = valknutSegmentPointGenJob.Schedule();
 
         JobHandle.ScheduleBatchedJobs();
     }
+
+    private const int TotalRangesCount = (6 + 5) * 3 + (5 + 4) * 3;
+    private const int TotalTransitionsCount = 2 * 3 + 2 * 3;
+
+    private void GenerateDataJobIndexData()
+    {
+        int targetIndex = 0;
+        int2 originIndices = new int2(4, 5);
+        int2 rangesCount = new int2(6, 5);
+        int rangeIndex = 0;
+        int2 bufferStart = new int2(0, rangesCount.x);
+        for (int i = 0; i < 6; i += 2)
+        {
+            _transitionDataJobIndexData[rangeIndex++] = new int3x2(
+                new int3(originIndices.x, targetIndex, ClockOrderToInt(ClockOrderType.CW)),
+                new int3(bufferStart.x, rangesCount.x, -1));
+            _transitionDataJobIndexData[rangeIndex++] = new int3x2(
+                new int3(originIndices.y, targetIndex, ClockOrderToInt(ClockOrderType.CCW)),
+                new int3(bufferStart.y, rangesCount.y, -1));
+
+            originIndices.x = originIndices.x + 2 >= 6 ? 0 : originIndices.x + 2;
+            originIndices.y = originIndices.y + 2 >= 6 ? 1 : originIndices.y + 2;
+            targetIndex += 2;
+
+            bufferStart.x = bufferStart.y + rangesCount.y;
+            bufferStart.y = bufferStart.x + rangesCount.x;
+        }
+
+        targetIndex = 1;
+        originIndices = new int2(5, 4);
+        rangesCount = new int2(4, 5);
+        bufferStart.y -= 2;
+        for (int i = 0; i < 6; i += 2)
+        {
+            _transitionDataJobIndexData[rangeIndex++] = new int3x2(
+                new int3(originIndices.x, targetIndex, ClockOrderToInt(ClockOrderType.CW)),
+                new int3(bufferStart.x, rangesCount.x, -1));
+            _transitionDataJobIndexData[rangeIndex++] = new int3x2(
+                new int3(originIndices.y, targetIndex, ClockOrderToInt(ClockOrderType.CCW)),
+                new int3(bufferStart.y, rangesCount.y, -1));
+
+            originIndices.x = originIndices.x + 2 >= 6 ? 1 : originIndices.x + 2;
+            originIndices.y = originIndices.y + 2 >= 6 ? 0 : originIndices.y + 2;
+            targetIndex += 2;
+
+            bufferStart.x = bufferStart.y + rangesCount.y;
+            bufferStart.y = bufferStart.x + rangesCount.x;
+        }
+    }
+
     protected override void GenerateFigureGameObject()
     {
         GameObject valknutGb = new GameObject("Valknut", typeof(Valknut), typeof(ValknutStatesController));
@@ -161,6 +247,8 @@ public class ValknutGenerator : FigureGenerator
         }
 
         _valknut = valknutGb.GetComponent<Valknut>();
+        _valknutStatesController = valknutGb.GetComponent<ValknutStatesController>();
+
     }
 
     private void Start()
@@ -219,6 +307,48 @@ public class ValknutGenerator : FigureGenerator
             }
         }
 
+        _dataJobHandle.Complete();
+        Debug.Log(LogUtilities.ToLog(_transitionPositions, LogUtilities.DecimalPlacesAfterDot.One, 5));
+        Debug.Log(LogUtilities.ToLog(_lerpRanges, LogUtilities.DecimalPlacesAfterDot.Four, 10));
+
+        Array2D<ValknutTransitionData> transitionDatas =
+            new Array2D<ValknutTransitionData>(new int2(TrianglesCount, PartsCount));
+        for (int i = 0; i < _transitionDataJobIndexData.Length; i += 2)
+        {
+            int3x2 index = int3x2.zero;
+
+            index = _transitionDataJobIndexData[i];
+            NativeArray<float4x2> _targetSegmentTransitionDataCW =
+                _transitionPositions.GetSubArray(index[1].x, index[1].y);
+            NativeArray<float3> _targetSegmentLerpRangesCW =
+                _lerpRanges.GetSubArray(index[1].x, index[1].y);
+
+            index = _transitionDataJobIndexData[i + 1];
+            NativeArray<float4x2> _targetSegmentTransitionDataCCW =
+                _transitionPositions.GetSubArray(index[1].x, index[1].y);
+            NativeArray<float3> _targetSegmentLerpRangesCCW =
+                _lerpRanges.GetSubArray(index[1].x, index[1].y);
+
+            ValknutTransitionData transitionData = new ValknutTransitionData()
+            {
+                PositionsCW = _targetSegmentTransitionDataCW.AsReadOnly(),
+                LerpRangesCW = _targetSegmentLerpRangesCW.AsReadOnly(),
+
+                PositionsCCW = _targetSegmentTransitionDataCCW.AsReadOnly(),
+                LerpRangesCCW = _targetSegmentLerpRangesCCW.AsReadOnly()
+            };
+
+            int2 segmentIndex = new int2((i / 2) / PartsCount, (i / 2) % PartsCount);
+            transitionDatas[segmentIndex] = transitionData;
+        }
+
+        _valknut.AssignTransitionDatas(transitionDatas);
+        _valknut.Initialize(
+            _segmentPoints,
+            _valknutStatesController,
+            figureParams
+        );
+
         _figureVertices.Dispose();
         _figureIndices.Dispose();
         _segmentMeshes.Dispose();
@@ -236,7 +366,7 @@ public class ValknutGenerator : FigureGenerator
         Mesh[] meshes = new Mesh[meshCount];
 
         for (int i = 0; i < meshes.Length; i++)
-        { 
+        {
             meshes[i] = CreateSegmentPointColliderMesh(buffersData);
             buffersData.Start += buffersData.Count;
         }
@@ -247,5 +377,10 @@ public class ValknutGenerator : FigureGenerator
     protected override void OnDestroy()
     {
         base.OnDestroy();
+
+        CollectionUtilities.DisposeIfNeeded(_segmentMeshes);
+        CollectionUtilities.DisposeIfNeeded(_transitionDataJobIndexData);
+        CollectionUtilities.DisposeIfNeeded(_transitionPositions);
+        CollectionUtilities.DisposeIfNeeded(_lerpRanges);
     }
 }
