@@ -10,10 +10,10 @@ using Orazum.Meshing;
 public struct ValknutSegmentMoveJob : IJob
 {
     public float P_LerpParam;
-    public QuadStripTransition InputQuadStripTransition;
-    public MeshBuffersData BuffersData;
+    public QSTransition InputQuadStripTransition;
+    public MeshBuffersIndexers BuffersData;
 
-    public ValknutSegmentMoveJob(ref MeshBuffersData buffersData, ref QuadStripTransition quadStripTransition)
+    public ValknutSegmentMoveJob(ref MeshBuffersIndexers buffersData, ref QSTransition quadStripTransition)
     {
         P_LerpParam = 0;
         BuffersData = buffersData;

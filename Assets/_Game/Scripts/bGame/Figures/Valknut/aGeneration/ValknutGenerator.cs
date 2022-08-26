@@ -17,10 +17,13 @@ using static Orazum.Math.ClockOrderConversions;
 
 public class ValknutGenerator : FigureGenerator
 {
-    public const int MaxRangesCountForOneSegment = 6;
+    public const int MaxRangesCountForOneSegment = 7;
 
     private const int TrianglesCount = 3;
     private const int PartsCount = 2;
+
+    private const int TotalRangesCount = (7 + 6) * 3 + (6 + 5) * 3;
+    private const int TotalTransitionsCount = 2 * 3 + 2 * 3;
 
     private const int SegmentsCount = Valknut.TrianglesCount * Valknut.TriangleSegmentsCount; // three outer and three inner;
     private const int SegmentQuadsCountTAS = 3;
@@ -31,12 +34,12 @@ public class ValknutGenerator : FigureGenerator
     private const int SegmentIndexCountTAS = SegmentQuadsCountTAS * 6;
     private const int SegmentIndexCountOAS = SegmentQuadsCountOAS * 6;
 
-    private const int SegmentTotalVertexCount = (SegmentVertexCountTAS + SegmentVertexCountOAS) * 3;
-    private const int SegmentTotalIndexCount = (SegmentIndexCountTAS + SegmentIndexCountOAS) * 3;
+    private const int SegmentsTotalVertexCount = (SegmentVertexCountTAS + SegmentVertexCountOAS) * 3;
+    private const int SegmentsTotalIndexCount = (SegmentIndexCountTAS + SegmentIndexCountOAS) * 3;
 
     private const int PointRendererVertexCountTAS = SegmentVertexCountTAS * 2;
     private const int PointRendererVertexCountOAS = SegmentVertexCountOAS * 2;
-    private const int PointRendererTotalVertexCount = SegmentTotalVertexCount * 2;
+    private const int PointRendererTotalVertexCount = SegmentsTotalVertexCount * 2;
 
     private const int PointRendererIndexCountTAS = (SegmentQuadsCountTAS * 4 + 2) * 6;
     private const int PointRendererIndexCountOAS = (SegmentQuadsCountOAS * 4 + 2) * 6;
@@ -70,10 +73,10 @@ public class ValknutGenerator : FigureGenerator
 
     private JobHandle _dataJobHandle;
 
-    private NativeArray<ValknutSegmentMesh> _segmentMeshes;
-    private NativeArray<int3x2> _transitionDataJobIndexData;
-    private NativeArray<float4x2> _transitionPositions;
-    private NativeArray<float3> _lerpRanges;
+    private QuadStripsCollection _quadStripsCollection;
+
+    private NativeArray<int2x2> _transitionDataJobIndexData;
+    private NativeArray<QSTransSegment> _qsTransSegments;
 
 
     private void Awake()
@@ -94,9 +97,12 @@ public class ValknutGenerator : FigureGenerator
     }
     protected override void StartMeshGeneration()
     {
-        _segmentMeshes = new NativeArray<ValknutSegmentMesh>(SegmentsCount, Allocator.TempJob);
-        _figureVertices = new NativeArray<VertexData>(SegmentTotalVertexCount, Allocator.TempJob);
-        _figureIndices = new NativeArray<short>(SegmentTotalIndexCount, Allocator.TempJob);
+        _figureVertices = new NativeArray<VertexData>(SegmentsTotalVertexCount, Allocator.TempJob);
+        _figureIndices = new NativeArray<short>(SegmentsTotalIndexCount, Allocator.TempJob);
+
+        NativeArray<float2x2> lineSegments = new NativeArray<float2x2>(SegmentsTotalVertexCount, Allocator.TempJob);
+        NativeArray<int2> quadStripsIndexers = new NativeArray<int2>(SegmentsCount, Allocator.TempJob);
+        _quadStripsCollection = new QuadStripsCollection(lineSegments, quadStripsIndexers);
 
         ValknutGenJob valknutGenJob = new ValknutGenJob()
         {
@@ -107,28 +113,20 @@ public class ValknutGenerator : FigureGenerator
             OutputVertices = _figureVertices,
             OutputIndices = _figureIndices,
 
-            OutputSegmentMeshes = _segmentMeshes
+            OutputQuadStripsCollection = _quadStripsCollection
         };
         _figureMeshGenJobHandle = valknutGenJob.Schedule();
 
 
-        _transitionDataJobIndexData = new NativeArray<int3x2>(TotalTransitionsCount, Allocator.Persistent);
-        _transitionPositions = new NativeArray<float4x2>(TotalRangesCount, Allocator.Persistent);
-        _lerpRanges = new NativeArray<float3>(TotalRangesCount, Allocator.Persistent);
+        _transitionDataJobIndexData = new NativeArray<int2x2>(TotalTransitionsCount, Allocator.Persistent);
+        _qsTransSegments = new NativeArray<QSTransSegment>(TotalRangesCount, Allocator.Persistent);
         GenerateDataJobIndexData();
-        // string log = "";
-        // for (int i = 0; i < TotalTransitionsCount; i++)
-        // {
-        //     log += $"{_dataJobIndexData[i][0]} {_dataJobIndexData[i][1]}\n";
-        // }
-        // Debug.Log(log);
 
         ValknutGenJobData transitionDataJob = new ValknutGenJobData()
         {
-            InputSegmentMeshes = _segmentMeshes,
+            InputQuadStripsCollection = _quadStripsCollection,
             InputIndexData = _transitionDataJobIndexData,
-            OutputTransitionPositions = _transitionPositions,
-            OutputLerpRanges = _lerpRanges
+            OutputTransitionsSegments = _qsTransSegments
         };
         _dataJobHandle = transitionDataJob.ScheduleParallel(TotalTransitionsCount, 32, _figureMeshGenJobHandle);
 
@@ -155,52 +153,49 @@ public class ValknutGenerator : FigureGenerator
         JobHandle.ScheduleBatchedJobs();
     }
 
-    private const int TotalRangesCount = (6 + 5) * 3 + (5 + 4) * 3;
-    private const int TotalTransitionsCount = 2 * 3 + 2 * 3;
-
     private void GenerateDataJobIndexData()
     {
-        int targetIndex = 0;
         int2 originIndices = new int2(4, 5);
-        int2 rangesCount = new int2(6, 5);
-        int rangeIndex = 0;
-        int2 bufferStart = new int2(0, rangesCount.x);
+        int targetIndex = 0;
+        int bufferStart = 0;
+        int2 rangesCount = new int2(7, 6);
+        
+        int rangeIndexer = 0;
         for (int i = 0; i < 6; i += 2)
         {
-            _transitionDataJobIndexData[rangeIndex++] = new int3x2(
-                new int3(originIndices.x, targetIndex, ClockOrderToInt(ClockOrderType.CW)),
-                new int3(bufferStart.x, rangesCount.x, -1));
-            _transitionDataJobIndexData[rangeIndex++] = new int3x2(
-                new int3(originIndices.y, targetIndex, ClockOrderToInt(ClockOrderType.CCW)),
-                new int3(bufferStart.y, rangesCount.y, -1));
+            _transitionDataJobIndexData[rangeIndexer++] = new int2x2(
+                new int2(originIndices.x, targetIndex),
+                new int2(bufferStart, rangesCount.x));
+            bufferStart += rangesCount.x;
+
+            _transitionDataJobIndexData[rangeIndexer++] = new int2x2(
+                new int2(originIndices.y, targetIndex),
+                new int2(bufferStart, rangesCount.y));
+            bufferStart += rangesCount.y;
 
             originIndices.x = originIndices.x + 2 >= 6 ? 0 : originIndices.x + 2;
             originIndices.y = originIndices.y + 2 >= 6 ? 1 : originIndices.y + 2;
             targetIndex += 2;
-
-            bufferStart.x = bufferStart.y + rangesCount.y;
-            bufferStart.y = bufferStart.x + rangesCount.x;
         }
 
         targetIndex = 1;
         originIndices = new int2(5, 4);
-        rangesCount = new int2(4, 5);
-        bufferStart.y -= 2;
+        rangesCount = new int2(5, 6);
         for (int i = 0; i < 6; i += 2)
         {
-            _transitionDataJobIndexData[rangeIndex++] = new int3x2(
-                new int3(originIndices.x, targetIndex, ClockOrderToInt(ClockOrderType.CW)),
-                new int3(bufferStart.x, rangesCount.x, -1));
-            _transitionDataJobIndexData[rangeIndex++] = new int3x2(
-                new int3(originIndices.y, targetIndex, ClockOrderToInt(ClockOrderType.CCW)),
-                new int3(bufferStart.y, rangesCount.y, -1));
+            _transitionDataJobIndexData[rangeIndexer++] = new int2x2(
+                new int2(originIndices.x, targetIndex),
+                new int2(bufferStart, rangesCount.x));
+            bufferStart += rangesCount.x;
+
+            _transitionDataJobIndexData[rangeIndexer++] = new int2x2(
+                new int2(originIndices.y, targetIndex),
+                new int2(bufferStart, rangesCount.y));
+            bufferStart += rangesCount.y;
 
             originIndices.x = originIndices.x + 2 >= 6 ? 1 : originIndices.x + 2;
             originIndices.y = originIndices.y + 2 >= 6 ? 0 : originIndices.y + 2;
             targetIndex += 2;
-
-            bufferStart.x = bufferStart.y + rangesCount.y;
-            bufferStart.y = bufferStart.x + rangesCount.x;
         }
     }
 
@@ -260,21 +255,38 @@ public class ValknutGenerator : FigureGenerator
         _figureMeshGenJobHandle.Complete();
         _segmentPointsMeshGenJobHandle.Complete();
 
+
+        // ValknutSegmentMesh origin = _segmentMeshes[4];
+        // ValknutSegmentMesh target = _segmentMeshes[0];
+
+        // NativeArray<float4x2> pos = _transitionPositions.GetSubArray(0, 6);
+        // NativeArray<float3> range = _lerpRanges.GetSubArray(0, 6);
+
+        // ValknutUtilities.BuildTransitionData(
+        //     in origin,
+        //     target,
+        //     ClockOrderType.CW,
+        //     ref pos,
+        //     ref range
+        // );
+
+
+
         int2 tasSegmentBuffersCount = new int2(SegmentVertexCountTAS, SegmentIndexCountTAS);
         int2 oasSegmentBuffersCount = new int2(SegmentVertexCountOAS, SegmentIndexCountOAS);
-        MeshBuffersData buffersData = new MeshBuffersData();
+        MeshBuffersIndexers buffersData = new MeshBuffersIndexers();
         buffersData.Start = int2.zero;
         buffersData.Count = tasSegmentBuffersCount;
 
         int2 tasPointRendererBuffersCount = new int2(PointRendererVertexCountTAS, PointRendererIndexCountTAS);
         int2 oasPointRendererBuffersCount = new int2(PointRendererVertexCountOAS, PointRendererIndexCountOAS);
-        MeshBuffersData pointBuffersData = new MeshBuffersData();
+        MeshBuffersIndexers pointBuffersData = new MeshBuffersIndexers();
         pointBuffersData.Start = int2.zero;
         pointBuffersData.Count = tasPointRendererBuffersCount;
 
         int2 tasPointColliderBuffersCount = new int2(PointColliderVertexCountTAS, PointColliderIndexCountTAS);
         int2 oasPointColliderBuffersCount = new int2(PointColliderVertexCountOAS, PointColliderIndexCountOAS);
-        MeshBuffersData multiMeshBuffersData = new MeshBuffersData();
+        MeshBuffersIndexers multiMeshBuffersData = new MeshBuffersIndexers();
         multiMeshBuffersData.Start = int2.zero;
         multiMeshBuffersData.Count = new int2(CubeVertexCount, CubeIndexCount);
 
@@ -308,34 +320,25 @@ public class ValknutGenerator : FigureGenerator
         }
 
         _dataJobHandle.Complete();
-        Debug.Log(LogUtilities.ToLog(_transitionPositions, LogUtilities.DecimalPlacesAfterDot.One, 5));
-        Debug.Log(LogUtilities.ToLog(_lerpRanges, LogUtilities.DecimalPlacesAfterDot.Four, 10));
 
-        Array2D<ValknutTransitionData> transitionDatas =
-            new Array2D<ValknutTransitionData>(new int2(TrianglesCount, PartsCount));
+        Array2D<ValknutQSTransSegments> transitionDatas =
+            new Array2D<ValknutQSTransSegments>(new int2(TrianglesCount, PartsCount));
         for (int i = 0; i < _transitionDataJobIndexData.Length; i += 2)
         {
-            int3x2 index = int3x2.zero;
+            int2x2 index = int2x2.zero;
 
             index = _transitionDataJobIndexData[i];
-            NativeArray<float4x2> _targetSegmentTransitionDataCW =
-                _transitionPositions.GetSubArray(index[1].x, index[1].y);
-            NativeArray<float3> _targetSegmentLerpRangesCW =
-                _lerpRanges.GetSubArray(index[1].x, index[1].y);
+            NativeArray<QSTransSegment> targetQSTransSegmentsCW =
+                _qsTransSegments.GetSubArray(index[1].x, index[1].y);
 
             index = _transitionDataJobIndexData[i + 1];
-            NativeArray<float4x2> _targetSegmentTransitionDataCCW =
-                _transitionPositions.GetSubArray(index[1].x, index[1].y);
-            NativeArray<float3> _targetSegmentLerpRangesCCW =
-                _lerpRanges.GetSubArray(index[1].x, index[1].y);
+            NativeArray<QSTransSegment> _targetSegmentTransitionDataAntiCW =
+                _qsTransSegments.GetSubArray(index[1].x, index[1].y);
 
-            ValknutTransitionData transitionData = new ValknutTransitionData()
+            ValknutQSTransSegments transitionData = new ValknutQSTransSegments()
             {
-                PositionsCW = _targetSegmentTransitionDataCW.AsReadOnly(),
-                LerpRangesCW = _targetSegmentLerpRangesCW.AsReadOnly(),
-
-                PositionsCCW = _targetSegmentTransitionDataCCW.AsReadOnly(),
-                LerpRangesCCW = _targetSegmentLerpRangesCCW.AsReadOnly()
+                CW = targetQSTransSegmentsCW.AsReadOnly(),
+                AntiCW = _targetSegmentTransitionDataAntiCW.AsReadOnly(),
             };
 
             int2 segmentIndex = new int2((i / 2) / PartsCount, (i / 2) % PartsCount);
@@ -351,7 +354,7 @@ public class ValknutGenerator : FigureGenerator
 
         _figureVertices.Dispose();
         _figureIndices.Dispose();
-        _segmentMeshes.Dispose();
+        _quadStripsCollection.Dispose();
 
         _pointsRenderVertices.Dispose();
         _pointsRenderIndices.Dispose();
@@ -360,7 +363,7 @@ public class ValknutGenerator : FigureGenerator
 
         return _valknut;
     }
-    private Mesh[] CreateColliderMultiMesh(ref MeshBuffersData buffersData, bool isTas)
+    private Mesh[] CreateColliderMultiMesh(ref MeshBuffersIndexers buffersData, bool isTas)
     {
         int meshCount = isTas ? 3 : 2;
         Mesh[] meshes = new Mesh[meshCount];
@@ -378,9 +381,8 @@ public class ValknutGenerator : FigureGenerator
     {
         base.OnDestroy();
 
-        CollectionUtilities.DisposeIfNeeded(_segmentMeshes);
+        _quadStripsCollection.DisposeIfNeeded();
         CollectionUtilities.DisposeIfNeeded(_transitionDataJobIndexData);
-        CollectionUtilities.DisposeIfNeeded(_transitionPositions);
-        CollectionUtilities.DisposeIfNeeded(_lerpRanges);
+        CollectionUtilities.DisposeIfNeeded(_qsTransSegments);
     }
 }

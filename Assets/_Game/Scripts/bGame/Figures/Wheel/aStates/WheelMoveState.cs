@@ -39,7 +39,7 @@ public class WheelMoveState : FigureMoveState
         }
         else if (swipeAngle > -5 * TAU / 12 && swipeAngle < -TAU / 12)
         {
-            return ConstructRotationMoves(_currentSelectedPoint.Index.y, ClockOrderType.CCW);
+            return ConstructRotationMoves(_currentSelectedPoint.Index.y, ClockOrderType.AntiCW);
         }
         else
         {

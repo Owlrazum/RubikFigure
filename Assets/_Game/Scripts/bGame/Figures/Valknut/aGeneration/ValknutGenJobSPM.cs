@@ -31,8 +31,8 @@ public struct ValknutGenJobSPM : IJob
     [WriteOnly]
     public NativeArray<short> OutputRenderIndices;
 
-    private MeshBuffersData _rendererBuffersData;
-    private MeshBuffersData _colliderBuffersData;
+    private MeshBuffersIndexers _rendererBuffersData;
+    private MeshBuffersIndexers _colliderBuffersData;
 
     private int _segmentIndex;
 
@@ -44,8 +44,8 @@ public struct ValknutGenJobSPM : IJob
 
     public void Execute()
     {
-        _rendererBuffersData = new MeshBuffersData();
-        _colliderBuffersData = new MeshBuffersData();
+        _rendererBuffersData = new MeshBuffersIndexers();
+        _colliderBuffersData = new MeshBuffersIndexers();
         _segmentIndex = 0;
 
         _heightOffset = new float3(0, P_Height, 0);

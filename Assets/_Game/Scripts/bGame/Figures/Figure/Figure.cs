@@ -98,7 +98,7 @@ public abstract class Figure : MonoBehaviour
             case ClockOrderType.CW:
                 index.x = index.x + 1 < _dims.x ? index.x + 1 : 0;
                 return index;
-            case ClockOrderType.CCW:
+            case ClockOrderType.AntiCW:
                 index.x = index.x - 1 >= 0 ? index.x - 1 : _dims.x - 1;
                 return index;
         }
@@ -117,7 +117,7 @@ public abstract class Figure : MonoBehaviour
                 }
 
                 return IsPointEmpty(index);
-            case ClockOrderType.CCW:
+            case ClockOrderType.AntiCW:
                 index.x--;
                 if (index.x < 0)
                 {

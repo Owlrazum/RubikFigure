@@ -45,7 +45,7 @@ public abstract class FigureGenerator : MonoBehaviour
     protected abstract void StartMeshGeneration();
     protected abstract void GenerateFigureGameObject();
 
-    protected virtual void UpdateSegment(FigureSegment segment, in MeshBuffersData data, int puzzleIndex)
+    protected virtual void UpdateSegment(FigureSegment segment, in MeshBuffersIndexers data, int puzzleIndex)
     {
         Mesh mesh = segment.MeshContainer.mesh;
         mesh.MarkDynamic();
@@ -71,7 +71,7 @@ public abstract class FigureGenerator : MonoBehaviour
         segment.Initialize(segmentVertices, puzzleIndex);
     }
     
-    protected Mesh CreateSegmentPointRenderMesh(in MeshBuffersData buffersData)
+    protected Mesh CreateSegmentPointRenderMesh(in MeshBuffersIndexers buffersData)
     {
         Mesh segmentPointMesh = new Mesh();
         segmentPointMesh.MarkDynamic();
@@ -94,7 +94,7 @@ public abstract class FigureGenerator : MonoBehaviour
         return segmentPointMesh;
     }
 
-    protected Mesh CreateSegmentPointColliderMesh(in MeshBuffersData buffersData)
+    protected Mesh CreateSegmentPointColliderMesh(in MeshBuffersIndexers buffersData)
     { 
         Mesh segmentPointMesh = new Mesh();
         segmentPointMesh.MarkDynamic();

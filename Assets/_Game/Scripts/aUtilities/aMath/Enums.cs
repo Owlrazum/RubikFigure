@@ -3,7 +3,7 @@ namespace Orazum.Math
     public enum ClockOrderType
     { 
         CW, // Clockwise
-        CCW // CounterClockwise
+        AntiCW // CounterClockwise
     }
 
     public static class ClockOrderConversions
@@ -15,7 +15,7 @@ namespace Orazum.Math
                 return ClockOrderType.CW;
             }
 
-            return ClockOrderType.CCW;
+            return ClockOrderType.AntiCW;
         }
 
         public static int ClockOrderToInt(ClockOrderType clockOrder)
@@ -24,7 +24,7 @@ namespace Orazum.Math
             { 
                 case ClockOrderType.CW:
                     return 10;
-                case ClockOrderType.CCW:
+                case ClockOrderType.AntiCW:
                     return -10;
             }
 
@@ -44,9 +44,15 @@ namespace Orazum.Math
         Left
     }
 
-    public enum DirectionOrderType
+    public enum LineEndType
     { 
         Start,
         End
+    }
+
+    public enum LineEndDirectionType
+    { 
+        StartToEnd,
+        EndToStart
     }
 }

@@ -63,7 +63,7 @@ public abstract class FigureSegmentMover : MonoBehaviour
     protected void AssignMeshBuffers(
         NativeArray<VertexData> vertices, 
         NativeArray<short> indices,
-        in MeshBuffersData buffersData
+        in MeshBuffersIndexers buffersData
     )
     { 
         Mesh mesh = MeshContainer.mesh;

@@ -23,8 +23,8 @@ public class ValknutSegmentMover : FigureSegmentMover
     private NativeArray<VertexData> _vertices;
     private NativeArray<short> _indices;
 
-    private MeshBuffersData _buffersData;
-    private QuadStripTransition _quadStripTransition;
+    private MeshBuffersIndexers _buffersData;
+    private QSTransition _quadStripTransition;
 
     private ValknutSegmentMoveJob _moveJob;
 
@@ -33,11 +33,11 @@ public class ValknutSegmentMover : FigureSegmentMover
         verticesArg.Dispose();
 
         _vertices = new NativeArray<VertexData>(
-            (ValknutGenerator.MaxRangesCountForOneSegment + 1) * 2, Allocator.Persistent);
+            (ValknutGenerator.MaxRangesCountForOneSegment + 2) * 2, Allocator.Persistent);
         _indices = new NativeArray<short>(ValknutGenerator.MaxRangesCountForOneSegment * 6, Allocator.Persistent);
 
-        _buffersData = new MeshBuffersData();
-        _quadStripTransition = new QuadStripTransition(ref _vertices, ref _indices);
+        _buffersData = new MeshBuffersIndexers();
+        _quadStripTransition = new QSTransition(ref _vertices, ref _indices);
         _moveJob = new ValknutSegmentMoveJob(ref _buffersData, ref _quadStripTransition);
     }
 
@@ -65,11 +65,9 @@ public class ValknutSegmentMover : FigureSegmentMover
     private IEnumerator MoveSequence(ValknutVerticesMove verticesMove)
     {
         float lerpParam = 0;
-        Assert.IsTrue(verticesMove.TransitionPositions.IsCreated);
-        Assert.IsTrue(verticesMove.LerpRanges.IsCreated);
+        Assert.IsTrue(verticesMove.TransitionData.IsCreated);
         _quadStripTransition.AssignTransitionData(
-            verticesMove.TransitionPositions,
-            verticesMove.LerpRanges
+            verticesMove.TransitionData
         );
         // _moveJob.InputQuadStripTransition.AssignTransitionData(
         //     verticesMove.TransitionPositions,
@@ -93,7 +91,7 @@ public class ValknutSegmentMover : FigureSegmentMover
             _buffersData.Count = int2.zero;
             _buffersData.Start = int2.zero;
             _buffersData.LocalCount = int2.zero;
-            // print(EaseInOut(lerpParam));
+            print(EaseInOut(lerpParam));
             // _moveJob.P_LerpParam = EaseInOut(lerpParam);
             // _segmentMoveJobHandle = _moveJob.Schedule(_segmentMoveJobHandle);
             // _wasJobScheduled = true;

@@ -1,23 +1,17 @@
 using System;
-using System.Collections.Generic;
-
-using Unity.Collections;
-using Unity.Mathematics;
-
 using UnityEngine;
 using UnityEngine.Assertions;
 
 using Orazum.Collections;
-using static Orazum.Math.MathUtilities;
 
 public class Valknut : Figure
 {
     public const int TrianglesCount = 3;
     public const int TriangleSegmentsCount = 2;
 
-    private Array2D<ValknutTransitionData> _transitionDatas;
+    private Array2D<ValknutQSTransSegments> _transitionDatas;
 
-    public void AssignTransitionDatas(Array2D<ValknutTransitionData> transitionDatas)
+    public void AssignTransitionDatas(Array2D<ValknutQSTransSegments> transitionDatas)
     {
         _transitionDatas = transitionDatas;
     }
@@ -48,17 +42,13 @@ public class Valknut : Figure
             from == 1 && to == 1
         )
         {
-            Assert.IsTrue(_transitionDatas[verticesMove.ToIndex].PositionsCW.IsCreated);
-            Assert.IsTrue(_transitionDatas[verticesMove.ToIndex].LerpRangesCW.IsCreated);
-            verticesMove.AssignTransitionPositions(_transitionDatas[verticesMove.ToIndex].PositionsCW);
-            verticesMove.AssignTransitionLerpRanges(_transitionDatas[verticesMove.ToIndex].LerpRangesCW);
+            Assert.IsTrue(_transitionDatas[verticesMove.ToIndex].CW.IsCreated);
+            verticesMove.AssignTransitionPositions(_transitionDatas[verticesMove.ToIndex].CW);
         }
         else
         { 
-            Assert.IsTrue(_transitionDatas[verticesMove.ToIndex].PositionsCCW.IsCreated);
-            Assert.IsTrue(_transitionDatas[verticesMove.ToIndex].LerpRangesCCW.IsCreated);
-            verticesMove.AssignTransitionPositions(_transitionDatas[verticesMove.ToIndex].PositionsCCW);
-            verticesMove.AssignTransitionLerpRanges(_transitionDatas[verticesMove.ToIndex].LerpRangesCCW);
+            Assert.IsTrue(_transitionDatas[verticesMove.ToIndex].AntiCW.IsCreated);
+            verticesMove.AssignTransitionPositions(_transitionDatas[verticesMove.ToIndex].AntiCW);
         }
     }
 

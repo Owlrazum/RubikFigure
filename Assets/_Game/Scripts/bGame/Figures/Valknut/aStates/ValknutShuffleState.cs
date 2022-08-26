@@ -20,7 +20,11 @@ public class ValknutShuffleState : FigureShuffleState
         ConvertToVerticesMoves(moves);
         Debug.Log(moves);
         FigureSegmentMove[] move = new FigureSegmentMove[1];
-        move[0] = moves[0];
+        move[0] = new ValknutVerticesMove();
+        move[0].AssignFromIndex(int2.zero);
+        move[0].AssignToIndex(new int2(1, 0));
+        move[0].AssignLerpSpeed(lerpSpeed);
+
         _figure.MakeMoves(move, null);
         return null;
     }

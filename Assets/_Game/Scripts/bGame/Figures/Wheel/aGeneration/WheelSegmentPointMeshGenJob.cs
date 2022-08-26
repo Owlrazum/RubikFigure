@@ -23,14 +23,14 @@ public struct WheelSegmentPointMeshGenJob : IJob
     [WriteOnly]
     public NativeArray<short> OutputIndices;
 
-    private MeshBuffersData _buffersData;
+    private MeshBuffersIndexers _buffersData;
 
     private float3 _startRay;
     private quaternion _rotationDelta;
 
     public void Execute()
     {
-        _buffersData = new MeshBuffersData();
+        _buffersData = new MeshBuffersIndexers();
 
         _startRay = new float3(math.cos(TAU / 4), 0, math.sin(TAU / 4));
         float angleResolutionDelta = TAU / P_SideCount;

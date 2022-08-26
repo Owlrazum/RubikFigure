@@ -22,10 +22,10 @@ public struct ValknutGenJob : IJob
     public NativeArray<short> OutputIndices;
 
     [WriteOnly]
-    public NativeArray<ValknutSegmentMesh> OutputSegmentMeshes;
+    public QuadStripsCollection OutputQuadStripsCollection;
 
-    private MeshBuffersData _buffersData;
-    private int _segmentIndex;
+    private MeshBuffersIndexers _buffersData;
+    private int2 _quadStripsCollectionIndexer;
 
     private float3x2 _normalAndUV;
 
@@ -39,8 +39,8 @@ public struct ValknutGenJob : IJob
         _rightRotate = quaternion.AxisAngle(math.up(), TAU / 3);
         _leftRotate = quaternion.AxisAngle(math.up(), 2 * TAU / 3);
 
-        _buffersData = new MeshBuffersData();
-        _segmentIndex = 0;
+        _buffersData = new MeshBuffersIndexers();
+        _quadStripsCollectionIndexer = int2.zero;
 
         float startUV = 1 - 1.0f / 6;
         _normalAndUV = new float3x2(
@@ -122,52 +122,52 @@ public struct ValknutGenJob : IJob
 
         float4x3 dirs  = CalculateDirs(upTriangle);
 
-        float4x3 urDir = new float4x3(dirs[2], dirs[0], dirs[1]); 
+        float4x3 urDir = new float4x3(dirs[2], dirs[1], dirs[0]); 
 
         float2x3 urPos = new float2x3();
         urPos[0] = rightTriangle.Up;
-        urPos[1] = upTriangle.Up;
-        urPos[2] = upTriangle.Left;
+        urPos[1] = upTriangle.Left;
+        urPos[2] = upTriangle.Up;
         float2x4 urEdges = ConstructTwoAngleSegment(urPos, in urDir);
         ConstructOneAngleSegment(in urEdges, in urDir, upTriangle.Right);
         OffsetUV();
 
 
-        float4x3 rlDir = new float4x3(dirs[0], dirs[1], dirs[2]);
+        float4x3 rlDir = new float4x3(dirs[0], dirs[2], dirs[1]);
 
         float2x3 rlPos = new float2x3();
         rlPos[0] = leftTriangle.Right;
-        rlPos[1] = rightTriangle.Right;
-        rlPos[2] = rightTriangle.Up;
+        rlPos[1] = rightTriangle.Up;
+        rlPos[2] = rightTriangle.Right;
         float2x4 rlEdges = ConstructTwoAngleSegment(rlPos, in rlDir);
         ConstructOneAngleSegment(in rlEdges, in rlDir, rightTriangle.Left);
         OffsetUV();
 
 
-        float4x3 luDir = new float4x3(dirs[1], dirs[2], dirs[0]);
+        float4x3 luDir = new float4x3(dirs[1], dirs[0], dirs[2]);
 
         float2x3 luPos = new float2x3();
         luPos[0] = upTriangle.Left;
-        luPos[1] = leftTriangle.Left;
-        luPos[2] = leftTriangle.Right;
+        luPos[1] = leftTriangle.Right;
+        luPos[2] = leftTriangle.Left;
         float2x4 luEdges = ConstructTwoAngleSegment(luPos, in luDir);
         ConstructOneAngleSegment(in luEdges, in luDir, leftTriangle.Up);
         OffsetUV();
     }
 
-    private float2 ExtrudeVertex(float2 start, float2 direction)
+    private struct TwoAngleSegment // tas
     {
-        return start + direction * P_Width;
+        public float2x2 s1;
+        public float2x2 s2;
+        public float2x2 s3;
+        public float2x2 s4;
     }
 
-    private float2 GapVertex(float2 start, float2 direction)
-    { 
-        return start + direction * P_GapSize;
-    }
-
-    private float2 OffsetVertex(float2 vertex, float2 direction, float length)
+    private struct OneAngleSegment // oas
     {
-        return vertex + direction * length;
+        public float2x2 s1;
+        public float2x2 s2;
+        public float2x2 s3;
     }
 
     /// <summary>
@@ -185,24 +185,24 @@ public struct ValknutGenJob : IJob
         TwoAngleSegment tas = new TwoAngleSegment();
         float2 intersect, v1, v2;
 
-        IntersectRays(Ray(poses[0], dirs[0].zw), Ray(poses[1], dirs[1].xy), out intersect);
-        v1 = GapVertex(intersect, dirs[1].zw);
-        v2 = ExtrudeVertex(v1, dirs[0].zw);
+        IntersectRays(Ray(poses[0], dirs[0].zw), Ray(poses[1], dirs[1].zw), out intersect);
+        v2 = GapVertex(intersect, dirs[1].xy);
+        v1 = ExtrudeVertex(v2, dirs[0].xy);
         tas.s1 = new float2x2(v1, v2);
 
-        IntersectRays(Ray(poses[1], dirs[0].zw), Ray(tas.s1[1], dirs[1].zw), out intersect);
-        v1 = poses[1];
-        v2 = ExtrudeVertex(intersect, dirs[1].xy);
+        IntersectRays(Ray(poses[1], dirs[0].xy), Ray(tas.s1[0], dirs[1].xy), out intersect);
+        v2 = poses[1];
+        v1 = ExtrudeVertex(intersect, dirs[1].zw);
         tas.s2 = new float2x2(v1, v2);
 
-        IntersectRays(Ray(tas.s2[1], dirs[0].zw), Ray(poses[2], dirs[2].zw), out intersect);
-        v1 = poses[2];
-        v2 = ExtrudeVertex(intersect, dirs[0].xy);
+        IntersectRays(Ray(poses[2], dirs[2].xy), Ray(tas.s2[0], dirs[0].xy), out intersect);
+        v2 = poses[2];
+        v1 = ExtrudeVertex(intersect, dirs[0].zw);
         tas.s3 = new float2x2(v1, v2);
 
-        IntersectRays(Ray(poses[0], dirs[0].zw), Ray(poses[2], dirs[2].zw), out intersect);
-        v1 = GapVertex(intersect, dirs[2].xy);
-        v2 = ExtrudeVertex(v1, dirs[0].xy);
+        IntersectRays(Ray(poses[0], dirs[0].zw), Ray(poses[2], dirs[2].xy), out intersect);
+        v2 = GapVertex(intersect, dirs[2].zw);
+        v1 = ExtrudeVertex(v2, dirs[0].zw);
         tas.s4 = new float2x2(v1, v2);
 
         AddTwoAngleSegmentMeshData(tas);
@@ -221,99 +221,78 @@ public struct ValknutGenJob : IJob
         float2 intersect, v1, v2;
         
         OneAngleSegment oas = new OneAngleSegment();
-        v1 = OffsetVertex(edges[0], dirs[2].zw, offsetLength);
-        v2 = OffsetVertex(edges[1], dirs[2].zw, offsetLength);
+        v1 = OffsetVertex(edges[0], dirs[2].xy, offsetLength);
+        v2 = OffsetVertex(edges[1], dirs[2].xy, offsetLength);
         oas.s1 = new float2x2(v1, v2);
         
-        IntersectRays(Ray(edges[1], dirs[2].zw), Ray(edges[3], dirs[1].xy), out intersect);
-        v1 = triangleVertex;
-        v2 = intersect;
+        IntersectRays(Ray(edges[0], dirs[2].xy), Ray(edges[2], dirs[1].zw), out intersect);
+        v1 = intersect;
+        v2 = triangleVertex;
         oas.s2 = new float2x2(v1, v2);
 
-        v1 = OffsetVertex(edges[2], dirs[1].xy, offsetLength);
-        v2 = OffsetVertex(edges[3], dirs[1].xy, offsetLength);
+        v1 = OffsetVertex(edges[2], dirs[1].zw, offsetLength);
+        v2 = OffsetVertex(edges[3], dirs[1].zw, offsetLength);
         oas.s3 = new float2x2(v1, v2);
 
         AddOneAngleSegment(oas);
     }
 
-    private struct TwoAngleSegment
-    {
-        public float2x2 s1;
-        public float2x2 s2;
-        public float2x2 s3;
-        public float2x2 s4;
-    }
-
-    private struct OneAngleSegment
-    {
-        public float2x2 s1;
-        public float2x2 s2;
-        public float2x2 s3;
-    }
-
-    
-    private void AddOneAngleSegment(OneAngleSegment oneAngleSegment)
+    private void AddOneAngleSegment(OneAngleSegment oas)
     {
         _buffersData.LocalCount = int2.zero;
-        QuadStripBuilderVertexData quadStrip = new QuadStripBuilderVertexData(OutputVertices, OutputIndices);
-        quadStrip.SetNormalsAndUV(_normalAndUV);
-        quadStrip.Start(oneAngleSegment.s1, ref _buffersData);
-        quadStrip.Continue(oneAngleSegment.s2, ref _buffersData);
-        quadStrip.Continue(oneAngleSegment.s3, ref _buffersData);
 
-        float4x4 stripsData = new float4x4(
-            new float4(oneAngleSegment.s1[0], oneAngleSegment.s1[1]),
-            new float4(oneAngleSegment.s2[0], oneAngleSegment.s2[1]),
-            new float4(oneAngleSegment.s3[0], oneAngleSegment.s3[1]),
-            float4.zero
-        );
-        OutputSegmentMeshes[_segmentIndex++] = new ValknutSegmentMesh(in stripsData, stripSegmentsCount: 3);
+        NativeArray<float2x2> lineSegments = new NativeArray<float2x2>(3, Allocator.Temp);
+        lineSegments[0] = oas.s1;
+        lineSegments[1] = oas.s2;
+        lineSegments[2] = oas.s3;
+
+        _quadStripsCollectionIndexer.y = 3;
+        OutputQuadStripsCollection.AddQuadStrip(lineSegments, _quadStripsCollectionIndexer);
+        _quadStripsCollectionIndexer.x += 3;
+        lineSegments.Dispose();
+
+        QuadStripBuilderVertexData quadStripBuilder = new QuadStripBuilderVertexData(OutputVertices, OutputIndices);
+        quadStripBuilder.SetNormalsAndUV(_normalAndUV);
+        quadStripBuilder.Start(oas.s1, ref _buffersData);
+        quadStripBuilder.Continue(oas.s2, ref _buffersData);
+        quadStripBuilder.Continue(oas.s3, ref _buffersData);
     }
 
-    private void AddTwoAngleSegmentMeshData(TwoAngleSegment twoAngleSegment)
+    private void AddTwoAngleSegmentMeshData(TwoAngleSegment tas)
     {
         _buffersData.LocalCount = int2.zero;
-        QuadStripBuilderVertexData quadStrip = new QuadStripBuilderVertexData(OutputVertices, OutputIndices);
-        quadStrip.SetNormalsAndUV(_normalAndUV);
-        quadStrip.Start(twoAngleSegment.s1, ref _buffersData);
-        quadStrip.Continue(twoAngleSegment.s2, ref _buffersData);
-        quadStrip.Continue(twoAngleSegment.s3, ref _buffersData);
-        quadStrip.Continue(twoAngleSegment.s4, ref _buffersData);
 
-        float4x4 stripsData = new float4x4(
-            new float4(twoAngleSegment.s1[0], twoAngleSegment.s1[1]),
-            new float4(twoAngleSegment.s2[0], twoAngleSegment.s2[1]),
-            new float4(twoAngleSegment.s3[0], twoAngleSegment.s3[1]),
-            new float4(twoAngleSegment.s4[0], twoAngleSegment.s4[1])
-        );
-        OutputSegmentMeshes[_segmentIndex++] = new ValknutSegmentMesh(in stripsData, stripSegmentsCount: 4);
+        NativeArray<float2x2> lineSegments = new NativeArray<float2x2>(4, Allocator.Temp);
+        lineSegments[0] = tas.s1;
+        lineSegments[1] = tas.s2;
+        lineSegments[2] = tas.s3;
+        lineSegments[3] = tas.s4;
+
+        _quadStripsCollectionIndexer.y = 4;
+        OutputQuadStripsCollection.AddQuadStrip(lineSegments, _quadStripsCollectionIndexer);
+        _quadStripsCollectionIndexer.x += 4;
+        lineSegments.Dispose();
+ 
+        QuadStripBuilderVertexData quadStripBuilder = new QuadStripBuilderVertexData(OutputVertices, OutputIndices);
+        quadStripBuilder.SetNormalsAndUV(_normalAndUV);
+        quadStripBuilder.Start(tas.s1, ref _buffersData);
+        quadStripBuilder.Continue(tas.s2, ref _buffersData);
+        quadStripBuilder.Continue(tas.s3, ref _buffersData);
+        quadStripBuilder.Continue(tas.s4, ref _buffersData);
+    }
+
+    private float2 ExtrudeVertex(float2 start, float2 direction)
+    {
+        return start + direction * P_Width;
+    }
+
+    private float2 GapVertex(float2 start, float2 direction)
+    { 
+        return start + direction * P_GapSize;
+    }
+
+    private float2 OffsetVertex(float2 vertex, float2 direction, float length)
+    {
+        return vertex + direction * length;
     }
 }
-
-/*
-
-float3x2 prev = float3x2.zero;
-            float3x2 next = new float3x2(transitionPositions[0], transitionPositions[1]);
-
-            for (int i = 2; i <= gapIndex.x; i += 2)
-            {
-                prev = next;
-                next = new float3x2(transitionPositions[i], transitionPositions[i + 1]);
-                _transitionLength.x += math.length(next[0] - prev[0]);
-                _transitionLength.y += math.length(next[1] - prev[1]);
-            }
-
-            prev = next;
-            next = new float3x2(transitionPositions[gapIndex.x + 2], transitionPositions[gapIndex.x + 3]);
-            _transitionLength.x += math.length(next[0] - prev[0]);
-            _transitionLength.y += math.length(next[1] - prev[1]);
-
-            for (int i = gapIndex.y; i < transitionPositions.Length; i += 2)
-            { 
-                next = new float3x2(transitionPositions[i], transitionPositions[i + 1]);
-                prev = new float3x2(transitionPositions[i - 2], transitionPositions[i - 1]);
-                _transitionLength.x += math.length(next[0] - prev[0]);
-                _transitionLength.y += math.length(next[1] - prev[1]);
-            }
-*/

@@ -5,7 +5,7 @@ namespace Orazum.Meshing
     /// <summary>
     /// x - vertex, y - index
     /// </summary>
-    public struct MeshBuffersData
+    public struct MeshBuffersIndexers
     {
         public int2 Count;
         public int2 Start;

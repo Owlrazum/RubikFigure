@@ -17,15 +17,9 @@ public class ValknutVerticesMove : FigureSegmentMove
         Mover = move.Mover;
     }
 
-    public NativeArray<float4x2>.ReadOnly TransitionPositions { get; private set; }
-    public void AssignTransitionPositions(NativeArray<float4x2>.ReadOnly transitionPositions)
+    public NativeArray<QSTransSegment>.ReadOnly TransitionData { get; private set; }
+    public void AssignTransitionPositions(NativeArray<QSTransSegment>.ReadOnly transitionData)
     {
-        TransitionPositions = transitionPositions;
-    }
-
-    public NativeArray<float3>.ReadOnly LerpRanges { get; private set; }
-    public void AssignTransitionLerpRanges(NativeArray<float3>.ReadOnly lerpRanges)
-    {
-        LerpRanges = lerpRanges;
+        TransitionData = transitionData;
     }
 }

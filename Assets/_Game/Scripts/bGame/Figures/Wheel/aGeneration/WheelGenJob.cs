@@ -25,7 +25,7 @@ public struct WheelGenJob : IJob
     [WriteOnly]
     public NativeArray<WheelSegmentMesh> OutputSegmentMeshes; // one for each ring
 
-    private MeshBuffersData _buffersData;
+    private MeshBuffersIndexers _buffersData;
 
     private float3 _startRay;
     private quaternion _rotationDelta;
@@ -36,7 +36,7 @@ public struct WheelGenJob : IJob
 
     public void Execute()
     {
-        _buffersData = new MeshBuffersData();
+        _buffersData = new MeshBuffersIndexers();
 
         _startRay = new float3(math.cos( TAU / 4), 0, math.sin( TAU / 4));
         _angleDelta = TAU / P_SideCount;

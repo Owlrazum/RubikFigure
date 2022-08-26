@@ -23,8 +23,8 @@ public class WheelGenerator : FigureGenerator
 
     private int _segmentCount;
 
-    private MeshBuffersData _segmentBuffersData;
-    private MeshBuffersData _segmentPointBuffersData;
+    private MeshBuffersIndexers _segmentBuffersData;
+    private MeshBuffersIndexers _segmentPointBuffersData;
 
     private float _innerRadius;
     private float _outerRadius;
@@ -58,14 +58,14 @@ public class WheelGenerator : FigureGenerator
         
         _segmentCount = _sideCount * _ringCount;
         
-        _segmentBuffersData = new MeshBuffersData();
+        _segmentBuffersData = new MeshBuffersIndexers();
         _segmentBuffersData.Count = new int2(
             2 * (_segmentResolution + 1),
             6 * _segmentResolution
         );
         FigureSegment.InitializeVertexCount(_segmentBuffersData.Count.x);
 
-        _segmentPointBuffersData = new MeshBuffersData();
+        _segmentPointBuffersData = new MeshBuffersIndexers();
         _segmentPointBuffersData.Count = new int2(
             _segmentBuffersData.Count.x * 2, 
             _segmentBuffersData.Count.y * 4 + 12

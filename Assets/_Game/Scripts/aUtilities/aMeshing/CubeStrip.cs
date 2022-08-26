@@ -17,7 +17,7 @@ namespace Orazum.Meshing
             _prevCubeStripIndices = int4.zero;
         }
 
-        public void Start(float3x4 p, ref MeshBuffersData buffersData)
+        public void Start(float3x4 p, ref MeshBuffersIndexers buffersData)
         {
             _prevCubeStripIndices.x = AddVertex(p[0], ref buffersData);
             _prevCubeStripIndices.y = AddVertex(p[1], ref buffersData);
@@ -26,7 +26,7 @@ namespace Orazum.Meshing
             AddQuadIndices(_prevCubeStripIndices, ref buffersData);
         }
 
-        public void Continue(float3x4 p, ref MeshBuffersData buffersData)
+        public void Continue(float3x4 p, ref MeshBuffersIndexers buffersData)
         {
             int4 newCubeStripIndices = int4.zero;
             newCubeStripIndices.x = AddVertex(p[0], ref buffersData);
@@ -47,7 +47,7 @@ namespace Orazum.Meshing
             _prevCubeStripIndices = newCubeStripIndices;
         }
 
-        public void Finish(float3x4 p, ref MeshBuffersData buffersData)
+        public void Finish(float3x4 p, ref MeshBuffersIndexers buffersData)
         {
             int4 newCubeStripIndices = int4.zero;
             newCubeStripIndices.x = AddVertex(p[0], ref buffersData);
@@ -70,7 +70,7 @@ namespace Orazum.Meshing
             _prevCubeStripIndices = newCubeStripIndices;
         }
 
-        private void AddQuadIndices(int4 quadIndices, ref MeshBuffersData buffersData)
+        private void AddQuadIndices(int4 quadIndices, ref MeshBuffersIndexers buffersData)
         {
             AddIndex(quadIndices.x, ref buffersData);
             AddIndex(quadIndices.y, ref buffersData);
@@ -80,7 +80,7 @@ namespace Orazum.Meshing
             AddIndex(quadIndices.w, ref buffersData);
         }
 
-        private short AddVertex(float3 pos, ref MeshBuffersData buffersData)
+        private short AddVertex(float3 pos, ref MeshBuffersIndexers buffersData)
         {
             _vertices[buffersData.Count.x++] = pos;
             short addedVertexIndex = (short)buffersData.LocalCount.x;
@@ -89,7 +89,7 @@ namespace Orazum.Meshing
             return addedVertexIndex;
         }
 
-        private void AddIndex(int vertexIndex, ref MeshBuffersData buffersData)
+        private void AddIndex(int vertexIndex, ref MeshBuffersIndexers buffersData)
         {
             _indices[buffersData.Count.y++] = (short)vertexIndex;
         }

@@ -47,7 +47,7 @@ public abstract class FigureShuffleState : FigureState
     public override void OnEnter()
     {
         Debug.Log("OnEnter");
-        _shuffleTimer.x = 0;
+        _shuffleTimer.x = _shuffleTimer.y / 1.5f;
         _shuffleStep.x = 0;
     }
 

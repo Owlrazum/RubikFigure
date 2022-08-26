@@ -1,3 +1,5 @@
+using Unity.Mathematics;
+
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "FigureParams", menuName = "Figure/FigureParams", order = 1)]
@@ -13,6 +15,6 @@ public class FigureParamsSO : ScriptableObject
     public Vector3 StartPositionForSegmentsInCompletionPhase = new Vector3(0, -10, 0);
 
     public bool ShouldUsePredefinedEmptyPlaces = false;
-    public Vector2Int[] PredefinedEmptyPlaces;
+    public int2[] PredefinedEmptyPlaces;
     public int EmptyPlacesCount = 2;
 }
