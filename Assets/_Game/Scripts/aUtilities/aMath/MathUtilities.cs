@@ -36,15 +36,20 @@ namespace Orazum.Math
         }
         
         #region Ray Intersection
-        public static float4 Ray(float2 origin, float2 direction)
+        public static float4 RayFromDirection(float2 origin, float2 direction)
         {
             return new float4(origin, direction);
         }
 
+        public static float4 RayFromDelta(float2 start, float2 end)
+        {
+            return new float4(start, math.normalize(end - start));
+        }
+
         public static float4x2 GetSegmentRays(in float2x2 start, in float2x2 end)
         {
-            return new float4x2(Ray(start[0], math.normalize(end[0] - start[0])),
-                                Ray(start[1], math.normalize(end[1] - start[1])));
+            return new float4x2(RayFromDelta(start[0], end[0]),
+                                RayFromDelta(start[1], end[1]));
         }
 
         /// <summary>
@@ -82,6 +87,14 @@ namespace Orazum.Math
             return toReturn;
         }
 
+        public static bool IntersectSegmentToRay(in float4x2 segmentRays, in float4 ray, out float2x2 intersection)
+        { 
+            intersection = new float2x2();
+            bool first = IntersectRays(segmentRays[0], ray, out intersection[0]);
+            bool second = IntersectRays(segmentRays[1], ray, out intersection[1]);
+            return first && second;
+        }
+
         public static bool IntersectSegmentRays(in float4x2 r1, in float4x2 r2, out float2x2 intersection)
         {
             intersection = new float2x2();
@@ -95,7 +108,7 @@ namespace Orazum.Math
             return first && second;
         }
 
-        private static void DrawRay(float4 ray, float length, float duration)
+        public static void DrawRay(float4 ray, float length, float duration)
         {
             Debug.DrawRay(x0z(ray.xy), x0z(ray.zw) * length, Color.red, duration);
         }

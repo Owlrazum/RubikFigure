@@ -36,9 +36,8 @@ namespace Orazum.Meshing
             }
         }
 
-        public void Start(float2x2 p, ref MeshBuffersIndexers buffersData, bool draw = false)
+        public void Start(float2x2 p, ref MeshBuffersIndexers buffersData)
         {
-            if (draw) DrawSegment(p);
             _prevIndices.x = AddVertex(p[0], ref buffersData);
             _prevIndices.y = AddVertex(p[1], ref buffersData);
 
@@ -50,9 +49,8 @@ namespace Orazum.Meshing
             Debug.DrawRay(x0z(p[1]), Vector3.up, Color.red, 5);
         }
 
-        public void Continue(float2x2 p, ref MeshBuffersIndexers buffersData, bool draw = false)
+        public void Continue(float2x2 p, ref MeshBuffersIndexers buffersData)
         {
-            if (draw) DrawSegment(p);
             int2 newIndices = int2.zero;
             newIndices.x = AddVertex(p[0], ref buffersData);
             newIndices.y = AddVertex(p[1], ref buffersData);

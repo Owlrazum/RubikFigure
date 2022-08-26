@@ -134,9 +134,9 @@ public struct ValknutTransitionsBuilder
     }
     private void ComputeDistsPosInEmptyZone(ref int3 index, ref float2 fillInOutTotalDistances)
     {
-        GetIntersectionRays(out float4x2 originRays, out float4x2 targetRays);
-        bool intersect = IntersectSegmentRays(originRays, targetRays, out float2x2 intersectSegment);
-        Assert.IsTrue(intersect);
+        GetIntersectionRays(out float4x2 originSegmentRays, out float4 targetRay);
+        bool intersect = IntersectSegmentToRay(originSegmentRays, targetRay, out float2x2 intersectSegment);
+        Assert.IsTrue(intersect, $"{_transitionType} is not intersected");
 
         int lastIndex = index.z - index.y;
 
@@ -149,25 +149,25 @@ public struct ValknutTransitionsBuilder
         fillInOutTotalDistances.x += _emptyZoneLength;
         fillInOutTotalDistances.y += _emptyZoneLength;
     }
-    private void GetIntersectionRays(out float4x2 originRays, out float4x2 targetRays)
+    private void GetIntersectionRays(out float4x2 originRays, out float4 targetRay)
     {
         switch (_transitionType)
         {
             case TransitionType.TasToTas:
                 originRays = _origin.GetRays(LineEndType.End, LineEndDirectionType.StartToEnd);
-                targetRays = _target.GetRays(LineEndType.Start, LineEndDirectionType.EndToStart);
+                targetRay = _target.GetRay(LineEndType.Start, LineEndType.End, LineEndDirectionType.EndToStart);
                 return;
             case TransitionType.TasToOas:
                 originRays = _origin.GetRays(LineEndType.Start, LineEndDirectionType.EndToStart);
-                targetRays = _target.GetRays(LineEndType.End, LineEndDirectionType.StartToEnd);
+                targetRay = _target.GetRay(LineEndType.End, LineEndType.End, LineEndDirectionType.StartToEnd);
                 return;
             case TransitionType.OasToTas:
                 originRays = _origin.GetRays(LineEndType.Start, LineEndDirectionType.EndToStart);
-                targetRays = _target.GetRays(LineEndType.Start, LineEndDirectionType.EndToStart);
+                targetRay = _target.GetRay(LineEndType.Start, LineEndType.Start, LineEndDirectionType.EndToStart);
                 return;
             case TransitionType.OasToOas:
                 originRays = _origin.GetRays(LineEndType.End, LineEndDirectionType.StartToEnd);
-                targetRays = _target.GetRays(LineEndType.End, LineEndDirectionType.StartToEnd);
+                targetRay = _target.GetRay(LineEndType.End, LineEndType.Start, LineEndDirectionType.StartToEnd);
                 return;
         }
 
