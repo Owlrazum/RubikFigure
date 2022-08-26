@@ -27,9 +27,11 @@ public class ValknutSegmentMover : FigureSegmentMover
     private QSTransition _quadStripTransition;
 
     private ValknutSegmentMoveJob _moveJob;
+    private float3x2 _normalUV;
 
     public override void Initialize(NativeArray<VertexData> verticesArg)
     {
+        _normalUV = new float3x2(verticesArg[0].normal, new float3(verticesArg[0].uv, 0));
         verticesArg.Dispose();
 
         _vertices = new NativeArray<VertexData>(
@@ -65,9 +67,10 @@ public class ValknutSegmentMover : FigureSegmentMover
     private IEnumerator MoveSequence(ValknutVerticesMove verticesMove)
     {
         float lerpParam = 0;
-        Assert.IsTrue(verticesMove.TransitionData.IsCreated);
+        Assert.IsTrue(verticesMove.TransSegments.IsCreated);
         _quadStripTransition.AssignTransitionData(
-            verticesMove.TransitionData
+            verticesMove.TransSegments,
+            _normalUV
         );
         // _moveJob.InputQuadStripTransition.AssignTransitionData(
         //     verticesMove.TransitionPositions,
@@ -106,7 +109,7 @@ public class ValknutSegmentMover : FigureSegmentMover
         if (_wasMoveCompleted)
         {
             // _segmentMoveJobHandle.Complete();
-            AssignMeshBuffers(_vertices, _indices, _moveJob.BuffersData);
+            // AssignMeshBuffers(_vertices, _indices, _moveJob.BuffersData);
 
             _moveCompleteAction?.Invoke();
             _wasMoveCompleted = false;

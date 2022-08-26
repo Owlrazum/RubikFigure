@@ -17,9 +17,9 @@ public class ValknutVerticesMove : FigureSegmentMove
         Mover = move.Mover;
     }
 
-    public NativeArray<QSTransSegment>.ReadOnly TransitionData { get; private set; }
-    public void AssignTransitionPositions(NativeArray<QSTransSegment>.ReadOnly transitionData)
+    public NativeArray<QSTransSegment>.ReadOnly TransSegments { get; private set; }
+    public void AssignTransitionPositions(NativeArray<QSTransSegment>.ReadOnly transSegments)
     {
-        TransitionData = transitionData;
+        TransSegments = transSegments;
     }
 }

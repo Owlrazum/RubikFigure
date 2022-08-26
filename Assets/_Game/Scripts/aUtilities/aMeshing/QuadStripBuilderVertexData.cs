@@ -14,12 +14,17 @@ namespace Orazum.Meshing
         private float3x2 _normalAndUV;
 
         private int2 _prevIndices;
-        public QuadStripBuilderVertexData(NativeArray<VertexData> vertices, NativeArray<short> indices)
+        public QuadStripBuilderVertexData(NativeArray<VertexData> vertices, NativeArray<short> indices, float3x2 normalAndUV)
         {
             _vertices = vertices;
             _indices = indices;
-            _normalAndUV = float3x2.zero;
+            _normalAndUV = normalAndUV;
             _prevIndices = int2.zero;
+        }
+
+        public void SetNormalAndUV(float3x2 normalAndUV)
+        {
+            _normalAndUV = normalAndUV;
         }
 
         public void Build(QuadStrip quadStrip, ref MeshBuffersIndexers buffersData)
@@ -29,11 +34,6 @@ namespace Orazum.Meshing
             {
                 Continue(quadStrip[1], ref buffersData);
             }
-        }
-
-        public void SetNormalsAndUV(in float3x2 normalAndUV)
-        {
-            _normalAndUV = normalAndUV;
         }
 
         public void Start(float2x2 p, ref MeshBuffersIndexers buffersData, bool draw = false)

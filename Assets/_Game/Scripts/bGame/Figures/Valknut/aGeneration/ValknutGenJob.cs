@@ -251,8 +251,8 @@ public struct ValknutGenJob : IJob
         _quadStripsCollectionIndexer.x += 3;
         lineSegments.Dispose();
 
-        QuadStripBuilderVertexData quadStripBuilder = new QuadStripBuilderVertexData(OutputVertices, OutputIndices);
-        quadStripBuilder.SetNormalsAndUV(_normalAndUV);
+        QuadStripBuilderVertexData quadStripBuilder = 
+            new QuadStripBuilderVertexData(OutputVertices, OutputIndices, _normalAndUV);
         quadStripBuilder.Start(oas.s1, ref _buffersData);
         quadStripBuilder.Continue(oas.s2, ref _buffersData);
         quadStripBuilder.Continue(oas.s3, ref _buffersData);
@@ -273,8 +273,8 @@ public struct ValknutGenJob : IJob
         _quadStripsCollectionIndexer.x += 4;
         lineSegments.Dispose();
  
-        QuadStripBuilderVertexData quadStripBuilder = new QuadStripBuilderVertexData(OutputVertices, OutputIndices);
-        quadStripBuilder.SetNormalsAndUV(_normalAndUV);
+        QuadStripBuilderVertexData quadStripBuilder 
+            = new QuadStripBuilderVertexData(OutputVertices, OutputIndices, _normalAndUV);
         quadStripBuilder.Start(tas.s1, ref _buffersData);
         quadStripBuilder.Continue(tas.s2, ref _buffersData);
         quadStripBuilder.Continue(tas.s3, ref _buffersData);

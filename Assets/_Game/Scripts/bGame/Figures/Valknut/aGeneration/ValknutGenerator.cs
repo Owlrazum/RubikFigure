@@ -331,6 +331,13 @@ public class ValknutGenerator : FigureGenerator
             NativeArray<QSTransSegment> targetQSTransSegmentsCW =
                 _qsTransSegments.GetSubArray(index[1].x, index[1].y);
 
+            bool isTargetZero = false;
+            if (index[0].y == 2)
+            {
+                print($"check index: {index}");
+                isTargetZero = true;
+            }
+
             index = _transitionDataJobIndexData[i + 1];
             NativeArray<QSTransSegment> _targetSegmentTransitionDataAntiCW =
                 _qsTransSegments.GetSubArray(index[1].x, index[1].y);
@@ -341,7 +348,13 @@ public class ValknutGenerator : FigureGenerator
                 AntiCW = _targetSegmentTransitionDataAntiCW.AsReadOnly(),
             };
 
-            int2 segmentIndex = new int2((i / 2) / PartsCount, (i / 2) % PartsCount);
+            int2 segmentIndex = new int2(index[0].y / PartsCount, index[0].y % PartsCount);
+            print($"segmentIndex {segmentIndex}");
+
+            if (isTargetZero)
+            {
+                print($"sdsddsds {segmentIndex}");
+            }
             transitionDatas[segmentIndex] = transitionData;
         }
 

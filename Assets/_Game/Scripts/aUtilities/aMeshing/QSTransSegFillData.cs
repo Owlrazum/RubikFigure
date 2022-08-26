@@ -16,4 +16,9 @@ public struct QSTransSegFillData
     {
         LerpRange = lerpRange;
     }
+
+    public override string ToString()
+    {
+        return $"{LerpRange.x:F2} {LerpRange.y:F2} {ConstructType}";
+    }
 }

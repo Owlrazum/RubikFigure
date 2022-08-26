@@ -3,6 +3,15 @@ using Unity.Collections;
 
 public struct QSTransSegment
 {
+    public enum QuadConstructType 
+    {
+        NewQuadStartToEnd,
+        ContinueQuadStartToEnd,
+        ContinueQuadFromStart,
+        NewQuadFromStart,
+        NewQuadToEnd
+    }
+
     public float2x2 StartLineSegment { get; private set; }
     public float2x2 EndLineSegment { get; private set; }
     public int FillDataLength { get; private set; }
@@ -66,11 +75,24 @@ public struct QSTransSegment
         }
     }
 
-    public enum QuadConstructType 
+    public override string ToString()
     {
-        NewQuadStartToEnd,
-        ContinueQuadStartToEnd,
-        ContinueQuadFromStart,
-        NewQuadToEnd
+        string s = "QSTransSegment:\n";
+        for (int i = 0; i < FillDataLength; i++)
+        { 
+            switch (i)
+            { 
+                case 0:
+                    s += _f1.ToString() + "\n";
+                    break;
+                case 1:
+                    s += _f2.ToString() + "\n";
+                    break;
+                case 2:
+                    s += _f3.ToString() + "\n";
+                    break;
+            }
+        }
+        return s;
     }
 }

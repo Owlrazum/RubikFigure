@@ -2,6 +2,7 @@
 using Unity.Mathematics;
 using Unity.Collections;
 
+using UnityEngine;
 using UnityEngine.Assertions;
 
 using Orazum.Math;
@@ -260,7 +261,10 @@ public struct ValknutTransitionsBuilder
             QuadConstructType.ContinueQuadFromStart
         );
         lastFillOutSegment[0] = firstSegFillInData;
-        lastFillOutSegment[1].SetLerpRange(new float2(lerpOffset, lastFillOutSegment[1].LerpRange.y));
+        QSTransSegFillData lastFilledState = lastFillOutSegment[1];
+        lastFilledState.SetLerpRange(new float2(lerpOffset, lastFillOutSegment[1].LerpRange.y));
+        lastFillOutSegment[1] = lastFilledState;
+        _transSegments[_transSegmentsIndexer.x - 1] = lastFillOutSegment;
 
         int inFillDistancesIndexer = 0;
         float2 dr = new float2(lerpOffset, _inFillDistances[inFillDistancesIndexer++] / inFillTotalDistance + lerpOffset);
@@ -276,7 +280,7 @@ public struct ValknutTransitionsBuilder
                 QSTransSegment firstFillInSegment = new QSTransSegment(startLineSeg, endLineSeg, fillDataLength: 2);
                 QSTransSegFillData fillInState = new QSTransSegFillData(
                     new float2(dr.x, dr.y),
-                    QuadConstructType.NewQuadToEnd
+                    QuadConstructType.NewQuadFromStart
                 );
                 QSTransSegFillData filledState = new QSTransSegFillData(
                     new float2(dr.y, 1),
@@ -284,6 +288,9 @@ public struct ValknutTransitionsBuilder
                 );
                 firstFillInSegment[0] = fillInState;
                 firstFillInSegment[1] = filledState;
+
+                Debug.Log(firstFillInSegment);
+
                 _transSegments[_transSegmentsIndexer.x++] = firstFillInSegment;
             }
             else if (i < _target.QuadsCount - 1)
@@ -313,9 +320,9 @@ public struct ValknutTransitionsBuilder
             }
 
             dr.x = dr.y;
-            if (_transSegmentsIndexer.x < _target.QuadsCount)
+            if (inFillDistancesIndexer < _target.QuadsCount)
             { 
-                dr.y += _inFillDistances[_transSegmentsIndexer.x] / inFillTotalDistance;
+                dr.y += _inFillDistances[inFillDistancesIndexer++] / inFillTotalDistance;
             }
         }
     }
