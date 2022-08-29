@@ -22,14 +22,14 @@ public class UIMainMenuCanvas : MonoBehaviour
 
     private void OnStartGameButtonPressed()
     {
-        InputDelegatesContainer.StartGameCommand?.Invoke();
+        StandaloneInputDelegatesContainer.StartGameCommand?.Invoke();
     }
 
     private void OnExitGameButtonPressed()
     {
-        if (InputDelegatesContainer.ExitGameCommand != null)
+        if (StandaloneInputDelegatesContainer.ExitGameCommand != null)
         {
-            InputDelegatesContainer.ExitGameCommand.Invoke();
+            StandaloneInputDelegatesContainer.ExitGameCommand.Invoke();
         }
         else
         { 

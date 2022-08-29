@@ -1,96 +1,53 @@
+using Unity.Mathematics;
 using UnityEngine;
 
-using Orazum.Utilities.ConstContainers;
-
-public class InputReceiverMobile : MonoBehaviour
+public class InputReceiverMobile : InputReceiver
 {
-    [SerializeField]
-    [Range(0, 0.5f)]
-    private float _swipeThreshold;
-#if !UNITY_EDITOR && (UNITY_ANDROID || UNITY_IOS)
-
-    private Camera _renderingCamera;
-
-    private Vector2 _pressPos;
-    private Vector2 _lastPos;
-
-    private bool _isSwiping;
-    private SwipeCommand _swipeCommand;
-    private bool _isSegmentSelected;
-
-    private bool _shouldRespond;
-
-    private void Awake()
+    private bool _isTouching;
+    protected override void CheckPointerDown()
     {
-        _swipeCommand = new SwipeCommand();
-
-        _shouldRespond = true;
-        InputDelegatesContainer.SetShouldRespond += SetShouldRespond;
-    }
-
-    private void OnDestroy()
-    { 
-        InputDelegatesContainer.SetShouldRespond -= SetShouldRespond;
-    }
-
-    private void SetShouldRespond(bool value)
-    {
-        _shouldRespond = value;
-    }
-
-    private void Start()
-    {
-        _renderingCamera = InputDelegatesContainer.GetRenderingCamera();
-    }
-
-    private void Update()
-    {
-        if (!_shouldRespond)
-        {
-            return;
-        }
-
         if (Input.touchCount == 1)
         {
-            Touch currentTouch = Input.GetTouch(0);
-            if (!_isSwiping)
-            {
-                _isSwiping = true;
-                _pressPos = currentTouch.position;
-                Ray ray = _renderingCamera.ScreenPointToRay(_pressPos);
-                if (Physics.Raycast(ray, out RaycastHit hitInfo, 1000,
-                   LayerUtilities.SEGMENT_POINTS_LAYER_MASK, QueryTriggerInteraction.Collide))
-                {
-                    _isSegmentSelected = true;
-                    InputDelegatesContainer.SelectSegmentCommand?.Invoke(hitInfo.collider);
-                }
-            }
-            else
-            { 
-                _lastPos = currentTouch.position;
-            }
-        }
-        else
-        { 
-            _isSwiping = false;
-            if (_isSegmentSelected)
-            {
-                _isSegmentSelected = false;
+            _isTouching = true;
+            _pressPos = new float3(Input.GetTouch(0).position, 0);
 
-                Vector2 viewStartPos = _renderingCamera.ScreenToViewportPoint(_pressPos);
-                Vector2 viewEndPos = _renderingCamera.ScreenToViewportPoint(_lastPos);
-
-                Vector2 delta = viewEndPos - viewStartPos;
-                if (delta.sqrMagnitude >= _swipeThreshold * _swipeThreshold)
-                {
-                    _swipeCommand.SetViewStartPos(viewStartPos);
-                    _swipeCommand.SetViewEndPos(viewEndPos);
-                    InputDelegatesContainer.SwipeCommand?.Invoke(_swipeCommand);
-                    return;
-                }
+            Ray ray = _inputCamera.ScreenPointToRay(_pressPos);
+            foreach (Selectable s in _registeredSelectables)
+            {
+                s.CheckSelectionOnPointerDown(ray);
             }
-            InputDelegatesContainer.DeselectSegmentCommand?.Invoke();
         }
     }
-#endif
+    protected override void CheckPointer()
+    {
+        if (Input.touchCount == 1)
+        {
+            _lastPos = new float3(Input.GetTouch(0).position, 0);
+        }
+    }
+    protected override void CheckPointerUp()
+    {
+        if (_isTouching && Input.touchCount == 0)
+        { 
+            CheckSwipeCommand();
+
+            Ray ray = _inputCamera.ScreenPointToRay(_lastPos);
+            foreach (Selectable s in _registeredSelectables)
+            {
+                s.CheckDeselectionOnPointerUp(ray);
+            }
+        }
+    }
+
+    private void CheckSwipeCommand()
+    {
+        float3 viewStartPos = _inputCamera.ScreenToViewportPoint(_pressPos);
+        float3 viewEndPos = _inputCamera.ScreenToViewportPoint(_lastPos);
+
+        float3 delta = viewEndPos - viewStartPos;
+        if (math.lengthsq(delta) >= _swipeThreshold * _swipeThreshold)
+        {
+            InputDelegatesContainer.SwipeCommand?.Invoke(new SwipeCommand(viewStartPos.xy, viewEndPos.xy));
+        }
+    }
 }

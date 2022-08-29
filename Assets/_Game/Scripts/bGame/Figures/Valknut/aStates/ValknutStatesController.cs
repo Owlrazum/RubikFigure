@@ -1,4 +1,5 @@
 using UnityEngine.Assertions;
+using static Orazum.Utilities.ConstContainers.LayerUtilities;
 
 public class ValknutStatesController : FigureStatesController
 {
@@ -6,7 +7,11 @@ public class ValknutStatesController : FigureStatesController
     {
         Valknut valknut = figure as Valknut;
         Assert.IsNotNull(valknut);
-        IdleState = new FigureIdleState(this, valknut);
+        if (figureParams.SelectMethod == SelectMethodType.Raycast)
+        {
+            RaycastSelectable raycastSelectable = new RaycastSelectable(SegmentPointsLayerMask);
+            IdleState = new FigureIdleState(raycastSelectable, this, valknut);
+        }
         MoveState = new ValknutMoveState(this, valknut, figureParams.MoveLerpSpeed);
         ShuffleState = new ValknutShuffleState(this, valknut, figureParams);
 

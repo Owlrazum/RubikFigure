@@ -1,4 +1,5 @@
 using UnityEngine.Assertions;
+using static Orazum.Utilities.ConstContainers.LayerUtilities;
 
 public class WheelStatesController : FigureStatesController
 {
@@ -7,7 +8,12 @@ public class WheelStatesController : FigureStatesController
         Wheel wheel = figure as Wheel;
         Assert.IsNotNull(wheel);
 
-        IdleState = new FigureIdleState(this, wheel);
+        if (figureParams.SelectMethod == SelectMethodType.Raycast)
+        {
+            RaycastSelectable raycastSelectable = new RaycastSelectable(SegmentPointsLayerMask);
+            IdleState = new FigureIdleState(raycastSelectable, this, wheel);
+        }
+
         MoveState = new WheelMoveState(this, wheel, figureParams.MoveLerpSpeed);
         ShuffleState = new WheelShuffleState(this, wheel, figureParams);
 

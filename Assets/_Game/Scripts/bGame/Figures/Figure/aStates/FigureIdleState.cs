@@ -5,37 +5,38 @@ public class FigureIdleState : FigureState
 { 
     protected SwipeCommand _currentSwipeCommand;
     protected FigureSegmentPoint _currentSelectedPoint;
-    public FigureIdleState(FigureStatesController statesController, Figure figure) 
+    protected Selectable _selectable;
+    public FigureIdleState(Selectable selectable, FigureStatesController statesController, Figure figure) 
         : base(statesController, figure)
-    { 
-
+    {
+        _selectable = selectable;
+        _selectable.SetSelectionActions(SelectAction, DeselectCheckOnPointerUp, DeselectAction);
     }
 
     public override void OnEnter()
     {
-        InputDelegatesContainer.SelectSegmentCommand += OnSelectSegmentCommand;
-        InputDelegatesContainer.DeselectSegmentCommand += OnDeselectSegmentCommand;
-        InputDelegatesContainer.SwipeCommand += OnSwipeCommand;
+        InputDelegatesContainer.RegisterSelectable(_selectable);
         InputDelegatesContainer.SetShouldRespond(true);
+
+        InputDelegatesContainer.SwipeCommand += OnSwipeCommand;
     }
 
     public override void OnExit()
     {
-        InputDelegatesContainer.SelectSegmentCommand -= OnSelectSegmentCommand;
-        InputDelegatesContainer.DeselectSegmentCommand -= OnDeselectSegmentCommand;
-        InputDelegatesContainer.SwipeCommand -= OnSwipeCommand;
+        InputDelegatesContainer.UnregisterSelectable(_selectable);
         InputDelegatesContainer.SetShouldRespond(false);
+
+        InputDelegatesContainer.SwipeCommand -= OnSwipeCommand;
     }
 
-    private void OnSelectSegmentCommand(Collider collider)
+    private void SelectAction(Collider collider)
     {
-        Debug.Log("OnSelectedSegmentCommand");
         bool isFound = collider.TryGetComponent(out FigureSegmentPointCollider segmentPointCollider);
         Assert.IsTrue(isFound);
         if (segmentPointCollider.ParentPoint.Segment == null)
         {
             _currentSelectedPoint = null;
-            Debug.LogWarning("No segment located here");
+            Debug.LogWarning("NoSegmentLocatedHere");
             return;
         }
 
@@ -43,15 +44,39 @@ public class FigureIdleState : FigureState
         _currentSelectedPoint.Segment.HighlightRender();
     }
 
-    private void OnDeselectSegmentCommand()
+    private bool DeselectCheckOnPointerUp(Collider collider)
     {
+        return _currentSwipeCommand == null;
+        // if (collider == null)
+        // {
+        //     return true;
+        // }
+        
+        // bool isFound = collider.TryGetComponent(out FigureSegmentPointCollider segmentPointCollider);
+        // Assert.IsTrue(isFound);
+        // if (segmentPointCollider.ParentPoint == _currentSelectedPoint)
+        // {
+        //     return false;
+        // }
+        // else
+        // { 
+        //     return true;
+        // }
+    }
+
+    private void DeselectAction()
+    {
+        Debug.Log("DeselectAction");
         _currentSelectedPoint?.Segment.DefaultRender();
         _currentSelectedPoint = null;
     }
 
     private void OnSwipeCommand(SwipeCommand swipeCommand)
     {
-        _currentSwipeCommand = swipeCommand;
+        if (_currentSelectedPoint != null)
+        { 
+            _currentSwipeCommand = swipeCommand;
+        }
     }
 
     public override FigureState HandleTransitions()
@@ -64,22 +89,14 @@ public class FigureIdleState : FigureState
         {
             FigureMoveState moveState = _statesController.MoveState;
             moveState.PrepareForMove(_currentSwipeCommand, _currentSelectedPoint);
+            DeselectAction();
             _currentSwipeCommand = null;
-            OnDeselectSegmentCommand();
             return moveState;
         }
     }
 
     public virtual void OnDestroy()
     {
-        if (InputDelegatesContainer.SelectSegmentCommand == null)
-        { 
-            InputDelegatesContainer.SelectSegmentCommand -= OnSelectSegmentCommand;
-        }
-        if (InputDelegatesContainer.DeselectSegmentCommand == null)
-        { 
-            InputDelegatesContainer.DeselectSegmentCommand -= OnDeselectSegmentCommand;
-        }
         if (InputDelegatesContainer.SwipeCommand != null)
         { 
             InputDelegatesContainer.SwipeCommand -= OnSwipeCommand;

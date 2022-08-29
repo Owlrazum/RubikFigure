@@ -22,16 +22,16 @@ public class GameController : MonoBehaviour
     private void Awake()
     {
         GameDelegatesContainer.GetGameState += GetGameState;
-        InputDelegatesContainer.StartGameCommand += OnStartGameCommand;
-        InputDelegatesContainer.ExitToMainMenuCommand += OnExitToMainMenuCommand;
+        StandaloneInputDelegatesContainer.StartGameCommand += OnStartGameCommand;
+        StandaloneInputDelegatesContainer.ExitToMainMenuCommand += OnExitToMainMenuCommand;
         DontDestroyOnLoad(gameObject);
     }
 
     private void OnDestroy()
     {
         GameDelegatesContainer.GetGameState -= GetGameState;
-        InputDelegatesContainer.StartGameCommand -= OnStartGameCommand;
-        InputDelegatesContainer.ExitToMainMenuCommand -= OnExitToMainMenuCommand;
+        StandaloneInputDelegatesContainer.StartGameCommand -= OnStartGameCommand;
+        StandaloneInputDelegatesContainer.ExitToMainMenuCommand -= OnExitToMainMenuCommand;
     }
 
     private void Start()

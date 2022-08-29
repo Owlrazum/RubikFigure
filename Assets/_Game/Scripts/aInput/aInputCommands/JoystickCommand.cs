@@ -1,11 +1,10 @@
+using Unity.Mathematics;
 public class JoystickCommand : InputCommand
 {
-    public float Horiz { get; private set; }
-    public float Vert  { get; private set; }
+    public float2 Joy { get; private set; }
 
-    public JoystickCommand(float horiz, float vert)
+    public JoystickCommand(float2 joy)
     {
-        Horiz = horiz;
-        Vert = vert;
+        Joy = joy;
     }
 }

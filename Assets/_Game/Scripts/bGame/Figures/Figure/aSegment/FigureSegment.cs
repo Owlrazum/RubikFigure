@@ -1,6 +1,5 @@
 using System;
 
-using Unity.Mathematics;
 using Unity.Collections;
 
 using UnityEngine;
@@ -14,22 +13,13 @@ using Orazum.Meshing;
 [RequireComponent(typeof(FigureSegmentRenderer))]
 public abstract class FigureSegment : MonoBehaviour
 {
-    public static int VertexCount { get; private set; }
-    public static void InitializeVertexCount(int vertexCount)
-    {
-        VertexCount = vertexCount;
-    }
-
     protected FigureSegmentMover _mover;
-    public FigureSegmentMover Mover { get { return _mover; } }
     protected FigureSegmentRenderer _renderer;
-    // private SegmentSelectionRespond _selectionRespond;
+    protected int _puzzleIndex;
 
     public MeshFilter MeshContainer { get { return _mover.MeshContainer; } }
-    protected int _puzzleIndex;
+    public FigureSegmentMover Mover { get { return _mover; } }
     public int PuzzleIndex { get { return _puzzleIndex; } }
-
-    private int2 _segmentIndex;
 
     private void Awake()
     {

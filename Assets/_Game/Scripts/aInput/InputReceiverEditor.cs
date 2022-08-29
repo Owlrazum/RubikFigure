@@ -1,90 +1,51 @@
+using Unity.Mathematics;
 using UnityEngine;
-using Orazum.Utilities.ConstContainers;
 
-public class InputReceiverEditor : MonoBehaviour
+public class InputReceiverEditor : InputReceiver
 {
-    [SerializeField]
-    [Range(0, 0.5f)]
-    private float _swipeThreshold;
-#if UNITY_EDITOR// && !UNITY_ANDROID && !UNITY_IOS
-
-    private Camera _renderingCamera;
-
-    private Vector2 _pressPos;
-    private Vector2 _lastPos;
-
-    private SwipeCommand _swipeCommand;
-    private bool _isSegmentSelected;
-
-    private bool _shouldRespond;
-
-    private void Awake()
+    protected override void CheckPointerDown()
     {
-        _swipeCommand = new SwipeCommand();
-
-        _shouldRespond = true;
-        InputDelegatesContainer.SetShouldRespond += SetShouldRespond;
-    }
-
-    private void OnDestroy()
-    { 
-        InputDelegatesContainer.SetShouldRespond -= SetShouldRespond;
-    }
-
-    private void SetShouldRespond(bool value)
-    {
-        _shouldRespond = value;
-    }
-
-    private void Start()
-    {
-        _renderingCamera = InputDelegatesContainer.GetRenderingCamera();
-    }
-
-    private void Update()
-    {
-        if (!_shouldRespond)
-        {
-            return;
-        }
-        
         if (Input.GetMouseButtonDown(0))
-        { 
+        {
             _pressPos = Input.mousePosition;
-            Ray ray = _renderingCamera.ScreenPointToRay(_pressPos);
-            if (Physics.Raycast(ray, out RaycastHit hitInfo, 1000,
-               LayerUtilities.SegmentPointsLayerMask, QueryTriggerInteraction.Collide))
+            
+            Ray ray = _inputCamera.ScreenPointToRay(_pressPos);
+            foreach (Selectable s in _registeredSelectables)
             {
-                _isSegmentSelected = true;
-                InputDelegatesContainer.SelectSegmentCommand?.Invoke(hitInfo.collider);
+                s.CheckSelectionOnPointerDown(ray);
             }
         }
-
+    }
+    protected override void CheckPointer()
+    {
         if (Input.GetMouseButton(0))
         {
             _lastPos = Input.mousePosition;
         }
-
+    }
+    protected override void CheckPointerUp()
+    {
         if (Input.GetMouseButtonUp(0))
         {
-            if (_isSegmentSelected)
+            CheckSwipeCommand();
+
+            Ray ray = _inputCamera.ScreenPointToRay(_pressPos);
+            foreach (Selectable s in _registeredSelectables)
             {
-                _isSegmentSelected = false;
-
-                Vector2 viewStartPos = _renderingCamera.ScreenToViewportPoint(_pressPos);
-                Vector2 viewEndPos = _renderingCamera.ScreenToViewportPoint(_lastPos);
-
-                Vector2 delta = viewEndPos - viewStartPos;
-                if (delta.sqrMagnitude >= _swipeThreshold * _swipeThreshold)
-                {
-                    _swipeCommand.SetViewStartPos(viewStartPos);
-                    _swipeCommand.SetViewEndPos(viewEndPos);
-                    InputDelegatesContainer.SwipeCommand?.Invoke(_swipeCommand);
-                    return;
-                }
+                s.CheckDeselectionOnPointerUp(ray);
             }
-            InputDelegatesContainer.DeselectSegmentCommand?.Invoke();
         }
     }
-#endif
+
+    private void CheckSwipeCommand()
+    {
+        float3 viewStartPos = _inputCamera.ScreenToViewportPoint(_pressPos);
+        float3 viewEndPos = _inputCamera.ScreenToViewportPoint(_lastPos);
+
+        float3 delta = viewEndPos - viewStartPos;
+        if (math.lengthsq(delta) >= _swipeThreshold * _swipeThreshold)
+        {
+            InputDelegatesContainer.SwipeCommand?.Invoke(new SwipeCommand(viewStartPos.xy, viewEndPos.xy));
+        }
+    }
 }

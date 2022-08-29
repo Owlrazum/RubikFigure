@@ -105,36 +105,3 @@ public class Wheel : Figure
         return "Wheel";
     }
 }
-
-
-/*
-    public Vector3 GetEmptySegmentPointPosition(int2 emptyIndex)
-    {
-        return _segmentPoints[emptyIndex].transform.position;
-    }
-
-    
-*/
-
-// float rotationAngle = 0;
-        // int2 toIndex = rotationMove.ToIndex;
-        // int2 fromIndex = rotationMove.FromIndex;
-        // int sideDeltaCW = Mathf.Abs(toIndex.x - fromIndex.x);
-        // int sideDeltaCCW = Mathf.Abs(toIndex.x + SideCount - fromIndex.x);
-        // if (sideDeltaCW < sideDeltaCCW)
-        // {
-        //     rotationAngle = sideDeltaCW * TAU / SideCount * Mathf.Rad2Deg;
-        //     if (toIndex.x < fromIndex.x)
-        //     {
-        //         rotationAngle = -rotationAngle;
-        //     }
-        // }
-        // else
-        // {
-        //     rotationAngle = sideDeltaCCW * TAU / SideCount * Mathf.Rad2Deg;
-        //     if (toIndex.x + SideCount < fromIndex.x)
-        //     {
-        //         rotationAngle = -rotationAngle;
-        //     }
-        // }
-        // rotationMove.AssignRotation(Quaternion.AngleAxis(rotationAngle, Vector3.up));

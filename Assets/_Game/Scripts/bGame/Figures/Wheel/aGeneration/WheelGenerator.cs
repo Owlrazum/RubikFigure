@@ -63,7 +63,6 @@ public class WheelGenerator : FigureGenerator
             2 * (_segmentResolution + 1),
             6 * _segmentResolution
         );
-        FigureSegment.InitializeVertexCount(_segmentBuffersData.Count.x);
 
         _segmentPointBuffersData = new MeshBuffersIndexers();
         _segmentPointBuffersData.Count = new int2(

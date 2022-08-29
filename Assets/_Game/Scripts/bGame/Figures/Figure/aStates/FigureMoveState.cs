@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 
+using Unity.Mathematics;
+
 using UnityEngine;
 using UnityEngine.Assertions;
 
@@ -32,16 +34,16 @@ public abstract class FigureMoveState : FigureState
     {
         Assert.IsNotNull(_currentSwipeCommand);
         Assert.IsNotNull(_currentSelectedPoint.Segment);
-        Camera renderingCamera = InputDelegatesContainer.GetRenderingCamera();
+        Camera renderingCamera = InputDelegatesContainer.GetInputCamera();
         float planeDistance = (_figureCenter - renderingCamera.transform.position).magnitude;
-        Vector3 viewStartPos = new Vector3(_currentSwipeCommand.ViewStartPos.x,
+        float3 viewStartPos = new Vector3(_currentSwipeCommand.ViewStartPos.x,
             _currentSwipeCommand.ViewStartPos.y, planeDistance);
-        Vector3 viewEndPos = new Vector3(_currentSwipeCommand.ViewEndPos.x,
+        float3 viewEndPos = new Vector3(_currentSwipeCommand.ViewEndPos.x,
             _currentSwipeCommand.ViewEndPos.y, planeDistance);
 
-        Vector3 worldStartPos = renderingCamera.ViewportToWorldPoint(viewStartPos);
-        Vector3 worldEndPos = renderingCamera.ViewportToWorldPoint(viewEndPos);
-        Vector3 worldDir = (worldEndPos - worldStartPos).normalized;
+        float3 worldStartPos = renderingCamera.ViewportToWorldPoint(viewStartPos);
+        float3 worldEndPos = renderingCamera.ViewportToWorldPoint(viewEndPos);
+        float3 worldDir = math.normalize(worldEndPos - worldStartPos);
 
         var moves = DetermineMovesFromInput(worldStartPos, worldDir);
         if (moves == null)

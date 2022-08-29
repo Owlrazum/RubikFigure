@@ -23,6 +23,6 @@ public class UIEndLevelCanvas : UIBaseFadingCanvas
 
     private void OnReturnMainMenuPressed()
     {
-        InputDelegatesContainer.ExitToMainMenuCommand();
+        StandaloneInputDelegatesContainer.ExitToMainMenuCommand();
     }
 }

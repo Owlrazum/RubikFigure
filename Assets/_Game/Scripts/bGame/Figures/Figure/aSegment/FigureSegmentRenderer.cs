@@ -17,6 +17,7 @@ public class FigureSegmentRenderer : MonoBehaviour
         _meshRenderer.material = _defaultMaterial;
     }
 
+    [ContextMenu("Print")]
     public void Highlight()
     {
         _meshRenderer.material = _highlightMaterial;

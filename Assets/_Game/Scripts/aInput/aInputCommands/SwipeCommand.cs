@@ -1,17 +1,19 @@
-using UnityEngine;
+using Unity.Mathematics;
 
 public class SwipeCommand : InputCommand
 { 
-    public Vector2 ViewStartPos { get; private set; }
-    public Vector2 ViewEndPos { get; private set; }
+    public float2 ViewStartPos { get; private set; }
+    public float2 ViewEndPos { get; private set; }
 
-    public void SetViewStartPos(Vector2 viewStartPosArg)
+    public SwipeCommand(float2 startViewPos, float2 endViewPos)
     {
-        ViewStartPos = viewStartPosArg;
+        ViewStartPos = startViewPos;
+        ViewEndPos = endViewPos;
     }
 
-    public void SetViewEndPos(Vector2 viewEndPosArg)
+    public SwipeCommand(float4 startEndViewPos)
     {
-        ViewEndPos = viewEndPosArg;
+        ViewStartPos = startEndViewPos.xy;
+        ViewEndPos = startEndViewPos.zw;
     }
 }

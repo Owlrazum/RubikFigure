@@ -10,13 +10,13 @@ public class CameraController : MonoBehaviour
         bool isFound = TryGetComponent(out _renderingCamera);
         Assert.IsTrue(isFound);
         GameDelegatesContainer.GetRenderingCamera += GetRenderingCamera;
-        InputDelegatesContainer.GetRenderingCamera += GetRenderingCamera;
+        InputDelegatesContainer.GetInputCamera += GetRenderingCamera;
     }
 
     private void OnDestroy()
     {
         GameDelegatesContainer.GetRenderingCamera -= GetRenderingCamera;
-        InputDelegatesContainer.GetRenderingCamera -= GetRenderingCamera;
+        InputDelegatesContainer.GetInputCamera -= GetRenderingCamera;
     }
 
     private Camera GetRenderingCamera()

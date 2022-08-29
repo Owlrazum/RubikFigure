@@ -52,12 +52,10 @@ namespace Orazum.UI
             _localPointHandlers = new Dictionary<int, IPointerLocalPointHandler>();
 
             UIDelegatesContainer.GetEventsUpdater += GetUpdater;
-            InputDelegatesContainer.GetPointerPosition += GetPointerPosition;
         }
         private void OnDestroy()
         { 
             UIDelegatesContainer.GetEventsUpdater -= GetUpdater;
-            InputDelegatesContainer.GetPointerPosition -= GetPointerPosition;
         }
 
         private UIPointerEventsUpdater GetUpdater()
