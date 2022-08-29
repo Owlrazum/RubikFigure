@@ -18,9 +18,5 @@ public class ValknutSegment : FigureSegment
     {
         base.Initialize(verticesArg, puzzleIndexArg);
         _puzzleIndex = puzzleIndexArg;
-        if (_puzzleIndex % 2 == 0)
-        { 
-
-        }
     }
 }

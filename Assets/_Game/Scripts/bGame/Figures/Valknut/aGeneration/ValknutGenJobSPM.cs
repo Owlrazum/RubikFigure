@@ -34,8 +34,6 @@ public struct ValknutGenJobSPM : IJob
     private MeshBuffersIndexers _rendererBuffersData;
     private MeshBuffersIndexers _colliderBuffersData;
 
-    private int _segmentIndex;
-
     private float3 _heightOffset;
 
     private float3 _startRay;
@@ -46,7 +44,6 @@ public struct ValknutGenJobSPM : IJob
     {
         _rendererBuffersData = new MeshBuffersIndexers();
         _colliderBuffersData = new MeshBuffersIndexers();
-        _segmentIndex = 0;
 
         _heightOffset = new float3(0, P_Height, 0);
 

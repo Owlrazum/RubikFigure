@@ -18,7 +18,6 @@ public class Valknut : Figure
 
     protected override void MakeSegmentMove(FigureSegment segment, FigureSegmentMove move, Action moveCompleteAction)
     {
-        Debug.Log($"Making ${move}");
         Assert.IsTrue(IsValidIndex(move.FromIndex) && IsValidIndex(move.ToIndex));
         if (move is ValknutVerticesMove verticesMove)
         { 
@@ -44,11 +43,13 @@ public class Valknut : Figure
         {
             Assert.IsTrue(_transitionDatas[verticesMove.ToIndex].CW.IsCreated);
             verticesMove.AssignTransitionPositions(_transitionDatas[verticesMove.ToIndex].CW);
+            Debug.Log($"TransitionData CW {_transitionDatas[verticesMove.ToIndex].CWID}");
         }
         else
         { 
             Assert.IsTrue(_transitionDatas[verticesMove.ToIndex].AntiCW.IsCreated);
             verticesMove.AssignTransitionPositions(_transitionDatas[verticesMove.ToIndex].AntiCW);
+            Debug.Log($"TransitionData AntiCW {_transitionDatas[verticesMove.ToIndex].AntiCWID}");
         }
     }
 

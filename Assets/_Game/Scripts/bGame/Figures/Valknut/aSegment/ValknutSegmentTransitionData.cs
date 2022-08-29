@@ -7,5 +7,7 @@ using Unity.Collections;
 public struct ValknutQSTransSegments
 {
     public NativeArray<QSTransSegment>.ReadOnly CW;
+    public int CWID;
     public NativeArray<QSTransSegment>.ReadOnly AntiCW;
+    public int AntiCWID;
 }

@@ -22,11 +22,10 @@ public class ValknutSegmentMover : FigureSegmentMover
 
     private NativeArray<VertexData> _vertices;
     private NativeArray<short> _indices;
-
-    private MeshBuffersIndexers _buffersData;
+    private NativeArray<MeshBuffersIndexers> _indexersShared;
+    
     private QSTransition _quadStripTransition;
 
-    private ValknutSegmentMoveJob _moveJob;
     private float3x2 _normalUV;
 
     public override void Initialize(NativeArray<VertexData> verticesArg)
@@ -37,10 +36,9 @@ public class ValknutSegmentMover : FigureSegmentMover
         _vertices = new NativeArray<VertexData>(
             (ValknutGenerator.MaxRangesCountForOneSegment + 2) * 2, Allocator.Persistent);
         _indices = new NativeArray<short>(ValknutGenerator.MaxRangesCountForOneSegment * 6, Allocator.Persistent);
-
-        _buffersData = new MeshBuffersIndexers();
+        _indexersShared = new NativeArray<MeshBuffersIndexers>(1, Allocator.Persistent);
+        
         _quadStripTransition = new QSTransition(ref _vertices, ref _indices);
-        _moveJob = new ValknutSegmentMoveJob(ref _buffersData, ref _quadStripTransition);
     }
 
     protected override void OnDestroy()
@@ -49,6 +47,7 @@ public class ValknutSegmentMover : FigureSegmentMover
 
         CollectionUtilities.DisposeIfNeeded(_vertices);
         CollectionUtilities.DisposeIfNeeded(_indices);
+        CollectionUtilities.DisposeIfNeeded(_indexersShared);
     }
 
     public override void StartMove(
@@ -68,18 +67,16 @@ public class ValknutSegmentMover : FigureSegmentMover
     {
         float lerpParam = 0;
         Assert.IsTrue(verticesMove.TransSegments.IsCreated);
-        _quadStripTransition.AssignTransitionData(
-            verticesMove.TransSegments,
-            _normalUV
-        );
-        // _moveJob.InputQuadStripTransition.AssignTransitionData(
-        //     verticesMove.TransitionPositions,
-        //     verticesMove.LerpRanges
+        // _quadStripTransition.AssignTransitionData(
+        //     verticesMove.TransSegments,
+        //     _normalUV
         // );
-
-        // _moveJob.P_LerpParam = EaseInOut(0.5f);
-        // _segmentMoveJobHandle = _moveJob.Schedule(_segmentMoveJobHandle);
-        // _wasJobScheduled = true;
+        _quadStripTransition.AssignTransitionData(verticesMove.TransSegments, _normalUV);
+        ValknutSegmentMoveJob moveJob = new ValknutSegmentMoveJob()
+        {
+            InputQuadStripTransition = _quadStripTransition,
+            OutputIndexers = _indexersShared
+        };
 
         while (lerpParam < 1)
         {
@@ -89,15 +86,12 @@ public class ValknutSegmentMover : FigureSegmentMover
                 lerpParam = 1;
             }
 
-            _quadStripTransition.UpdateWithLerpPos(EaseInOut(lerpParam), ref _buffersData);
-            AssignMeshBuffers(_vertices, _indices, _buffersData);
-            _buffersData.Count = int2.zero;
-            _buffersData.Start = int2.zero;
-            _buffersData.LocalCount = int2.zero;
-            print(EaseInOut(lerpParam));
-            // _moveJob.P_LerpParam = EaseInOut(lerpParam);
-            // _segmentMoveJobHandle = _moveJob.Schedule(_segmentMoveJobHandle);
-            // _wasJobScheduled = true;
+            // _quadStripTransition.UpdateWithLerpPos(EaseInOut(lerpParam), ref _buffersData);
+            // AssignMeshBuffers(_vertices, _indices, _buffersData);
+            // print(EaseInOut(lerpParam));
+            moveJob.P_LerpParam = EaseInOut(lerpParam);
+            _segmentMoveJobHandle = moveJob.Schedule(_segmentMoveJobHandle);
+            _wasJobScheduled = true;
             yield return null;
         }
 
@@ -108,8 +102,9 @@ public class ValknutSegmentMover : FigureSegmentMover
     {
         if (_wasMoveCompleted)
         {
-            // _segmentMoveJobHandle.Complete();
-            // AssignMeshBuffers(_vertices, _indices, _moveJob.BuffersData);
+            MeshBuffersIndexers indexers = _indexersShared[0];
+            indexers.Reset();
+            _indexersShared[0] = indexers;
 
             _moveCompleteAction?.Invoke();
             _wasMoveCompleted = false;
@@ -117,10 +112,10 @@ public class ValknutSegmentMover : FigureSegmentMover
         else if (_wasJobScheduled)
         {
             _segmentMoveJobHandle.Complete();
-            print($"{_moveJob.BuffersData} ; {_buffersData}");
-            // MeshBuffersData buffersData = new MeshBuffersData();
-            // buffersData.Count = new int2(10, 24);
-            AssignMeshBuffers(_vertices, _indices, _buffersData);
+            MeshBuffersIndexers indexers = _indexersShared[0];
+            AssignMeshBuffers(_vertices, _indices, indexers);
+            indexers.Reset();
+            _indexersShared[0] = indexers;
             
             _wasJobScheduled = false;
         }

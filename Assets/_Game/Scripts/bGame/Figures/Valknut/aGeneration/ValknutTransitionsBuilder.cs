@@ -100,8 +100,8 @@ public struct ValknutTransitionsBuilder
         int outDistancesIndexer = 0;
 
         int3 index = int3.zero;
-        GetIndex(_origin.QuadsCount, out index);
-        for (int i = index.x; index.z > 0 ? i < index.z : i > index.z; i += index.y)
+        GetIndexOrigin(_origin.LineSegmentsCount, out index);
+        for (int i = index.x; index.y > 0 ? i < index.z : i >= index.z; i += index.y)
         {
             float2x2 startSeg = new float2x2(_origin[i][0], _origin[i][1]);
             float2x2 endSeg = new float2x2(_origin[i + index.y][0], _origin[i + index.y][1]);
@@ -113,12 +113,12 @@ public struct ValknutTransitionsBuilder
             outDistancesIndexer++;
         }
 
-        GetIndex(_origin.QuadsCount + 1, out index);
-        ComputeDistsPosInEmptyZone(ref index, ref fillInOutTotalDistances);
+        GetIndexEmptyZone(_origin.LineSegmentsCount, out int emptyIndex);
+        ComputeDistsPosInEmptyZone(in emptyIndex, ref fillInOutTotalDistances);
 
         int inDistancesIndexer = 0;
-        GetIndex(_target.QuadsCount, out index);
-        for (int i = index.x; index.z > 0 ? i < index.z : i > index.z; i += index.y)
+        GetIndexTarget(_target.LineSegmentsCount, out index);
+        for (int i = index.x; index.y > 0 ? i < index.z : i >= index.z; i += index.y)
         {
             float2x2 startSeg = new float2x2(_target[i][0], _target[i][1]);
             float2x2 endSeg = new float2x2(_target[i + index.y][0], _target[i + index.y][1]);
@@ -132,19 +132,17 @@ public struct ValknutTransitionsBuilder
 
         _transSegmentsIndexer.x = 0;
     }
-    private void ComputeDistsPosInEmptyZone(ref int3 index, ref float2 fillInOutTotalDistances)
+    private void ComputeDistsPosInEmptyZone(in int emptyIndex, ref float2 fillInOutTotalDistances)
     {
         GetIntersectionRays(out float4x2 originSegmentRays, out float4 targetRay);
         bool intersect = IntersectSegmentToRay(originSegmentRays, targetRay, out float2x2 intersectSegment);
         Assert.IsTrue(intersect, $"{_transitionType} is not intersected");
 
-        int lastIndex = index.z - index.y;
-
-        float2x2 startSeg = new float2x2(_origin[lastIndex][0], _origin[lastIndex][1]);
+        float2x2 startSeg = new float2x2(_origin[emptyIndex][0], _origin[emptyIndex][1]);
         float2x2 endSeg = new float2x2(intersectSegment[0], intersectSegment[1]);
         _startEndSegs[_transSegmentsIndexer.x++] = new float2x4(startSeg[0], startSeg[1], endSeg[0], endSeg[1]);
 
-        float2x2 delta = intersectSegment - _origin[lastIndex];
+        float2x2 delta = intersectSegment - _origin[emptyIndex];
         _emptyZoneLength = math.length(delta[0]);
         fillInOutTotalDistances.x += _emptyZoneLength;
         fillInOutTotalDistances.y += _emptyZoneLength;
@@ -173,19 +171,45 @@ public struct ValknutTransitionsBuilder
 
         throw new System.Exception();
     }
-    private void GetIndex(int upperBound, out int3 index)
+    private void GetIndexOrigin(int upperBound, out int3 index)
     {
         if (_transitionType == TransitionType.TasToTas || _transitionType == TransitionType.OasToOas)
         {
             index.x = 0;
             index.y = 1;
-            index.z = upperBound;
+            index.z = upperBound - 1;
         }
         else
         {
             index.x = upperBound - 1;
             index.y = -1;
-            index.z = 0;
+            index.z = 1;
+        }
+    }
+    private void GetIndexEmptyZone(int upperBound, out int index)
+    { 
+        if (_transitionType == TransitionType.TasToTas || _transitionType == TransitionType.OasToOas)
+        {
+            index = upperBound - 1;
+        }
+        else
+        {
+            index = 0;
+        }
+    }
+    private void GetIndexTarget(int upperBound, out int3 index)
+    { 
+        if (_transitionType == TransitionType.TasToTas || _transitionType == TransitionType.OasToTas)
+        {
+            index.x = 0;
+            index.y = 1;
+            index.z = upperBound - 1;
+        }
+        else
+        {
+            index.x = upperBound - 1;
+            index.y = -1;
+            index.z = 1;
         }
     }
 
@@ -288,8 +312,6 @@ public struct ValknutTransitionsBuilder
                 );
                 firstFillInSegment[0] = fillInState;
                 firstFillInSegment[1] = filledState;
-
-                Debug.Log(firstFillInSegment);
 
                 _transSegments[_transSegmentsIndexer.x++] = firstFillInSegment;
             }

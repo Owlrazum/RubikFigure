@@ -71,7 +71,6 @@ namespace Orazum.Meshing
                             }
                             else if (fillData.ConstructType == QuadConstructType.ContinueQuadFromStart)
                             {
-                                Debug.Log($"local lerp param {localLerpParam}");
                                 _quadStripBuilder.Continue(new float2x2(middle.xy, middle.zw), ref buffersData);
                             }
                             else
@@ -82,8 +81,6 @@ namespace Orazum.Meshing
                     }
                 }
             }
-
-            Debug.Log("Updated transition mesh.");
         }
     }
 }

@@ -16,5 +16,12 @@ namespace Orazum.Meshing
         {
             return $"{Start.x} {Count.x} {Start.y} {Count.y}";
         }
+
+        public void Reset()
+        {
+            Count = int2.zero;
+            Start = int2.zero;
+            LocalCount = int2.zero;
+        }
     }
 }
