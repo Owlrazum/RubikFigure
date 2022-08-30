@@ -1,5 +1,5 @@
 using UnityEngine;
-using Orazum.Utilities.ConstContainers;
+using Orazum.Constants;
 
 public class TutorialController : MonoBehaviour
 {
@@ -7,7 +7,7 @@ public class TutorialController : MonoBehaviour
 
     private void Awake()
     { 
-        shouldShowTutorial = PlayerPrefs.GetInt(PlayerPrefsContainer.AtLeastOneLevelCompleted, 0) == 0;
+        shouldShowTutorial = PlayerPrefs.GetInt(PlayerPreferences.AtLeastOneLevelCompleted, 0) == 0;
 
         GameDelegatesContainer.EventLevelCompleted += OnLevelCompleted;
 
@@ -25,7 +25,7 @@ public class TutorialController : MonoBehaviour
     { 
         if (shouldShowTutorial)
         { 
-            PlayerPrefs.SetInt(PlayerPrefsContainer.AtLeastOneLevelCompleted, 1);
+            PlayerPrefs.SetInt(PlayerPreferences.AtLeastOneLevelCompleted, 1);
             shouldShowTutorial = false;
         }
     }

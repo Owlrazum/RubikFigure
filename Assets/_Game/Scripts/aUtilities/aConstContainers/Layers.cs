@@ -1,6 +1,6 @@
-namespace Orazum.Utilities.ConstContainers
+namespace Orazum.Constants
 {
-    public static class LayerUtilities
+    public static class Layers
     {
         public static bool IsInLayerMaskLayer(int layer, int layerMask)
         {

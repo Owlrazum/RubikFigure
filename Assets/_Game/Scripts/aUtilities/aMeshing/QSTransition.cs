@@ -1,8 +1,6 @@
 using Unity.Mathematics;
 using Unity.Collections;
 
-using UnityEngine;
-
 using static QSTransSegment;
 
 namespace Orazum.Meshing
@@ -43,35 +41,38 @@ namespace Orazum.Meshing
                     float2 lerpRange = fillData.LerpRange;
                     if (globalLerpParam >= lerpRange.x && globalLerpParam <= lerpRange.y)
                     {
-                        float4 start = new float4(segment.StartLineSegment[0], segment.StartLineSegment[1]);
-                        float4 end = new float4(segment.EndLineSegment[0], segment.EndLineSegment[1]);
+                        float3x2 start = segment.StartLineSegment;
+                        float3x2 end = segment.EndLineSegment;
 
-                        if (fillData.ConstructType == QuadConstructType.NewQuadStartToEnd ||
-                            fillData.ConstructType == QuadConstructType.ContinueQuadStartToEnd)
+                        if (fillData.QuadType == QuadConstructType.NewQuadStartToEnd ||
+                            fillData.QuadType == QuadConstructType.ContinueQuadStartToEnd)
                         {
-                            if (fillData.ConstructType == QuadConstructType.NewQuadStartToEnd)
+                            if (fillData.QuadType == QuadConstructType.NewQuadStartToEnd)
                             { 
-                                _quadStripBuilder.Start(new float2x2(start.xy, start.zw), ref buffersData);
+                                _quadStripBuilder.Start(start, ref buffersData);
                             }
-                            _quadStripBuilder.Continue(new float2x2(end.xy, end.zw), ref buffersData);
+                            _quadStripBuilder.Continue(end, ref buffersData);
                         }
                         else
                         { 
                             float localLerpParam = math.unlerp(lerpRange.x, lerpRange.y, globalLerpParam);
-                            float4 middle = math.lerp(start, end, localLerpParam);
-                            if (fillData.ConstructType == QuadConstructType.NewQuadFromStart)
+                            float3x2 middle = new float3x2(
+                                math.lerp(start[0], end[0], localLerpParam),
+                                math.lerp(start[1], end[1], localLerpParam)
+                            ); 
+                            if (fillData.QuadType == QuadConstructType.NewQuadFromStart)
                             { 
-                                _quadStripBuilder.Start(new float2x2(start.xy, start.zw), ref buffersData);
-                                _quadStripBuilder.Continue(new float2x2(middle.xy, middle.zw), ref buffersData);
+                                _quadStripBuilder.Start(start, ref buffersData);
+                                _quadStripBuilder.Continue(middle, ref buffersData);
                             }
-                            else if (fillData.ConstructType == QuadConstructType.NewQuadToEnd)
+                            else if (fillData.QuadType == QuadConstructType.NewQuadToEnd)
                             {
-                                _quadStripBuilder.Start(new float2x2(middle.xy, middle.zw), ref buffersData);
-                                _quadStripBuilder.Continue(new float2x2(end.xy, end.zw), ref buffersData);
+                                _quadStripBuilder.Start(middle, ref buffersData);
+                                _quadStripBuilder.Continue(end, ref buffersData);
                             }
-                            else if (fillData.ConstructType == QuadConstructType.ContinueQuadFromStart)
+                            else if (fillData.QuadType == QuadConstructType.ContinueQuadFromStart)
                             {
-                                _quadStripBuilder.Continue(new float2x2(middle.xy, middle.zw), ref buffersData);
+                                _quadStripBuilder.Continue(middle, ref buffersData);
                             }
                             else
                             {

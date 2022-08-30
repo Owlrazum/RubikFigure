@@ -4,7 +4,7 @@ using Unity.Mathematics;
 using Unity.Collections;
 
 using Orazum.Meshing;
-using static Orazum.Math.MathUtilities;
+using static Orazum.Constants.Math;
 
 [BurstCompile]
 public struct WheelSegmentPointMeshGenJob : IJob

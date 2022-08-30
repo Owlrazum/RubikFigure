@@ -1,6 +1,6 @@
 {
     "name": "aAssemblyConstContainers",
-    "rootNamespace": "Orazum.Utilities.Containers",
+    "rootNamespace": "Orazum.Constants",
     "references": [],
     "includePlatforms": [],
     "excludePlatforms": [],

@@ -8,54 +8,50 @@ namespace Orazum.Math
     {
         public const float Epsilon = 1E-5F;
 
-        #region EasingFunctions
-        public static float EaseIn(float lerpParam)
-        {
-            return lerpParam * lerpParam;
-        }
-
-        public static float Flip(float t)
-        {
-            return 1 - t;
-        }
-
-        public static float EaseOut(float lerpParam)
-        {
-            return Flip(EaseIn(Flip(lerpParam)));
-        }
-
-        public static float EaseInOut(float lerpParam)
-        {
-            return Mathf.Lerp(EaseIn(lerpParam), EaseOut(lerpParam), lerpParam);
-        }
-        #endregion
-
         public static float CrossScalar(float2 lhs, float2 rhs)
         {
             return rhs.x * lhs.y - rhs.y * lhs.x;
         }
-        
+
         #region Ray Intersection
-        public static float4 RayFromDirection(float2 origin, float2 direction)
+        public static float2x2 RayFromDirection(float2 origin, float2 direction)
         {
-            return new float4(origin, direction);
+            return new float2x2(origin, direction);
         }
 
-        public static float4 RayFromDelta(float2 start, float2 end)
+        public static float3x2 RayFromDirection(float3 origin, float3 direction)
         {
-            return new float4(start, math.normalize(end - start));
+            return new float3x2(origin, direction);
         }
 
-        public static float4x2 GetSegmentRays(in float2x2 start, in float2x2 end)
+        public static float2x2 RayFromDelta(float2 start, float2 end)
         {
-            return new float4x2(RayFromDelta(start[0], end[0]),
-                                RayFromDelta(start[1], end[1]));
+            return new float2x2(start, math.normalize(end - start));
+        }
+
+        public static float3x2 RayFromDelta(float3 start, float3 end)
+        {
+            return new float3x2(start, math.normalize(end - start));
+        }
+
+        public static float2x4 GetSegmentRays(in float2x2 start, in float2x2 end)
+        {
+            float2x2 r1 = RayFromDelta(start[0], end[1]);
+            float2x2 r2 = RayFromDelta(start[1], end[1]);
+            return new float2x4(r1[0], r1[1], r2[0], r2[1]);
+        }
+
+        public static float3x4 GetSegmentRays(in float3x2 start, in float3x2 end)
+        {
+            float3x2 r1 = RayFromDelta(start[0], end[1]);
+            float3x2 r2 = RayFromDelta(start[1], end[1]);
+            return new float3x4(r1[0], r1[1], r2[0], r2[1]);
         }
 
         /// <summary>
         /// intersection will be on xz, and y = 0
         /// </summary>
-        public static bool IntersectRays(float4 r1, float4 r2, out float2 intersection)
+        public static bool IntersectRays2D(float4 r1, float4 r2, out float2 intersection)
         {
             intersection = float2.zero;
             float det = CrossScalar(r1.zw, r2.zw);
@@ -80,18 +76,31 @@ namespace Orazum.Math
             }
         }
 
-        public static bool IntersectRays(float4 r1, float4 r2, out float3 intersection)
+        public static bool IntersectRays2D(float4 r1, float4 r2, out float3 intersection)
         {
-            bool toReturn = IntersectRays(r1, r2, out float2 p);
+            bool toReturn = IntersectRays2D(r1, r2, out float2 p);
             intersection = x0z(p);
             return toReturn;
         }
 
-        public static bool IntersectSegmentToRay(in float4x2 segmentRays, in float4 ray, out float2x2 intersection)
+        public static bool IntersectRays2D(float3x2 r1, float3x2 r2, out float3 intersection)
+        {
+            float4 r1_2D = new float4(r1[0].xz, r1[1].xz);
+            float4 r2_2D = new float4(r2[0].xz, r2[1].xz);
+            bool toReturn = IntersectRays2D(r1_2D, r2_2D, out float2 p);
+            intersection = x0z(p);
+            return toReturn;
+        }
+
+        public static bool IntersectSegmentToRay2D(
+            in float3x2 firstSegmentRay, 
+            in float3x2 secondSegmentRay, 
+            in float3x2 ray, 
+            out float3x2 intersection)
         { 
-            intersection = new float2x2();
-            bool first = IntersectRays(segmentRays[0], ray, out intersection[0]);
-            bool second = IntersectRays(segmentRays[1], ray, out intersection[1]);
+            intersection = new float3x2();
+            bool first = IntersectRays2D(firstSegmentRay, ray, out intersection[0]);
+            bool second = IntersectRays2D(secondSegmentRay, ray, out intersection[1]);
             return first && second;
         }
 
@@ -100,11 +109,11 @@ namespace Orazum.Math
             intersection = new float2x2();
             // DrawRay(r1[0], 1, 100);
             // DrawRay(r2[0], 1, 100);
-            bool first = IntersectRays(r1[0], r2[0], out intersection[0]);
+            bool first = IntersectRays2D(r1[0], r2[0], out intersection[0]);
 
             // DrawRay(r1[1], 1, 100);
             // DrawRay(r2[1], 1, 100);
-            bool second = IntersectRays(r1[1], r2[1], out intersection[1]);
+            bool second = IntersectRays2D(r1[1], r2[1], out intersection[1]);
             return first && second;
         }
 
@@ -117,6 +126,10 @@ namespace Orazum.Math
         public static float3 x0z(in float2 xy)
         {
             return new float3(xy.x, 0, xy.y);
+        }
+        public static float3x2 x0z(in float2x2 xy)
+        {
+            return new float3x2(x0z(xy[0]), x0z(xy[1]));
         }
 
         public static Vector3 ProjectVector(Vector3 toProject, Vector3 onto)
@@ -167,11 +180,6 @@ namespace Orazum.Math
         private static int t;
         #region FreyaHolmer
         
-        /// <summary>
-        /// The 2 * PI value.
-        /// <see href="https://tauday.com/tau-manifesto">Tau manifesto.</see>
-        /// </summary>
-        public const float TAU = 6.28318530717959f;  
         public static float Frac(float x) => x - Mathf.Floor(x);
         public static float Smooth01(float x) => x * x * (3 - 2 * x);
         public static float InverseLerpUnclamped(float a, float b, float value) => (value - a) / (b - a);

@@ -1,5 +1,5 @@
 using Unity.Mathematics;
-using static Orazum.Math.MathUtilities;
+using static Orazum.Constants.Math;
 
 /// <summary>
 /// Computes rays starting at 12 hour and moves clockwise.

@@ -45,30 +45,30 @@ public abstract class FigureGenerator : MonoBehaviour
     protected abstract void StartMeshGeneration();
     protected abstract void GenerateFigureGameObject();
 
-    protected virtual void UpdateSegment(FigureSegment segment, in MeshBuffersIndexers data, int puzzleIndex)
+    protected virtual void UpdateSegment(FigureSegment segment, in MeshBuffersIndexers indexers, int2 meshResPuzzleIndex)
     {
         Mesh mesh = segment.MeshContainer.mesh;
         mesh.MarkDynamic();
 
-        mesh.SetVertexBufferParams(data.Count.x, VertexData.VertexBufferMemoryLayout);
-        mesh.SetIndexBufferParams(data.Count.y, IndexFormat.UInt16);
+        mesh.SetVertexBufferParams(indexers.Count.x, VertexData.VertexBufferMemoryLayout);
+        mesh.SetIndexBufferParams(indexers.Count.y, IndexFormat.UInt16);
 
-        mesh.SetVertexBufferData(_figureVertices, data.Start.x, 0, data.Count.x, 0, GenerationMeshUpdateFlags);
-        mesh.SetIndexBufferData(_figureIndices, data.Start.y, 0, data.Count.y, GenerationMeshUpdateFlags);
+        mesh.SetVertexBufferData(_figureVertices, indexers.Start.x, 0, indexers.Count.x, 0, GenerationMeshUpdateFlags);
+        mesh.SetIndexBufferData(_figureIndices, indexers.Start.y, 0, indexers.Count.y, GenerationMeshUpdateFlags);
 
         mesh.subMeshCount = 1;
         SubMeshDescriptor subMesh = new SubMeshDescriptor(
             indexStart: 0,
-            indexCount: data.Count.y
+            indexCount: indexers.Count.y
         );
         mesh.SetSubMesh(0, subMesh);
 
         mesh.RecalculateBounds();
 
         NativeArray<VertexData> segmentVertices = CollectionUtilities.GetSlice(
-            _figureVertices, data.Start.x, data.Count.x);
+            _figureVertices, indexers.Start.x, indexers.Count.x);
 
-        segment.Initialize(segmentVertices, puzzleIndex);
+        segment.Initialize(_figureVertices[indexers.Start.x].uv, meshResPuzzleIndex.x, meshResPuzzleIndex.y);
     }
     
     protected Mesh CreateSegmentPointRenderMesh(in MeshBuffersIndexers buffersData)

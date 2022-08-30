@@ -36,24 +36,24 @@ namespace Orazum.Meshing
             }
         }
 
-        public void Start(float2x2 p, ref MeshBuffersIndexers buffersData)
+        public void Start(float3x2 lineSegment, ref MeshBuffersIndexers buffersData)
         {
-            _prevIndices.x = AddVertex(p[0], ref buffersData);
-            _prevIndices.y = AddVertex(p[1], ref buffersData);
+            _prevIndices.x = AddVertex(lineSegment[0], ref buffersData);
+            _prevIndices.y = AddVertex(lineSegment[1], ref buffersData);
 
         }
 
-        private void DrawSegment(float2x2 p)
+        private void DrawSegment(float3x2 p)
         {
-            Debug.DrawRay(x0z(p[0]), Vector3.up, Color.red, 5);
-            Debug.DrawRay(x0z(p[1]), Vector3.up, Color.red, 5);
+            Debug.DrawRay(p[0], Vector3.up, Color.red, 5);
+            Debug.DrawRay(p[1], Vector3.up, Color.red, 5);
         }
 
-        public void Continue(float2x2 p, ref MeshBuffersIndexers buffersData)
+        public void Continue(float3x2 lineSegment, ref MeshBuffersIndexers buffersData)
         {
             int2 newIndices = int2.zero;
-            newIndices.x = AddVertex(p[0], ref buffersData);
-            newIndices.y = AddVertex(p[1], ref buffersData);
+            newIndices.x = AddVertex(lineSegment[0], ref buffersData);
+            newIndices.y = AddVertex(lineSegment[1], ref buffersData);
 
             int4 quadIndices = new int4(_prevIndices, newIndices.yx);
             AddQuadIndices(quadIndices, ref buffersData);
@@ -71,10 +71,10 @@ namespace Orazum.Meshing
             AddIndex(quadIndices.w, ref buffersData);
         }
 
-        private short AddVertex(float2 pos, ref MeshBuffersIndexers buffersData)
+        private short AddVertex(float3 pos, ref MeshBuffersIndexers buffersData)
         { 
             VertexData vertex = new VertexData();
-            vertex.position = x0z(pos);
+            vertex.position = pos;
             vertex.normal = _normalAndUV[0];
             vertex.uv = _normalAndUV[1].xy;
             

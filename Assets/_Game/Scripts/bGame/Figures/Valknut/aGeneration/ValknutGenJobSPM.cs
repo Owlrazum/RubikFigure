@@ -5,6 +5,7 @@ using Unity.Collections;
 
 using Orazum.Meshing;
 using static Orazum.Math.MathUtilities;
+using static Orazum.Constants.Math;
 
 /// <summary>
 /// SPM - SegmentPointMeshes
@@ -180,28 +181,28 @@ public struct ValknutGenJobSPM : IJob
         tas = new TwoAngleSegment();
         float3 intersect, v1, v2, v1h, v2h;
 
-        IntersectRays(Ray(poses[0], dirs[0].zw), Ray(poses[1], dirs[1].xy), out intersect);
+        IntersectRays2D(Ray(poses[0], dirs[0].zw), Ray(poses[1], dirs[1].xy), out intersect);
         v1 = GapVertex(intersect, x0z(dirs[1].zw));
         v2 = ExtrudeVertex(v1, x0z(dirs[0].zw));
         v2h = ExtrudeVertex(v2, _heightOffset);
         v1h = ExtrudeVertex(v1, _heightOffset);
         tas.s1 = new float3x4(v1, v2, v2h, v1h);
 
-        IntersectRays(Ray(poses[1], dirs[0].zw), Ray(tas.s1[1].xz, dirs[1].zw), out intersect);
+        IntersectRays2D(Ray(poses[1], dirs[0].zw), Ray(tas.s1[1].xz, dirs[1].zw), out intersect);
         v1 = x0z(poses[1]);
         v2 = ExtrudeVertex(intersect, x0z(dirs[1].xy));
         v2h = ExtrudeVertex(v2, _heightOffset);
         v1h = ExtrudeVertex(v1, _heightOffset);
         tas.s2 = new float3x4(v1, v2, v2h, v1h);
 
-        IntersectRays(Ray(tas.s2[1].xz, dirs[0].zw), Ray(poses[2], dirs[2].zw), out intersect);
+        IntersectRays2D(Ray(tas.s2[1].xz, dirs[0].zw), Ray(poses[2], dirs[2].zw), out intersect);
         v1 = x0z(poses[2]);
         v2 = ExtrudeVertex(intersect, x0z(dirs[0].xy));
         v2h = ExtrudeVertex(v2, _heightOffset);
         v1h = ExtrudeVertex(v1, _heightOffset);
         tas.s3 = new float3x4(v1, v2, v2h, v1h);
 
-        IntersectRays(Ray(poses[0], dirs[0].zw), Ray(poses[2], dirs[2].zw), out intersect);
+        IntersectRays2D(Ray(poses[0], dirs[0].zw), Ray(poses[2], dirs[2].zw), out intersect);
         v1 = GapVertex(intersect, x0z(dirs[2].xy));
         v2 = ExtrudeVertex(v1, x0z(dirs[0].xy));
         v2h = ExtrudeVertex(v2, _heightOffset);
@@ -231,7 +232,7 @@ public struct ValknutGenJobSPM : IJob
         v1h = ExtrudeVertex(v1, _heightOffset);
         oas.s1 = new float3x4(v1, v2, v2h, v1h);
         
-        IntersectRays(Ray(edges[1].xz, dirs[2].zw), Ray(edges[3].xz, dirs[1].xy), out intersect);
+        IntersectRays2D(Ray(edges[1].xz, dirs[2].zw), Ray(edges[3].xz, dirs[1].xy), out intersect);
         v1 = x0z(triangleVertex);
         v2 = intersect;
         v2h = ExtrudeVertex(v2, _heightOffset);

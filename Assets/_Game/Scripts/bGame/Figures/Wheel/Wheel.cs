@@ -6,7 +6,7 @@ using UnityEngine;
 using UnityEngine.Assertions;
 
 using Orazum.Collections;
-using static Orazum.Math.MathUtilities;
+using static Orazum.Constants.Math;
 
 public class Wheel : Figure
 {

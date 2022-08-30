@@ -3,7 +3,13 @@ using Unity.Collections;
 
 public struct QSTransSegment
 {
-    public enum QuadConstructType 
+    public enum MeshConstructType
+    {
+        Quad,
+        Radial
+    }
+
+    public enum QuadConstructType
     {
         NewQuadStartToEnd,
         ContinueQuadStartToEnd,
@@ -12,15 +18,21 @@ public struct QSTransSegment
         NewQuadToEnd
     }
 
-    public float2x2 StartLineSegment { get; private set; }
-    public float2x2 EndLineSegment { get; private set; }
+    public enum RadialConstructType
+    { 
+        Single,
+        Double
+    }
+
+    public float3x2 StartLineSegment { get; private set; }
+    public float3x2 EndLineSegment { get; private set; }
     public int FillDataLength { get; private set; }
     
     private QSTransSegFillData _f1;
     private QSTransSegFillData _f2;
     private QSTransSegFillData _f3;
 
-    public QSTransSegment(float2x2 startLineSegment, float2x2 endLineSegment, int fillDataLength)
+    public QSTransSegment(float3x2 startLineSegment, float3x2 endLineSegment, int fillDataLength)
     { 
         StartLineSegment = startLineSegment;
         EndLineSegment = endLineSegment;

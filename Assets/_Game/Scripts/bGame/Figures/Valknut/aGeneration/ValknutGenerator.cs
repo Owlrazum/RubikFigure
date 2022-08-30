@@ -1,19 +1,13 @@
-using System.Collections.Generic;
-
 using Unity.Jobs;
 using Unity.Collections;
 
 using UnityEngine;
 using UnityEngine.Assertions;
-using UnityEngine.Rendering;
 
 using Unity.Mathematics;
-using Orazum.Utilities.ConstContainers;
+using Orazum.Constants;
 using Orazum.Meshing;
 using Orazum.Collections;
-
-using Orazum.Math;
-using static Orazum.Math.ClockOrderConversions;
 
 public class ValknutGenerator : FigureGenerator
 {
@@ -100,7 +94,7 @@ public class ValknutGenerator : FigureGenerator
         _figureVertices = new NativeArray<VertexData>(SegmentsTotalVertexCount, Allocator.TempJob);
         _figureIndices = new NativeArray<short>(SegmentsTotalIndexCount, Allocator.TempJob);
 
-        NativeArray<float2x2> lineSegments = new NativeArray<float2x2>(SegmentsTotalVertexCount, Allocator.TempJob);
+        NativeArray<float3x2> lineSegments = new NativeArray<float3x2>(SegmentsTotalVertexCount, Allocator.TempJob);
         NativeArray<int2> quadStripsIndexers = new NativeArray<int2>(SegmentsCount, Allocator.TempJob);
         _quadStripsCollection = new QuadStripsCollection(lineSegments, quadStripsIndexers);
 
@@ -202,7 +196,7 @@ public class ValknutGenerator : FigureGenerator
     protected override void GenerateFigureGameObject()
     {
         GameObject valknutGb = new GameObject("Valknut", typeof(Valknut), typeof(ValknutStatesController));
-        valknutGb.layer = LayerUtilities.FigureLayer;
+        valknutGb.layer = Layers.FigureLayer;
         Transform parentWheel = valknutGb.transform;
 
         GameObject segmentPointsParentGb = new GameObject("SegmentPoints");
@@ -230,7 +224,7 @@ public class ValknutGenerator : FigureGenerator
                 _segments[index] = segment;
 
                 GameObject segmentPointGb = Instantiate(_segmentPointPrefab);
-                segmentPointGb.layer = LayerUtilities.SegmentPointsLayer;
+                segmentPointGb.layer = Layers.SegmentPointsLayer;
                 segmentGb.name = "Segment";
                 segmentPointGb.transform.parent = segmentPointsParent;
                 FigureSegmentPoint segmentPoint = segmentPointGb.GetComponent<FigureSegmentPoint>();
@@ -243,7 +237,6 @@ public class ValknutGenerator : FigureGenerator
 
         _valknut = valknutGb.GetComponent<Valknut>();
         _valknutStatesController = valknutGb.GetComponent<ValknutStatesController>();
-
     }
 
     private void Start()
@@ -254,23 +247,6 @@ public class ValknutGenerator : FigureGenerator
     {
         _figureMeshGenJobHandle.Complete();
         _segmentPointsMeshGenJobHandle.Complete();
-
-
-        // ValknutSegmentMesh origin = _segmentMeshes[4];
-        // ValknutSegmentMesh target = _segmentMeshes[0];
-
-        // NativeArray<float4x2> pos = _transitionPositions.GetSubArray(0, 6);
-        // NativeArray<float3> range = _lerpRanges.GetSubArray(0, 6);
-
-        // ValknutUtilities.BuildTransitionData(
-        //     in origin,
-        //     target,
-        //     ClockOrderType.CW,
-        //     ref pos,
-        //     ref range
-        // );
-
-
 
         int2 tasSegmentBuffersCount = new int2(SegmentVertexCountTAS, SegmentIndexCountTAS);
         int2 oasSegmentBuffersCount = new int2(SegmentVertexCountOAS, SegmentIndexCountOAS);
@@ -296,7 +272,7 @@ public class ValknutGenerator : FigureGenerator
             {
                 int2 index = new int2(triangle, part);
 
-                UpdateSegment(_segments[index], buffersData, 0);
+                UpdateSegment(_segments[index], buffersData, meshResPuzzleIndex: new int2(1, 0));
                 Mesh[] multiMesh = CreateColliderMultiMesh(ref multiMeshBuffersData, part == 0);
                 Mesh renderMesh = CreateSegmentPointRenderMesh(in pointBuffersData);
                 _segmentPoints[index].InitializeWithMultiMesh(renderMesh, multiMesh);

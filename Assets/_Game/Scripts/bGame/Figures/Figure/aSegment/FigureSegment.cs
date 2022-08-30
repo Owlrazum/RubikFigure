@@ -1,11 +1,9 @@
 using System;
 
-using Unity.Collections;
+using Unity.Mathematics;
 
 using UnityEngine;
 using UnityEngine.Assertions;
-
-using Orazum.Meshing;
 
 /// <summary>
 /// Segment of the Wheel
@@ -29,9 +27,9 @@ public abstract class FigureSegment : MonoBehaviour
     }
     protected abstract void InitializeMover();
     
-    public virtual void Initialize(NativeArray<VertexData> verticesArg, int puzzleIndexArg)
+    public virtual void Initialize(float2 uv, int meshResolution, int puzzleIndexArg)
     { 
-        _mover.Initialize(verticesArg);
+        _mover.Initialize(uv, meshResolution);
         _puzzleIndex = puzzleIndexArg;
     }
 

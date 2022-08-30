@@ -5,6 +5,7 @@ using Unity.Collections;
 
 using Orazum.Meshing;
 using static Orazum.Math.MathUtilities;
+using static Orazum.Constants.Math;
 
 [BurstCompile]
 public struct ValknutGenJob : IJob
@@ -185,22 +186,22 @@ public struct ValknutGenJob : IJob
         TwoAngleSegment tas = new TwoAngleSegment();
         float2 intersect, v1, v2;
 
-        IntersectRays(Ray(poses[0], dirs[0].zw), Ray(poses[1], dirs[1].zw), out intersect);
+        IntersectRays2D(Ray(poses[0], dirs[0].zw), Ray(poses[1], dirs[1].zw), out intersect);
         v2 = GapVertex(intersect, dirs[1].xy);
         v1 = ExtrudeVertex(v2, dirs[0].xy);
         tas.s1 = new float2x2(v1, v2);
 
-        IntersectRays(Ray(poses[1], dirs[0].xy), Ray(tas.s1[0], dirs[1].xy), out intersect);
+        IntersectRays2D(Ray(poses[1], dirs[0].xy), Ray(tas.s1[0], dirs[1].xy), out intersect);
         v2 = poses[1];
         v1 = ExtrudeVertex(intersect, dirs[1].zw);
         tas.s2 = new float2x2(v1, v2);
 
-        IntersectRays(Ray(poses[2], dirs[2].xy), Ray(tas.s2[0], dirs[0].xy), out intersect);
+        IntersectRays2D(Ray(poses[2], dirs[2].xy), Ray(tas.s2[0], dirs[0].xy), out intersect);
         v2 = poses[2];
         v1 = ExtrudeVertex(intersect, dirs[0].zw);
         tas.s3 = new float2x2(v1, v2);
 
-        IntersectRays(Ray(poses[0], dirs[0].zw), Ray(poses[2], dirs[2].xy), out intersect);
+        IntersectRays2D(Ray(poses[0], dirs[0].zw), Ray(poses[2], dirs[2].xy), out intersect);
         v2 = GapVertex(intersect, dirs[2].zw);
         v1 = ExtrudeVertex(v2, dirs[0].zw);
         tas.s4 = new float2x2(v1, v2);
@@ -225,7 +226,7 @@ public struct ValknutGenJob : IJob
         v2 = OffsetVertex(edges[1], dirs[2].xy, offsetLength);
         oas.s1 = new float2x2(v1, v2);
         
-        IntersectRays(Ray(edges[0], dirs[2].xy), Ray(edges[2], dirs[1].zw), out intersect);
+        IntersectRays2D(Ray(edges[0], dirs[2].xy), Ray(edges[2], dirs[1].zw), out intersect);
         v1 = intersect;
         v2 = triangleVertex;
         oas.s2 = new float2x2(v1, v2);
@@ -241,10 +242,10 @@ public struct ValknutGenJob : IJob
     {
         _buffersData.LocalCount = int2.zero;
 
-        NativeArray<float2x2> lineSegments = new NativeArray<float2x2>(3, Allocator.Temp);
-        lineSegments[0] = oas.s1;
-        lineSegments[1] = oas.s2;
-        lineSegments[2] = oas.s3;
+        NativeArray<float3x2> lineSegments = new NativeArray<float3x2>(3, Allocator.Temp);
+        lineSegments[0] = x0z(oas.s1);
+        lineSegments[1] = x0z(oas.s2);
+        lineSegments[2] = x0z(oas.s3);
 
         _quadStripsCollectionIndexer.y = 3;
         OutputQuadStripsCollection.AddQuadStrip(lineSegments, _quadStripsCollectionIndexer);
@@ -253,20 +254,20 @@ public struct ValknutGenJob : IJob
 
         QuadStripBuilderVertexData quadStripBuilder = 
             new QuadStripBuilderVertexData(OutputVertices, OutputIndices, _normalAndUV);
-        quadStripBuilder.Start(oas.s1, ref _buffersData);
-        quadStripBuilder.Continue(oas.s2, ref _buffersData);
-        quadStripBuilder.Continue(oas.s3, ref _buffersData);
+        quadStripBuilder.Start(x0z(oas.s1), ref _buffersData);
+        quadStripBuilder.Continue(x0z(oas.s2), ref _buffersData);
+        quadStripBuilder.Continue(x0z(oas.s3), ref _buffersData);
     }
 
     private void AddTwoAngleSegmentMeshData(TwoAngleSegment tas)
     {
         _buffersData.LocalCount = int2.zero;
 
-        NativeArray<float2x2> lineSegments = new NativeArray<float2x2>(4, Allocator.Temp);
-        lineSegments[0] = tas.s1;
-        lineSegments[1] = tas.s2;
-        lineSegments[2] = tas.s3;
-        lineSegments[3] = tas.s4;
+        NativeArray<float3x2> lineSegments = new NativeArray<float3x2>(4, Allocator.Temp);
+        lineSegments[0] = x0z(tas.s1);
+        lineSegments[1] = x0z(tas.s2);
+        lineSegments[2] = x0z(tas.s3);
+        lineSegments[3] = x0z(tas.s4);
 
         _quadStripsCollectionIndexer.y = 4;
         OutputQuadStripsCollection.AddQuadStrip(lineSegments, _quadStripsCollectionIndexer);
@@ -275,10 +276,10 @@ public struct ValknutGenJob : IJob
  
         QuadStripBuilderVertexData quadStripBuilder 
             = new QuadStripBuilderVertexData(OutputVertices, OutputIndices, _normalAndUV);
-        quadStripBuilder.Start(tas.s1, ref _buffersData);
-        quadStripBuilder.Continue(tas.s2, ref _buffersData);
-        quadStripBuilder.Continue(tas.s3, ref _buffersData);
-        quadStripBuilder.Continue(tas.s4, ref _buffersData);
+        quadStripBuilder.Start(x0z(tas.s1), ref _buffersData);
+        quadStripBuilder.Continue(x0z(tas.s2), ref _buffersData);
+        quadStripBuilder.Continue(x0z(tas.s3), ref _buffersData);
+        quadStripBuilder.Continue(x0z(tas.s4), ref _buffersData);
     }
 
     private float2 ExtrudeVertex(float2 start, float2 direction)

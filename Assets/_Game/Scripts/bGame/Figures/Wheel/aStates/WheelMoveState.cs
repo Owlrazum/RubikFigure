@@ -6,7 +6,7 @@ using UnityEngine.Assertions;
 
 using Orazum.Math;
 
-using static Orazum.Math.MathUtilities;
+using static Orazum.Constants.Math;
 
 public class WheelMoveState : FigureMoveState
 {
