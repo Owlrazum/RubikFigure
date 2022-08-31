@@ -6,6 +6,4 @@ public struct WheelQSTransSegs
     public NativeArray<QSTransSegment>.ReadOnly Ctsi;
     public NativeArray<QSTransSegment>.ReadOnly Dtsi;
     public NativeArray<QSTransSegment>.ReadOnly Utsi;
-    public NativeArray<QSTransSegment>.ReadOnly LevDtsi;
-    public NativeArray<QSTransSegment>.ReadOnly LevUtsi;
 }

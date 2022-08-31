@@ -83,7 +83,7 @@ public class WheelGenerator : FigureGenerator
 
         _transSegsCount.x = VerticalTransSegCount * 2 * (_sidesRingsCount.y - 1) * _segmentResolution * _sidesRingsCount.x;
         _transSegsCount.y = LevitationTransSegCount * 2 * _sidesRingsCount.x;
-        _transSegsCount.z = ClockOrderTransSegCount * 2 * _sidesRingsCount.x;
+        _transSegsCount.z = ClockOrderTransSegCount * 2 * _sidesRingsCount.x * _sidesRingsCount.y;
     }
 
     protected override void StartMeshGeneration()
@@ -117,8 +117,8 @@ public class WheelGenerator : FigureGenerator
             _HelperTransitionGrid = _transitionGrid,
 
             OutputDownTransSegments = _dtsi,
-            OutputLevDownTransSegments = _levDtsi,
             OutputUpTransSegments = _utsi,
+            OutputLevDownTransSegments = _levDtsi,
             OutputLevUpTransSegments = _levUtsi,
             OutputAntiCWTransSegments = _atsi,
             OutputCWTransSegments = _ctsi
@@ -214,31 +214,45 @@ public class WheelGenerator : FigureGenerator
         }
 
         Array2D<WheelQSTransSegs> transitionDatas = new Array2D<WheelQSTransSegs>(_sidesRingsCount);
-        int3 index = int3.zero;
+        int2x3 index = int2x3.zero;
         for (int side = 0; side < _sidesRingsCount.x; side++)
         {
             for (int ring = 0; ring < _sidesRingsCount.y; ring++)
             {
-                NativeArray<QSTransSegment> atsi = _atsi.GetSubArray(index.x, ClockOrderTransSegCount);
-                NativeArray<QSTransSegment> ctsi = _ctsi.GetSubArray(index.x, ClockOrderTransSegCount);
-                index.x += ClockOrderTransSegCount;
+                NativeArray<QSTransSegment> atsi = _atsi.GetSubArray(index[0].x, ClockOrderTransSegCount);
+                NativeArray<QSTransSegment> ctsi = _ctsi.GetSubArray(index[0].x, ClockOrderTransSegCount);
+                index[0].x += ClockOrderTransSegCount;
 
-                NativeArray<QSTransSegment> dtsi = _dtsi.GetSubArray(index.y, VerticalTransSegCount * _segmentResolution);
-                NativeArray<QSTransSegment> utsi = _utsi.GetSubArray(index.y, VerticalTransSegCount * _segmentResolution);
-                index.y += VerticalTransSegCount * _segmentResolution;
+                NativeArray<QSTransSegment> dtsi;
+                if (ring == 0)
+                { 
+                    dtsi = _levDtsi.GetSubArray(index[1].x, LevitationTransSegCount);
+                    index[1].x += LevitationTransSegCount;
+                }
+                else
+                { 
+                    dtsi = _dtsi.GetSubArray(index[2].x, VerticalTransSegCount * _segmentResolution);
+                    index[2].x += VerticalTransSegCount * _segmentResolution;
+                }
 
-                NativeArray<QSTransSegment> levDtsi = _levDtsi.GetSubArray(index.z, LevitationTransSegCount);
-                NativeArray<QSTransSegment> levUtsi = _levUtsi.GetSubArray(index.z, LevitationTransSegCount);
-                index.z += LevitationTransSegCount;
+                NativeArray<QSTransSegment> utsi;
+                if (ring == _sidesRingsCount.y - 1)
+                {
+                    utsi = _levUtsi.GetSubArray(index[1].y, LevitationTransSegCount);
+                    index[1].y += LevitationTransSegCount;
+                }
+                else 
+                {
+                    utsi = _utsi.GetSubArray(index[2].y, VerticalTransSegCount * _segmentResolution);
+                    index[2].y += VerticalTransSegCount * _segmentResolution;
+                }
 
                 WheelQSTransSegs transData = new WheelQSTransSegs()
                 {
                     Atsi = atsi.AsReadOnly(),
                     Ctsi = ctsi.AsReadOnly(),
                     Dtsi = dtsi.AsReadOnly(),
-                    Utsi = utsi.AsReadOnly(),
-                    LevDtsi = levDtsi.AsReadOnly(),
-                    LevUtsi = levUtsi.AsReadOnly(),
+                    Utsi = utsi.AsReadOnly()
                 };
 
                 transitionDatas[side, ring] = transData;

@@ -67,7 +67,10 @@ public class FigureIdleState : FigureState
 
     private void DeselectAction()
     {
-        Debug.Log("DeselectAction");
+        if (_currentSelectedPoint != null)
+        { 
+            Debug.Log("DeselectAction");
+        }
         _currentSelectedPoint?.Segment.DefaultRender();
         _currentSelectedPoint = null;
     }

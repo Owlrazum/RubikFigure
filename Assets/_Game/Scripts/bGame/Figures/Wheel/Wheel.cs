@@ -26,9 +26,9 @@ public class Wheel : Figure
         FigureParamsSO figureParams)
     {
         base.Initialize(segmentPoints, statesController, figureParams);
-        // RotateSegmentOnGeneration();
+        RotateSegmentPointsOnGeneration();
     }
-    private void RotateSegmentOnGeneration()
+    private void RotateSegmentPointsOnGeneration()
     {
         for (int side = 0; side < _dims.x; side++)
         {
@@ -37,10 +37,6 @@ public class Wheel : Figure
                 Quaternion rotation = GetSideRotation(side);
                 int2 index = new int2(side, ring);
                 _segmentPoints[index].transform.localRotation = rotation;
-                if (_segmentPoints[index].Segment != null)
-                {
-                    _segmentPoints[index].Segment.transform.localRotation = rotation;
-                }
             }
         }
     }
