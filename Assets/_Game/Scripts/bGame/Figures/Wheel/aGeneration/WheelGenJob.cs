@@ -3,12 +3,15 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Collections;
 
+using UnityEngine;
+
 using Orazum.Meshing;
 using static Orazum.Constants.Math;
 using static Orazum.Math.LineSegmentUtilities;
 using static QSTransSegment;
+using static Orazum.Utilities.DebugUtilities;
 
-[BurstCompile]
+// [BurstCompile]
 public struct WheelGenJob : IJob
 {
     public int P_SideCount;
@@ -26,40 +29,40 @@ public struct WheelGenJob : IJob
 
     [WriteOnly]
     public NativeArray<QSTransSegment> OutputDownTransSegments;
+    [WriteOnly]
+    public NativeArray<QSTransSegment> OutputLevDownTransSegments;
 
     [WriteOnly]
     public NativeArray<QSTransSegment> OutputUpTransSegments;
+    [WriteOnly]
+    public NativeArray<QSTransSegment> OutputLevUpTransSegments;
 
     [WriteOnly]
     public NativeArray<QSTransSegment> OutputAntiCWTransSegments;
-
     [WriteOnly]
     public NativeArray<QSTransSegment> OutputCWTransSegments;
+
+    public NativeArray<float3> _HelperTransitionGrid;
 
     private MeshBuffersIndexers _buffersData;
 
     private float3 _segStartRay;
+    private float3 _sideStartRay;
     private float3x2 _normalAndUV;
 
     private float3 _radiiData;
 
     private quaternion _segQuadRotDelta;
 
-    private NativeArray<float3> _transitionGrid;
-    private int _sideOffset;
-    private int _ringOffset;
-
-    private int4 _transSegIndexer;
-    private int2 _levitatinoSegIndexer;
+    private int2 _dutsi;
+    private int2 _levDutsi;
+    private int2 _actsi;
 
     public void Execute()
     {
-        _sideOffset = P_SegmentResolution;
-        _ringOffset = _sideOffset * P_SideCount;
-        int transitionGridVerticesCount = _ringOffset * (P_RingCount + 1);
-        _transitionGrid = new NativeArray<float3>(transitionGridVerticesCount, Allocator.Temp);
-        _transSegIndexer = int4.zero;
-        _levitatinoSegIndexer = new int2(P_RingCount - 1, P_RingCount - 1);
+        _dutsi = int2.zero;
+        _levDutsi = int2.zero;
+        _actsi = int2.zero;
 
 
         _buffersData = new MeshBuffersIndexers();
@@ -70,13 +73,15 @@ public struct WheelGenJob : IJob
             float3.zero
         );
 
-        _segQuadRotDelta = quaternion.AxisAngle(math.up(),TAU / P_SideCount / P_SegmentResolution);
+        _segQuadRotDelta = quaternion.AxisAngle(math.up(), TAU / P_SideCount / P_SegmentResolution);
 
         _radiiData.xy = new float2(P_InnerCircleRadius, P_OuterCircleRadius);
         _radiiData.z = (P_OuterCircleRadius - P_InnerCircleRadius) / P_RingCount;
 
         float deltaUV = 1.0f / P_SideCount;
         float startUV = 1 - deltaUV / 2;
+
+        int2 offsets = new int2(P_SegmentResolution, P_SegmentResolution * P_SideCount);
 
         for (int side = 0; side < P_SideCount; side++)
         {
@@ -86,64 +91,60 @@ public struct WheelGenJob : IJob
             _radiiData.y = _radiiData.x + _radiiData.z;
 
             quaternion sideRot = quaternion.AxisAngle(math.up(), TAU / P_SideCount * side);
-            _segStartRay = math.rotate(sideRot, _segStartRay);
+            _sideStartRay = math.rotate(sideRot, _segStartRay);
 
             for (int ring = 0; ring < P_RingCount; ring++)
             {
-                AddSegment(side, ring);
+                AddSegment(side, ring, offsets);
 
                 _radiiData.x = _radiiData.y;
                 _radiiData.y += _radiiData.z;
             }
         }
 
-        GenerateTransitions();
+        DebugHelperGrid(offsets);
+
+        GenerateTransitions(offsets);
     }
 
-    private void AddSegment(int side, int ring)
+    private void AddSegment(int side, int ring, int2 offsets)
     {
         _buffersData.LocalCount = int2.zero;
 
-        QuadStripBuilderVertexData quadStrip =
+        QuadStripBuilderVertexData quadStripBuilder =
             new QuadStripBuilderVertexData(OutputVertices, OutputIndices, _normalAndUV);
 
-        float3 currentRay = _segStartRay;
+        float3 currentRay = _sideStartRay;
         float3x2 quadStripSegment = new float3x2(
             (currentRay * _radiiData.x),
             (currentRay * _radiiData.y));
-        quadStrip.Start(quadStripSegment, ref _buffersData);
+        quadStripBuilder.Start(quadStripSegment, ref _buffersData);
 
-        int gridIndexer = side * _sideOffset + ring * _ringOffset;
-        _transitionGrid[gridIndexer++] = quadStripSegment[0];
-
+        int gridIndexer = side * offsets.x + ring * offsets.y;
         for (int i = 0; i < P_SegmentResolution; i++)
         {
+            _HelperTransitionGrid[gridIndexer++] = quadStripSegment[0];
+
             currentRay = math.rotate(_segQuadRotDelta, currentRay);
             quadStripSegment[0] = (currentRay * _radiiData.x);
             quadStripSegment[1] = (currentRay * _radiiData.y);
-            quadStrip.Continue(quadStripSegment, ref _buffersData);
-
-            if (i < P_SegmentResolution - 1)
-            {
-                _transitionGrid[gridIndexer++] = quadStripSegment[0];
-            }
+            quadStripBuilder.Continue(quadStripSegment, ref _buffersData);
         }
 
         if (ring == P_RingCount - 1)
         {
-            currentRay = _segStartRay;
+            currentRay = _sideStartRay;
             float3 outerRingVertex = currentRay * _radiiData.y;
-            gridIndexer = side * _sideOffset + (ring + 1) * _ringOffset;
-            _transitionGrid[gridIndexer++] = outerRingVertex;
-            for (int i = 0; i < P_SegmentResolution - 1; i++)
+            gridIndexer = side * offsets.x + (ring + 1) * offsets.y;
+            for (int i = 0; i < P_SegmentResolution; i++)
             {
+                _HelperTransitionGrid[gridIndexer++] = outerRingVertex;
                 outerRingVertex = math.rotate(_segQuadRotDelta, outerRingVertex);
-                _transitionGrid[gridIndexer++] = outerRingVertex;
             }
         }
     }
 
-    private void GenerateTransitions()
+    private void GenerateTransitions(int2 offsets)
     {
         for (int side = 0; side < P_SideCount; side++)
         {
@@ -152,54 +153,62 @@ public struct WheelGenJob : IJob
                 int4 originIndexer = int4.zero;
                 int4 targetIndexer = int4.zero;
                 float3x4 originQuad = float3x4.zero;
-                float3x4 targetQuad = float3x4.zero;
+                float3x4 targetSegmentQuad = float3x4.zero;
 
-                GetSegmentIndexer(side * _sideOffset + ring * _ringOffset, out targetIndexer);
-                GetTransQuad(in targetIndexer, ref targetQuad);
+                int startSegmentIndex = side * offsets.x + ring * offsets.y;
+                GetSegmentIndexer(startSegmentIndex, offsets, out targetIndexer);
+                GetTransQuad(in targetIndexer, ref targetSegmentQuad);
 
                 int nextSide = side + 1 >= P_SideCount ? 0 : side + 1;
-                GetSegmentIndexer(nextSide * _sideOffset + ring * _ringOffset, out originIndexer);
+                int nextSideStartSegmentIndex = nextSide * offsets.x + ring * offsets.y;
+                GetSegmentIndexer(nextSideStartSegmentIndex, offsets, out originIndexer);
                 GetTransQuad(in originIndexer, ref originQuad);
-                GenerateClockOrderTransition(in originQuad, in targetQuad, isCW: true);
+                GenerateClockOrderTransition(in originQuad, in targetSegmentQuad, isCW: true);
 
                 int prevSide = side - 1 < 0 ? P_SideCount - 1 : side - 1;
-                GetSegmentIndexer(prevSide * _sideOffset + ring * _ringOffset, out originIndexer);
+                int prevSideStartSegmentIndex = prevSide * offsets.x + ring * offsets.y;
+                GetSegmentIndexer(prevSideStartSegmentIndex, offsets, out originIndexer);
                 GetTransQuad(in originIndexer, ref originQuad);
-                GenerateClockOrderTransition(in originQuad, in targetQuad, isCW: false);
+                GenerateClockOrderTransition(in originQuad, in targetSegmentQuad, isCW: false);
 
-                GetQuadIndexer(side * _sideOffset + ring * _ringOffset, out targetIndexer);
+                if (ring == 0)
+                {
+                    int levDownStartIndex = side * offsets.x;
+                    GetSegmentIndexer(levDownStartIndex, offsets.x, out originIndexer);
+                    GetTransQuad(in originIndexer, ref originQuad);
+                    GenerateLevitationVerticalTransition(in originQuad, in targetSegmentQuad, isDown: true);
+                }
+
+                if (ring == P_RingCount - 1)
+                {
+                    int levUpStartIndex = side * offsets.x + (P_RingCount - 1) * offsets.y;
+                    GetSegmentIndexer(levUpStartIndex, offsets, out originIndexer);
+                    GetTransQuad(in originIndexer, ref originQuad);
+                    GenerateLevitationVerticalTransition(in originQuad, in targetSegmentQuad, isDown: false);
+                }
+
+                int startQuadIndex = startSegmentIndex;
+                float3x4 targetQuad = float3x4.zero;
+                int4 targetQuadIndexer = int4.zero;
                 for (int r = 0; r < P_SegmentResolution; r++)
                 {
-                    GetTransQuad(in targetIndexer, ref targetQuad);
-
-                    targetIndexer.x += 1;
-                    GetQuadIndexer(targetIndexer.x, out targetIndexer);
-
-                    if (ring == P_RingCount - 1)
+                    GetQuadIndexer(startQuadIndex, offsets, out targetQuadIndexer);
+                    GetTransQuad(in targetQuadIndexer, ref targetQuad);
+                    if (ring < P_RingCount - 1)
                     {
-                        GetQuadIndexer(side * _sideOffset, out originIndexer);
+                        GetQuadIndexer(targetQuadIndexer.z, offsets, out originIndexer);
                         GetTransQuad(in originIndexer, ref originQuad);
-                        GenerateLevitationVerticalTransition(in originQuad, in targetQuad, isDown: true);
-                    }
-                    else
-                    {
-                        GetQuadIndexer(targetIndexer.z, out originIndexer);
-                        GetTransQuad(in originIndexer, ref originQuad);
-                        GenerateGroundedVerticalTransition(in originQuad, in targetQuad, isDown: true);
+                        GenerateGroundedVerticalTransition(in originQuad, in targetSegmentQuad, isDown: true);
                     }
 
-                    if (ring == 0)
+                    if (ring > 0)
                     {
-                        GetQuadIndexer(side * _sideOffset + (P_RingCount - 1) * _ringOffset, out originIndexer);
+                        GetQuadIndexer(targetQuadIndexer.x - offsets.y, offsets, out originIndexer);
                         GetTransQuad(in originIndexer, ref originQuad);
-                        GenerateLevitationVerticalTransition(in originQuad, in targetQuad, isDown: false);
+                        GenerateGroundedVerticalTransition(in originQuad, in targetSegmentQuad, isDown: false);
                     }
-                    else
-                    {
-                        GetQuadIndexer(targetIndexer.x - _ringOffset, out originIndexer);
-                        GetTransQuad(in originIndexer, ref originQuad);
-                        GenerateGroundedVerticalTransition(in originQuad, in targetQuad, isDown: false);
-                    }
+
+                    startQuadIndex++;
                 }
             }
         }
@@ -239,7 +248,7 @@ public struct WheelGenJob : IJob
             radialQuad[3] = targetQuad[3];
         }
         else
-        { 
+        {
             radialQuad[0] = originQuad[2];
             radialQuad[1] = originQuad[3];
             radialQuad[2] = targetQuad[0];
@@ -248,7 +257,7 @@ public struct WheelGenJob : IJob
         GetLineSegments(in radialQuad, new int4(0, 1, 2, 3), out startLineSeg, out endLineSeg);
         QSTransSegment radial = new QSTransSegment(startLineSeg, endLineSeg, 1);
         QSTransSegFillData radialFillData = new QSTransSegFillData(lerpRanges[1], MeshConstructType.Radial);
-        
+
         radialFillData.RadialType = RadialConstructType.Double;
         quaternion perp;
         if (isDown)
@@ -268,17 +277,18 @@ public struct WheelGenJob : IJob
             new float4(rotAxises[0], 180),
             new float4(rotAxises[1], 180)
         );
-        radialData.Centers = new float3x2()
-        {
-            
-        };
+
+        radialData.Centers = new float3x2(
+            GetLineSegmentCenter(startLineSeg[0], endLineSeg[0]),
+            GetLineSegmentCenter(startLineSeg[1], endLineSeg[1])
+        );
         radialFillData.RadialData = radialData;
         radial[0] = radialFillData;
 
 
 
         indexers = isDown ? new int4(0, 1, 2, 3) : new int4(2, 3, 0, 1);
-         GetLineSegments(in targetQuad, in indexers, out startLineSeg, out endLineSeg);
+        GetLineSegments(in targetQuad, in indexers, out startLineSeg, out endLineSeg);
         QSTransSegment targetLinear = new QSTransSegment(startLineSeg, endLineSeg, 1);
         QSTransSegFillData linearFillIn = new QSTransSegFillData(lerpRanges[2], MeshConstructType.Quad);
         linearFillIn.QuadType = QuadConstructType.NewQuadToEnd;
@@ -286,15 +296,15 @@ public struct WheelGenJob : IJob
 
         if (isDown)
         {
-            OutputDownTransSegments[_levitatinoSegIndexer.x++] = originLinear;
-            OutputDownTransSegments[_levitatinoSegIndexer.x++] = radial;
-            OutputDownTransSegments[_levitatinoSegIndexer.x++] = targetLinear;
+            OutputLevDownTransSegments[_levDutsi.x++] = originLinear;
+            OutputLevDownTransSegments[_levDutsi.x++] = radial;
+            OutputLevDownTransSegments[_levDutsi.x++] = targetLinear;
         }
         else
         {
-            OutputDownTransSegments[_levitatinoSegIndexer.y++] = originLinear;
-            OutputDownTransSegments[_levitatinoSegIndexer.y++] = radial;
-            OutputDownTransSegments[_levitatinoSegIndexer.y++] = targetLinear;
+            OutputLevUpTransSegments[_levDutsi.y++] = originLinear;
+            OutputLevUpTransSegments[_levDutsi.y++] = radial;
+            OutputLevUpTransSegments[_levDutsi.y++] = targetLinear;
         }
     }
 
@@ -305,7 +315,7 @@ public struct WheelGenJob : IJob
         float3x2 startLineSeg, endLineSeg;
         GetLineSegments(in originQuad, in indexers, out startLineSeg, out endLineSeg);
         QSTransSegment origin = new QSTransSegment(startLineSeg, endLineSeg, 1);
-        
+
         QSTransSegFillData fillOutState = new QSTransSegFillData(new float2(0, 1), MeshConstructType.Quad);
         fillOutState.QuadType = QuadConstructType.NewQuadToEnd;
         origin[0] = fillOutState;
@@ -318,14 +328,14 @@ public struct WheelGenJob : IJob
         target[0] = fillInState;
 
         if (isDown)
-        { 
-            OutputDownTransSegments[_transSegIndexer.x++] = origin;
-            OutputDownTransSegments[_transSegIndexer.x++] = target;
+        {
+            OutputDownTransSegments[_dutsi.x++] = origin;
+            OutputDownTransSegments[_dutsi.x++] = target;
         }
         else
-        { 
-            OutputDownTransSegments[_transSegIndexer.y++] = origin;
-            OutputDownTransSegments[_transSegIndexer.y++] = target;
+        {
+            OutputUpTransSegments[_dutsi.y++] = origin;
+            OutputUpTransSegments[_dutsi.y++] = target;
         }
     }
 
@@ -334,13 +344,13 @@ public struct WheelGenJob : IJob
         int4 indexers = isCW ? new int4(0, 1, 2, 3) : new int4(2, 3, 0, 1);
         float3x4 radialQuad = new float3x4(
             originQuad[0], originQuad[1],
-            targetQuad[2], targetQuad[3]            
+            targetQuad[2], targetQuad[3]
         );
 
         float3x2 startLineSeg, endLineSeg;
         GetLineSegments(in radialQuad, in indexers, out startLineSeg, out endLineSeg);
         QSTransSegment radial = new QSTransSegment(startLineSeg, endLineSeg, 1);
-        
+
         QSTransSegFillData radialFillData = new QSTransSegFillData(new float2(0, 1), MeshConstructType.Radial);
         float rotationAngle = TAU / P_SideCount;
         if (!isCW)
@@ -360,43 +370,80 @@ public struct WheelGenJob : IJob
         radial[0] = radialFillData;
 
         if (isCW)
-        { 
-            OutputDownTransSegments[_transSegIndexer.z++] = radial;
+        {
+            OutputCWTransSegments[_actsi.x++] = radial;
         }
         else
-        { 
-            OutputDownTransSegments[_transSegIndexer.w++] = radial;
+        {
+            OutputAntiCWTransSegments[_actsi.y++] = radial;
         }
     }
 
-    private void GetQuadIndexer(int bottomLeftIndex, out int4 quadIndexer)
+    private void GetQuadIndexer(int bottomLeftIndex, int2 offsets, out int4 quadIndexer)
     {
+        int ringIndex = bottomLeftIndex / offsets.y;
         quadIndexer.x = bottomLeftIndex;
         quadIndexer.y = quadIndexer.x + 1;
-        quadIndexer.z = quadIndexer.x + _ringOffset;
+        if (quadIndexer.y / offsets.y != ringIndex)
+        {
+            quadIndexer.y = offsets.y * ringIndex;
+        }
+
+        ringIndex++;
+        quadIndexer.z = quadIndexer.x + offsets.y;
         quadIndexer.w = quadIndexer.z + 1;
+        if (quadIndexer.w / offsets.y != ringIndex)
+        {
+            quadIndexer.w = offsets.y * ringIndex;
+        }
     }
 
     // segment mesh of the wheel, one for each side and ring
-    private void GetSegmentIndexer(int bottomLeftIndex, out int4 segmentIndexer)
+    private void GetSegmentIndexer(int bottomLeftIndex, int2 offsets, out int4 segmentIndexer)
     {
+        int ringIndex = bottomLeftIndex / offsets.y;
         segmentIndexer.x = bottomLeftIndex;
         segmentIndexer.y = segmentIndexer.x + P_SegmentResolution;
-        segmentIndexer.z = segmentIndexer.x + _ringOffset;
-        segmentIndexer.w = segmentIndexer.z + P_SegmentResolution;
-    }
+        if ((segmentIndexer.y / offsets.y) != ringIndex)
+        {
+            segmentIndexer.y = offsets.y * ringIndex;
+        }
 
-    private void GetLineSegments(in float3x4 quad, in int4 indexers, out float3x2 startLineSeg, out float3x2 endLineSeg)
-    { 
-        startLineSeg = new float3x2(quad[indexers.x], quad[indexers.y]);
-        endLineSeg = new float3x2(quad[indexers.z], quad[indexers.w]);
+        ringIndex++;
+        segmentIndexer.z = segmentIndexer.x + offsets.y;
+        segmentIndexer.w = segmentIndexer.z + P_SegmentResolution;
+        if ((segmentIndexer.w / offsets.y) != ringIndex)
+        {
+            segmentIndexer.w = offsets.y * ringIndex;
+        }
     }
 
     private void GetTransQuad(in int4 transIndex, ref float3x4 transQuad)
     {
-        transQuad[0] = _transitionGrid[transIndex.x];
-        transQuad[1] = _transitionGrid[transIndex.y];
-        transQuad[2] = _transitionGrid[transIndex.z];
-        transQuad[3] = _transitionGrid[transIndex.w];
+        transQuad[0] = _HelperTransitionGrid[transIndex.x];
+        transQuad[1] = _HelperTransitionGrid[transIndex.y];
+        transQuad[2] = _HelperTransitionGrid[transIndex.z];
+        transQuad[3] = _HelperTransitionGrid[transIndex.w];
+    }
+
+    private void GetLineSegments(in float3x4 quad, in int4 indexers, out float3x2 startLineSeg, out float3x2 endLineSeg)
+    {
+        startLineSeg = new float3x2(quad[indexers.x], quad[indexers.y]);
+        endLineSeg = new float3x2(quad[indexers.z], quad[indexers.w]);
+    }
+
+    private void DebugHelperGrid(int2 offsets)
+    {
+        for (int ring = 0; ring < P_RingCount + 1; ring++)
+        {
+            for (int i = 0; i < offsets.y; i++)
+            {
+                int index = i + ring * offsets.y;
+                if (index + 1 < _HelperTransitionGrid.Length)
+                { 
+                    Debug.DrawLine(_HelperTransitionGrid[index], _HelperTransitionGrid[index + 1], Color.red, 100);
+                }
+            }
+        }
     }
 }

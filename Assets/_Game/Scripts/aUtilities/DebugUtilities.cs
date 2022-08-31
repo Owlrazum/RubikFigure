@@ -40,6 +40,14 @@ namespace Orazum.Utilities
             DrawQuad(quad, height, color, duration);
         }
 
+        public static void DrawQuad(float3x4 quad, Color color, float duration)
+        {
+            Debug.DrawLine(quad[0], quad[1], color, duration);
+            Debug.DrawLine(quad[1], quad[3], color, duration);
+            Debug.DrawLine(quad[3], quad[2], color, duration);
+            Debug.DrawLine(quad[2], quad[0], color, duration);
+        }
+
         public static void DrawRay(float4 ray, float length, float duration)
         {
             Debug.DrawRay(x0z(ray.xy), x0z(ray.zw) * length, Color.white, duration);

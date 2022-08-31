@@ -35,11 +35,11 @@ public class WheelMoveState : FigureMoveState
         }
         else if (swipeAngle > TAU / 12 && swipeAngle < 5 * TAU / 12)
         {
-            return ConstructRotationMoves(_currentSelectedPoint.Index.y, ClockOrderType.CW);
+            return ConstructVerticesMove(_currentSelectedPoint.Index.y, ClockOrderType.CW);
         }
         else if (swipeAngle > -5 * TAU / 12 && swipeAngle < -TAU / 12)
         {
-            return ConstructRotationMoves(_currentSelectedPoint.Index.y, ClockOrderType.AntiCW);
+            return ConstructVerticesMove(_currentSelectedPoint.Index.y, ClockOrderType.AntiCW);
         }
         else
         {
@@ -51,9 +51,26 @@ public class WheelMoveState : FigureMoveState
     {
         if (_wheel.IsValidIndexVertOrder(index, vertOrder))
         {
-            WheelVerticesMove verticesMove = new WheelVerticesMove();
+            FigureVerticesMove verticesMove = new FigureVerticesMove();
             verticesMove.AssignFromIndex(index);
             verticesMove.AssignToIndex(_wheel.MoveIndexVertOrder(index, vertOrder));
+            verticesMove.AssignLerpSpeed(_moveLerpSpeed);
+            _movesToMake.Add(verticesMove);
+            return _movesToMake;
+        }
+        else
+        {
+            return null;
+        }
+    }
+
+    private List<FigureSegmentMove> ConstructVerticesMove(int2 index, ClockOrderType clockOrder)
+    {
+        if (_wheel.IsValidIndexClockOrder(index, clockOrder))
+        {
+            FigureVerticesMove verticesMove = new FigureVerticesMove();
+            verticesMove.AssignFromIndex(index);
+            verticesMove.AssignToIndex(_wheel.MoveIndexInClockOrder(index, clockOrder));
             verticesMove.AssignLerpSpeed(_moveLerpSpeed);
             _movesToMake.Add(verticesMove);
             return _movesToMake;
@@ -93,10 +110,3 @@ public class WheelMoveState : FigureMoveState
         index = _wheel.MoveIndexInClockOrder(index, clockOrder);
     }
 }
-
-/*
-Debug.DrawRay(worldPos, DirToCenter * 10, Color.red, 10);
-Debug.DrawRay(worldPos, worldDir * 10, Color.blue, 10);
-Debug.DrawRay(worldPos, worldDir * 10, Color.green, 10);
-Debug.Log(swipeAngle * Mathf.Rad2Deg);
-*/

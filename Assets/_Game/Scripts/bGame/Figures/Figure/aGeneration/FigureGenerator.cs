@@ -65,9 +65,6 @@ public abstract class FigureGenerator : MonoBehaviour
 
         mesh.RecalculateBounds();
 
-        NativeArray<VertexData> segmentVertices = CollectionUtilities.GetSlice(
-            _figureVertices, indexers.Start.x, indexers.Count.x);
-
         segment.Initialize(_figureVertices[indexers.Start.x].uv, meshResPuzzleIndex.x, meshResPuzzleIndex.y);
     }
     

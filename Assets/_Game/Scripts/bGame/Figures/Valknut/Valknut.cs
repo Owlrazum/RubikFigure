@@ -9,9 +9,9 @@ public class Valknut : Figure
     public const int TrianglesCount = 3;
     public const int TriangleSegmentsCount = 2;
 
-    private Array2D<ValknutQSTransSegments> _transitionDatas;
+    private Array2D<ValknutQSTransSegs> _transitionDatas;
 
-    public void AssignTransitionDatas(Array2D<ValknutQSTransSegments> transitionDatas)
+    public void AssignTransitionDatas(Array2D<ValknutQSTransSegs> transitionDatas)
     {
         _transitionDatas = transitionDatas;
     }
@@ -43,13 +43,11 @@ public class Valknut : Figure
         {
             Assert.IsTrue(_transitionDatas[verticesMove.ToIndex].CW.IsCreated);
             verticesMove.AssignTransitionPositions(_transitionDatas[verticesMove.ToIndex].CW);
-            Debug.Log($"TransitionData CW {_transitionDatas[verticesMove.ToIndex].CWID}");
         }
         else
         { 
             Assert.IsTrue(_transitionDatas[verticesMove.ToIndex].AntiCW.IsCreated);
             verticesMove.AssignTransitionPositions(_transitionDatas[verticesMove.ToIndex].AntiCW);
-            Debug.Log($"TransitionData AntiCW {_transitionDatas[verticesMove.ToIndex].AntiCWID}");
         }
     }
 

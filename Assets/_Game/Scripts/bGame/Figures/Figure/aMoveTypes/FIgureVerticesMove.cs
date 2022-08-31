@@ -18,7 +18,7 @@ public class FigureVerticesMove : FigureSegmentMove
     }
 
     public NativeArray<QSTransSegment>.ReadOnly TransSegments { get; private set; }
-    public void AssignTransitionPositions(NativeArray<QSTransSegment>.ReadOnly transSegments)
+    public void AssignTransSegs(NativeArray<QSTransSegment>.ReadOnly transSegments)
     {
         TransSegments = transSegments;
     }

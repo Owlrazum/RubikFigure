@@ -14,17 +14,20 @@ public class Wheel : Figure
     public int SideCount { get { return _dims.x; } }
     public int RingCount { get { return _dims.y; } }
 
-    public void AssignSegmentMeshes(WheelSegmentMesh[] segmentMeshes)
+    private Array2D<WheelQSTransSegs> _transDatas;
+
+    public void AssignTransitionDatas(Array2D<WheelQSTransSegs> transDatas)
     {
-        _segmentMeshes = segmentMeshes;
+        _transDatas = transDatas;
     }
+
     public override void Initialize(
         Array2D<FigureSegmentPoint> segmentPoints,
         FigureStatesController statesController,
         FigureParamsSO figureParams)
     {
         base.Initialize(segmentPoints, statesController, figureParams);
-        RotateSegmentOnGeneration();
+        // RotateSegmentOnGeneration();
     }
     private void RotateSegmentOnGeneration()
     {
@@ -36,19 +39,19 @@ public class Wheel : Figure
                 int2 index = new int2(side, ring);
                 _segmentPoints[index].transform.localRotation = rotation;
                 if (_segmentPoints[index].Segment != null)
-                { 
+                {
                     _segmentPoints[index].Segment.transform.localRotation = rotation;
                 }
             }
         }
     }
-    
+
     private Quaternion GetSideRotation(int2 index)
     {
         return GetSideRotation(index.x);
     }
     private Quaternion GetSideRotation(int sideIndex)
-    { 
+    {
         float rotationAngle = sideIndex * TAU / SideCount * Mathf.Rad2Deg;
         return Quaternion.AngleAxis(rotationAngle, Vector3.up);
     }
@@ -56,22 +59,49 @@ public class Wheel : Figure
     protected override void MakeSegmentMove(FigureSegment segment, FigureSegmentMove move, Action moveCompleteAction)
     {
         Assert.IsTrue(IsValidIndex(move.FromIndex) && IsValidIndex(move.ToIndex));
-        if (move is WheelRotationMove rotationMove)
-        { 
-            AssignRotation(rotationMove);
-        }
-        else if (move is WheelVerticesMove verticesMove)
-        { 
-            Assert.IsNull(_segmentPoints[move.ToIndex].Segment);
-            Assert.IsNotNull(_segmentPoints[move.FromIndex].Segment);
-            AssignSegmentMesh(verticesMove);
-        }
-        else if (move is WheelTeleportMove teleportMove)
+        if (move is FigureVerticesMove verticesMove)
         {
-            AssignTeleportMoveData(teleportMove);
+            AssignTransData(verticesMove);
         }
+        // else if (move is WheelVerticesMove verticesMove)
+        // { 
+        //     Assert.IsNull(_segmentPoints[move.ToIndex].Segment);
+        //     Assert.IsNotNull(_segmentPoints[move.FromIndex].Segment);
+        //     AssignSegmentMesh(verticesMove);
+        // }
+        // else if (move is WheelTeleportMove teleportMove)
+        // {
+        //     AssignTeleportMoveData(teleportMove);
+        // }
 
         segment.StartMove(move, moveCompleteAction);
+    }
+
+    private void AssignTransData(FigureVerticesMove verticesMove)
+    {
+        int2 from = verticesMove.FromIndex;
+        int2 to = verticesMove.ToIndex;
+        int sideDelta = to.x - from.x;
+        int ringDelta = to.y - from.y;
+        if (sideDelta > 0)
+        {
+            verticesMove.AssignTransSegs(_transDatas[to].Atsi);
+        }
+
+        if (sideDelta < 0)
+        { 
+            verticesMove.AssignTransSegs(_transDatas[to].Ctsi);
+        }
+
+        if (ringDelta > 0)
+        { 
+            verticesMove.AssignTransSegs(_transDatas[to].Utsi);
+        }
+
+        if (ringDelta < 0)
+        { 
+            verticesMove.AssignTransSegs(_transDatas[to].Dtsi);
+        }
     }
 
     private void AssignRotation(WheelRotationMove rotationMove)

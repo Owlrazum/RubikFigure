@@ -297,8 +297,8 @@ public class ValknutGenerator : FigureGenerator
 
         _dataJobHandle.Complete();
 
-        Array2D<ValknutQSTransSegments> transitionDatas =
-            new Array2D<ValknutQSTransSegments>(new int2(TrianglesCount, PartsCount));
+        Array2D<ValknutQSTransSegs> transitionDatas =
+            new Array2D<ValknutQSTransSegs>(new int2(TrianglesCount, PartsCount));
         for (int i = 0; i < _transitionDataJobIndexData.Length; i += 2)
         {
             int2x2 index = int2x2.zero;
@@ -311,12 +311,10 @@ public class ValknutGenerator : FigureGenerator
             NativeArray<QSTransSegment> _targetSegmentTransitionDataAntiCW =
                 _qsTransSegments.GetSubArray(index[1].x, index[1].y);
 
-            ValknutQSTransSegments transitionData = new ValknutQSTransSegments()
+            ValknutQSTransSegs transitionData = new ValknutQSTransSegs()
             {
                 CW = targetQSTransSegmentsCW.AsReadOnly(),
-                CWID = i,
                 AntiCW = _targetSegmentTransitionDataAntiCW.AsReadOnly(),
-                AntiCWID = i + 1
             };
 
             int2 segmentIndex = new int2(index[0].y / PartsCount, index[0].y % PartsCount);

@@ -216,7 +216,7 @@ public abstract class Figure : MonoBehaviour
     }
     private int2[] GenerateRandomEmptyPoints(int emptyPlacesCount, int colCount, int rowCount)
     {
-        var randomGenerator = Unity.Mathematics.Random.CreateFromIndex(15);
+        var randomGenerator = Unity.Mathematics.Random.CreateFromIndex((uint)System.DateTime.Now.Millisecond);
         int2[] emptySegmentPointIndices = new int2[emptyPlacesCount];
         Assert.IsTrue(emptySegmentPointIndices.Length <= (colCount * rowCount) / 2);
         HashSet<int2> _emptiedSet = new HashSet<int2>();

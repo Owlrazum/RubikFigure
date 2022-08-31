@@ -11,10 +11,21 @@ using Orazum.Constants;
 
 public class WheelGenerator : FigureGenerator
 {
-    [SerializeField]
-    private FigureParamsSO _figureParams; 
+    private const int LevitationTransSegCount = 3;
+    private const int ClockOrderTransSegCount = 1;
+    private const int VerticalTransSegCount = 2;
 
-    private NativeArray<QSTransSegment> _qsTransSegments;
+    [SerializeField]
+    private FigureParamsSO _figureParams;
+
+    private NativeArray<float3> _transitionGrid;
+
+    private NativeArray<QSTransSegment> _atsi;
+    private NativeArray<QSTransSegment> _ctsi;
+    private NativeArray<QSTransSegment> _dtsi;
+    private NativeArray<QSTransSegment> _utsi;
+    private NativeArray<QSTransSegment> _levDtsi;
+    private NativeArray<QSTransSegment> _levUtsi;
 
     private int2 _sidesRingsCount;
     private float2 _innerOuterRadii;
@@ -31,10 +42,12 @@ public class WheelGenerator : FigureGenerator
     private Array2D<WheelSegment> _segments;
     private Array2D<FigureSegmentPoint> _segmentPoints;
 
+    private int3 _transSegsCount;
+
     private void Awake()
     {
         if (enabled)
-        { 
+        {
             StartGeneration(_figureParams.FigureGenParamsSO);
         }
     }
@@ -48,12 +61,12 @@ public class WheelGenerator : FigureGenerator
     {
         base.InitializeParameters(figureGenParams);
 
-        WheelGenParamsSO generationParams =  figureGenParams as WheelGenParamsSO;
+        WheelGenParamsSO generationParams = figureGenParams as WheelGenParamsSO;
         _sidesRingsCount = new int2(generationParams.SideCount, generationParams.RingCount);
-        
+
         _segmentCount = _sidesRingsCount.x * _sidesRingsCount.y;
         _segmentResolution = generationParams.SegmentResolution;
-        
+
         _segmentBuffersData = new MeshBuffersIndexers();
         _segmentBuffersData.Count = new int2(
             2 * (_segmentResolution + 1),
@@ -62,18 +75,33 @@ public class WheelGenerator : FigureGenerator
 
         _segmentPointBuffersData = new MeshBuffersIndexers();
         _segmentPointBuffersData.Count = new int2(
-            _segmentBuffersData.Count.x * 2, 
+            _segmentBuffersData.Count.x * 2,
             _segmentBuffersData.Count.y * 4 + 12
         );
 
         _innerOuterRadii = new float2(generationParams.InnerRadius, generationParams.OuterRadius);
+
+        _transSegsCount.x = VerticalTransSegCount * 2 * (_sidesRingsCount.y - 1) * _segmentResolution * _sidesRingsCount.x;
+        _transSegsCount.y = LevitationTransSegCount * 2 * _sidesRingsCount.x;
+        _transSegsCount.z = ClockOrderTransSegCount * 2 * _sidesRingsCount.x;
     }
 
     protected override void StartMeshGeneration()
     {
-        _figureVertices = new NativeArray<VertexData>(_segmentBuffersData.Count.x * _segmentCount, Allocator.Persistent);
+        _figureVertices = new NativeArray<VertexData>(_segmentBuffersData.Count.x * _segmentCount, Allocator.TempJob);
         _figureIndices = new NativeArray<short>(_segmentBuffersData.Count.y * _segmentCount, Allocator.TempJob);
-        _qsTransSegments = new NativeArray<QSTransSegment>(_sidesRingsCount.y, Allocator.TempJob);
+
+        _transitionGrid = new NativeArray<float3>(
+            _sidesRingsCount.x * (_sidesRingsCount.y + 1) * _segmentResolution, Allocator.TempJob);
+
+        _dtsi = new NativeArray<QSTransSegment>(_transSegsCount.x, Allocator.Persistent);
+        _utsi = new NativeArray<QSTransSegment>(_transSegsCount.x, Allocator.Persistent);
+
+        _levDtsi = new NativeArray<QSTransSegment>(_transSegsCount.y, Allocator.Persistent);
+        _levUtsi = new NativeArray<QSTransSegment>(_transSegsCount.y, Allocator.Persistent);
+
+        _ctsi = new NativeArray<QSTransSegment>(_transSegsCount.z, Allocator.Persistent);
+        _atsi = new NativeArray<QSTransSegment>(_transSegsCount.z, Allocator.Persistent);
 
         WheelGenJob wheelMeshGenJob = new WheelGenJob()
         {
@@ -86,7 +114,14 @@ public class WheelGenerator : FigureGenerator
             OutputVertices = _figureVertices,
             OutputIndices = _figureIndices,
 
-            OutputDownTransSegments = _qsTransSegments
+            _HelperTransitionGrid = _transitionGrid,
+
+            OutputDownTransSegments = _dtsi,
+            OutputLevDownTransSegments = _levDtsi,
+            OutputUpTransSegments = _utsi,
+            OutputLevUpTransSegments = _levUtsi,
+            OutputAntiCWTransSegments = _atsi,
+            OutputCWTransSegments = _ctsi
         };
         _figureMeshGenJobHandle = wheelMeshGenJob.Schedule();
 
@@ -128,13 +163,13 @@ public class WheelGenerator : FigureGenerator
 
         _segmentPoints = new Array2D<FigureSegmentPoint>(_sidesRingsCount.x, _sidesRingsCount.y);
         _segments = new Array2D<WheelSegment>(_sidesRingsCount.x, _sidesRingsCount.y);
-        
+
         for (int ring = 0; ring < _sidesRingsCount.y; ring++)
         {
             for (int side = 0; side < _sidesRingsCount.x; side++)
             {
                 int2 index = new int2(side, ring);
-                
+
                 GameObject segmentGb = Instantiate(_segmentPrefab);
                 segmentGb.transform.parent = segmentsParent;
                 WheelSegment segment = segmentGb.AddComponent<WheelSegment>();
@@ -169,7 +204,7 @@ public class WheelGenerator : FigureGenerator
         {
             for (int ring = 0; ring < _sidesRingsCount.y; ring++)
             {
-                UpdateSegment(_segments[side, ring], _segmentBuffersData, new int2(_segmentResolution ,side));
+                UpdateSegment(_segments[side, ring], _segmentBuffersData, new int2(_segmentResolution, side));
 
                 FigureSegmentPoint currentPoint = _segmentPoints[side, ring];
                 currentPoint.InitializeWithSingleMesh(segmentPointMeshes[ring]);
@@ -178,19 +213,51 @@ public class WheelGenerator : FigureGenerator
             }
         }
 
-        _wheel.AssignSegmentMeshes(_qsTransSegments.ToArray());
+        Array2D<WheelQSTransSegs> transitionDatas = new Array2D<WheelQSTransSegs>(_sidesRingsCount);
+        int3 index = int3.zero;
+        for (int side = 0; side < _sidesRingsCount.x; side++)
+        {
+            for (int ring = 0; ring < _sidesRingsCount.y; ring++)
+            {
+                NativeArray<QSTransSegment> atsi = _atsi.GetSubArray(index.x, ClockOrderTransSegCount);
+                NativeArray<QSTransSegment> ctsi = _ctsi.GetSubArray(index.x, ClockOrderTransSegCount);
+                index.x += ClockOrderTransSegCount;
+
+                NativeArray<QSTransSegment> dtsi = _dtsi.GetSubArray(index.y, VerticalTransSegCount * _segmentResolution);
+                NativeArray<QSTransSegment> utsi = _utsi.GetSubArray(index.y, VerticalTransSegCount * _segmentResolution);
+                index.y += VerticalTransSegCount * _segmentResolution;
+
+                NativeArray<QSTransSegment> levDtsi = _levDtsi.GetSubArray(index.z, LevitationTransSegCount);
+                NativeArray<QSTransSegment> levUtsi = _levUtsi.GetSubArray(index.z, LevitationTransSegCount);
+                index.z += LevitationTransSegCount;
+
+                WheelQSTransSegs transData = new WheelQSTransSegs()
+                {
+                    Atsi = atsi.AsReadOnly(),
+                    Ctsi = ctsi.AsReadOnly(),
+                    Dtsi = dtsi.AsReadOnly(),
+                    Utsi = utsi.AsReadOnly(),
+                    LevDtsi = levDtsi.AsReadOnly(),
+                    LevUtsi = levUtsi.AsReadOnly(),
+                };
+
+                transitionDatas[side, ring] = transData;
+            }
+        }
+        _wheel.AssignTransitionDatas(transitionDatas);
         _wheel.Initialize(
-            _segmentPoints, 
+            _segmentPoints,
             _wheelStatesController,
-            figureParams    
+            figureParams
         );
 
         _figureVertices.Dispose();
         _figureIndices.Dispose();
-        _qsTransSegments.Dispose();
 
         _pointsRenderVertices.Dispose();
         _pointsRenderIndices.Dispose();
+
+        _transitionGrid.Dispose();
 
         return _wheel;
     }
@@ -215,6 +282,14 @@ public class WheelGenerator : FigureGenerator
     protected override void OnDestroy()
     {
         base.OnDestroy();
-        CollectionUtilities.DisposeIfNeeded(_qsTransSegments);
+
+        CollectionUtilities.DisposeIfNeeded(_transitionGrid);
+
+        CollectionUtilities.DisposeIfNeeded(_atsi);
+        CollectionUtilities.DisposeIfNeeded(_ctsi);
+        CollectionUtilities.DisposeIfNeeded(_dtsi);
+        CollectionUtilities.DisposeIfNeeded(_utsi);
+        CollectionUtilities.DisposeIfNeeded(_levDtsi);
+        CollectionUtilities.DisposeIfNeeded(_levUtsi);
     }
 }
