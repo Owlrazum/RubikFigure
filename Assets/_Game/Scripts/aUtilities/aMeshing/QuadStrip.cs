@@ -54,7 +54,7 @@ public struct QuadStrip : IDisposable
                 throw new System.ArgumentOutOfRangeException("Unknown LineEndType");
         }
 
-        return MathUtilities.GetSegmentRays(in startSegment, in endSegment);
+        return RaysUtilities.GetSegmentRays(in startSegment, in endSegment);
     }
 
     public float3x2 GetRay(LineEndType quadStripEnd, LineEndType lineSegmentEnd, LineEndDirectionType rayDirection)
@@ -77,9 +77,9 @@ public struct QuadStrip : IDisposable
         switch (lineSegmentEnd)
         { 
             case LineEndType.Start:
-                return MathUtilities.RayFromDelta(startSegment[0], endSegment[0]);
+                return RaysUtilities.RayFromDelta(startSegment[0], endSegment[0]);
             case LineEndType.End:
-                return MathUtilities.RayFromDelta(startSegment[1], endSegment[1]);
+                return RaysUtilities.RayFromDelta(startSegment[1], endSegment[1]);
             default:
                 throw new System.ArgumentOutOfRangeException("UnknonwLineEndType");
         }

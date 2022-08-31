@@ -4,7 +4,8 @@ using Unity.Mathematics;
 using Unity.Collections;
 
 using Orazum.Meshing;
-using static Orazum.Math.MathUtilities;
+using static Orazum.Math.RaysUtilities;
+using static Orazum.Math.MathUtils;
 using static Orazum.Constants.Math;
 
 [BurstCompile]

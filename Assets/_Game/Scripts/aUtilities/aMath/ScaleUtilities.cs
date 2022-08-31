@@ -1,4 +1,5 @@
 using UnityEngine;
+using Unity.Mathematics;
 
 namespace Orazum.Math
 { 
@@ -103,8 +104,8 @@ namespace Orazum.Math
                 targetBox = origin.gameObject.AddComponent<BoxCollider>();
             }
 
-            Vector3 originSize = MathUtilities.Abs(origin.TransformVector(originBox.size));
-            Vector3 targetSize = MathUtilities.Abs(target.TransformVector(targetBox.size));
+            Vector3 originSize = math.abs(origin.TransformVector(originBox.size));
+            Vector3 targetSize = math.abs(target.TransformVector(targetBox.size));
 
             Vector3 initialScale = origin.localScale;
             Vector3 newScale = origin.localScale;
@@ -120,7 +121,7 @@ namespace Orazum.Math
                 origin.localScale = newScale;
             }
 
-            originSize = MathUtilities.Abs(origin.TransformVector(originBox.size));
+            originSize = math.abs(origin.TransformVector(originBox.size));
             float deltaY = targetSize.y - originSize.y;
 
             if (deltaY < 0)
@@ -131,7 +132,7 @@ namespace Orazum.Math
                 origin.localScale = newScale;
             }
 
-            originSize = MathUtilities.Abs(origin.TransformVector(originBox.size));
+            originSize = math.abs(origin.TransformVector(originBox.size));
             float deltaZ = targetSize.z - originSize.z;
             if (deltaZ < 0)
             {

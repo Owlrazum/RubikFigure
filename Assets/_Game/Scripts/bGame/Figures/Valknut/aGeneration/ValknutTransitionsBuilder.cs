@@ -4,7 +4,8 @@ using Unity.Collections;
 using UnityEngine.Assertions;
 
 using Orazum.Math;
-using static Orazum.Math.MathUtilities;
+using static Orazum.Math.RaysUtilities;
+using static Orazum.Math.MathUtils;
 using static QSTransSegment;
 
 // TODO: create all possible transitions for the shuffle state.

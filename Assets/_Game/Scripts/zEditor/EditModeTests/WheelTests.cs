@@ -1,7 +1,7 @@
 using NUnit.Framework;
 using UnityEngine;
 using Unity.Mathematics;
-using static Orazum.Math.MathUtilities;
+using static Orazum.Math.MathUtils;
 
 public class FigureTests
 {

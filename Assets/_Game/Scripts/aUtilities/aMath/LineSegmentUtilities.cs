@@ -1,3 +1,4 @@
+using UnityEngine;
 using Unity.Mathematics;
 
 namespace Orazum.Math
@@ -30,6 +31,51 @@ namespace Orazum.Math
         public static float3 GetLineSegmentCenter(in float3x2 lineSegment)
         {
             return GetLineSegmentCenter(lineSegment[0], lineSegment[1]);
+        }
+
+        public static float3x2 RotateLineSegment(quaternion q, in float3x2 lineSegment)
+        {
+            return new float3x2(
+                math.rotate(q, lineSegment[0]),
+                math.rotate(q, lineSegment[1])
+            );
+        }
+        public static float3x2 RotateLineSegmentAround(quaternion q, float3 center, in float3x2 lineSegment)
+        {
+            float3x2 toReturn = new float3x2(
+                lineSegment[0] - center,
+                lineSegment[1] - center
+            );
+            toReturn = RotateLineSegment(q, in toReturn);
+            toReturn[0] = toReturn[0] + center;
+            toReturn[1] = toReturn[1] + center;
+
+            return toReturn;
+        }
+        public static float3x2 RotateLineSegmentAround(
+            quaternion q1, quaternion q2, 
+            float3x2 centers,
+            in float3x2 lineSegment
+        )
+        {
+            float3x2 toReturn = new float3x2(
+                lineSegment[0] - centers[0],
+                lineSegment[1] - centers[1]
+            );
+
+            toReturn[0] = math.rotate(q1, toReturn[0]);
+            toReturn[1] = math.rotate(q2, toReturn[1]);
+
+            toReturn[0] = toReturn[0] + centers[0];
+            toReturn[1] = toReturn[1] + centers[1];
+
+            return toReturn;
+        }
+
+        public static void DrawLineSegmentWithRaysUp(float3x2 lineSegment, float length, float duration)
+        {
+            Debug.DrawRay(lineSegment[0], Vector3.up * length, Color.red, duration);
+            Debug.DrawRay(lineSegment[1], Vector3.up * length, Color.red, duration);
         }
     }
 }

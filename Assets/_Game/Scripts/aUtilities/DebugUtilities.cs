@@ -1,6 +1,6 @@
 using UnityEngine;
 using Unity.Mathematics;
-using static Orazum.Math.MathUtilities;
+using static Orazum.Math.MathUtils;
 
 namespace Orazum.Utilities
 { 
@@ -46,16 +46,6 @@ namespace Orazum.Utilities
             Debug.DrawLine(quad[1], quad[3], color, duration);
             Debug.DrawLine(quad[3], quad[2], color, duration);
             Debug.DrawLine(quad[2], quad[0], color, duration);
-        }
-
-        public static void DrawRay(float4 ray, float length, float duration)
-        {
-            Debug.DrawRay(x0z(ray.xy), x0z(ray.zw) * length, Color.white, duration);
-        }
-
-        public static void DrawRay(float2 start, float2 dir, float length, float duration)
-        {
-            DrawRay(new float4(start, dir), length, duration);
         }
     }
 }

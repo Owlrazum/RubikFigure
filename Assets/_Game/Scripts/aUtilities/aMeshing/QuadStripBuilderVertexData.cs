@@ -3,7 +3,7 @@ using Unity.Collections;
 
 using UnityEngine;
 
-using static Orazum.Math.MathUtilities;
+using static Orazum.Math.MathUtils;
 
 namespace Orazum.Meshing
 {

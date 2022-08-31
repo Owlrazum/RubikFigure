@@ -66,7 +66,7 @@ namespace Orazum.Math
 
         public Vector3 GetLerpedPos(float lerpParam)
         {
-            Vector3 toReturn = MathUtilities.ComputeCubicBeizerPos(_par, lerpParam); ;
+            Vector3 toReturn = MathUtils.ComputeCubicBeizerPos(_par, lerpParam); ;
             return toReturn;
         }
 
