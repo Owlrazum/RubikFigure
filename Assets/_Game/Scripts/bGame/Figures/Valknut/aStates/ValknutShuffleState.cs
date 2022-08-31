@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Unity.Mathematics;
 
 using UnityEngine;
@@ -18,11 +19,11 @@ public class ValknutShuffleState : FigureShuffleState
     {
         FigureSegmentMove[] moves = base.Shuffle(lerpSpeed);
         ConvertToVerticesMoves(moves);
-        Debug.Log(moves);
+        // Debug.Log(moves);
         // FigureSegmentMove[] move = new FigureSegmentMove[1];
-        // move[0] = new ValknutVerticesMove();
-        // move[0].AssignFromIndex(new int2(0, 1));
-        // move[0].AssignToIndex(new int2(1, 0));
+        // move[0] = new FigureVerticesMove();
+        // move[0].AssignFromIndex(new int2(1, 0));
+        // move[0].AssignToIndex(new int2(2, 0));
         // move[0].AssignLerpSpeed(lerpSpeed);
 
         _figure.MakeMoves(moves, null);
@@ -31,26 +32,33 @@ public class ValknutShuffleState : FigureShuffleState
 
     protected override void ShuffleIndices()
     {
-        for (int part = 0; part < _figure.RowCount; part++)
-        {
-            for (int triangle = 0; triangle < _figure.ColCount; triangle++)
-            {
-                _shuffleIndices[part][triangle] = new int2(triangle, part);
-            }
-        }
-
-        for (int part = 0; part < _figure.RowCount; part++)
-        {
-            _shuffleIndices[part] = Algorithms.RandomDerangement(in _shuffleIndices[part]);
-        }
+        // HashSet<int2> toShuffle = new HashSet<int2>();
+        // HashSet<int2> freeIndices = new HashSet<int2>();
+        // for (int triangle = 0; triangle < _figure.ColCount; triangle++)
+        // {
+        //     for (int part = 0; part < _figure.RowCount; part++)
+        //     {
+        //         int2 index = new int2(triangle, part);
+        //         toShuffle.Add(index);
+        //         freeIndices.Add(index);
+        //     }
+        // }
 
         for (int triangle = 0; triangle < _figure.ColCount; triangle++)
         {
-            if (rnd.value > 0.5f)
+            int nextTriangle = triangle + 1 >= _figure.ColCount ? 0 : triangle + 1;
+            if (rnd.value < 0.5f)
             {
-                int2 t = _shuffleIndices[0][triangle];
-                _shuffleIndices[0][triangle] = _shuffleIndices[1][triangle];
-                _shuffleIndices[1][triangle] = t;
+                if (rnd.value < 0.5f)
+                { 
+                    _shuffleIndices[0][triangle] = new int2(nextTriangle, 0);
+                    _shuffleIndices[1][triangle] = new int2(nextTriangle, 1);
+                }
+                else
+                { 
+                    _shuffleIndices[0][triangle] = new int2(nextTriangle, 1);
+                    _shuffleIndices[1][triangle] = new int2(nextTriangle, 0);
+                }
             }
         }
     }
@@ -59,7 +67,7 @@ public class ValknutShuffleState : FigureShuffleState
     { 
         for (int i = 0; i < moves.Length; i++)
         {
-            moves[i] = new ValknutVerticesMove(moves[i]);
+            moves[i] = new FigureVerticesMove(moves[i]);
             Assert.IsNotNull(moves[i]);
         }
     }

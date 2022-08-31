@@ -5,7 +5,6 @@ using Unity.Collections;
 using UnityEngine.Assertions;
 
 using Orazum.Math;
-using static Orazum.Math.MathUtilities;
 public struct QuadStrip : IDisposable
 {
     private NativeArray<float3x2> _lineSegments;
@@ -40,27 +39,28 @@ public struct QuadStrip : IDisposable
 
     public float3x4 GetRays(LineEndType quadStripEnd, LineEndDirectionType raysDirection)
     {
-        float3x2 start = float3x2.zero;
-        float3x2 end = float3x2.zero;
+        float3x2 startSegment = float3x2.zero;
+        float3x2 endSegment = float3x2.zero;
+        
         switch (quadStripEnd)
         {
             case LineEndType.Start:
-                GetSegmentsForStartRay(raysDirection, out start, out end);
+                GetSegmentsForStartRay(raysDirection, out startSegment, out endSegment);
                 break;
             case LineEndType.End:
-                GetSegmentsForEndRay(raysDirection, out start, out end);
+                GetSegmentsForEndRay(raysDirection, out startSegment, out endSegment);
                 break;
             default:
                 throw new System.ArgumentOutOfRangeException("Unknown LineEndType");
         }
 
-        return GetSegmentRays(in start, in end);
+        return MathUtilities.GetSegmentRays(in startSegment, in endSegment);
     }
 
     public float3x2 GetRay(LineEndType quadStripEnd, LineEndType lineSegmentEnd, LineEndDirectionType rayDirection)
     {
-        float3x2 startSegment;
-        float3x2 endSegment;
+        float3x2 startSegment = float3x2.zero;
+        float3x2 endSegment = float3x2.zero;
 
         switch (quadStripEnd)
         { 
@@ -77,9 +77,9 @@ public struct QuadStrip : IDisposable
         switch (lineSegmentEnd)
         { 
             case LineEndType.Start:
-                return RayFromDelta(startSegment[0], endSegment[0]);
+                return MathUtilities.RayFromDelta(startSegment[0], endSegment[0]);
             case LineEndType.End:
-                return RayFromDelta(startSegment[1], endSegment[1]);
+                return MathUtilities.RayFromDelta(startSegment[1], endSegment[1]);
             default:
                 throw new System.ArgumentOutOfRangeException("UnknonwLineEndType");
         }
@@ -109,8 +109,6 @@ public struct QuadStrip : IDisposable
 
     private void GetSegmentsForEndRay(LineEndDirectionType raysDirection, out float3x2 start, out float3x2 end)
     {
-        start = float3x2.zero;
-        end = float3x2.zero;
         switch (raysDirection)
         { 
             case LineEndDirectionType.StartToEnd:

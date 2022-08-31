@@ -86,6 +86,7 @@ public abstract class FigureShuffleState : FigureState
             {
                 int2 fromIndex = new int2(side, ring);
                 int2 toIndex = _shuffleIndices[ring][side];
+                Debug.Log($"shuffle move: {fromIndex} {toIndex}");
                 FigureSegmentMove rotationMove = new FigureSegmentMove();
                 rotationMove.AssignFromIndex(fromIndex);
                 rotationMove.AssignToIndex(toIndex);

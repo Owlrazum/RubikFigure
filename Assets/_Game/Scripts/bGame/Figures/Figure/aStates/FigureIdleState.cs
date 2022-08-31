@@ -40,7 +40,7 @@ public class FigureIdleState : FigureState
             return;
         }
 
-        Debug.Log("Select action");
+        Debug.Log($"Select action {segmentPointCollider.ParentPoint.Index}");
         _currentSelectedPoint = segmentPointCollider.ParentPoint;
         _currentSelectedPoint.Segment.HighlightRender();
     }

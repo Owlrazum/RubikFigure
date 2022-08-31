@@ -81,30 +81,6 @@ public class WheelMoveState : FigureMoveState
         }
     }
 
-    private List<FigureSegmentMove> ConstructRotationMoves(int ringIndex, ClockOrderType clockOrder)
-    {
-        int2 index = new int2(0, ringIndex);
-        int2 nextIndex = new int2(0, ringIndex);
-        MoveIndexInRotationOrder(ref nextIndex, clockOrder);
-
-        for (int i = 0; i < _wheel.SideCount; i++)
-        {
-            index = nextIndex;
-            MoveIndexInRotationOrder(ref nextIndex, clockOrder);
-            if (_wheel.IsPointEmpty(index))
-            {
-                continue;
-            }
-            WheelRotationMove rotationMove = new WheelRotationMove();
-            rotationMove.AssignFromIndex(index);
-            rotationMove.AssignToIndex(nextIndex);
-            rotationMove.AssignLerpSpeed(_moveLerpSpeed);
-            _movesToMake.Add(rotationMove);
-        }
-
-        return _movesToMake;
-    }
-
     private void MoveIndexInRotationOrder(ref int2 index, ClockOrderType clockOrder)
     {
         index = _wheel.MoveIndexInClockOrder(index, clockOrder);

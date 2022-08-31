@@ -10,7 +10,6 @@ using static Orazum.Constants.Math;
 
 public class Wheel : Figure
 {
-    private WheelSegmentMesh[] _segmentMeshes;
     public int SideCount { get { return _dims.x; } }
     public int RingCount { get { return _dims.y; } }
 
@@ -85,43 +84,23 @@ public class Wheel : Figure
         int ringDelta = to.y - from.y;
         if (sideDelta > 0)
         {
-            verticesMove.AssignTransSegs(_transDatas[to].Atsi);
+            verticesMove.AssignTransitionData(_transDatas[to].Atsi);
         }
 
         if (sideDelta < 0)
         { 
-            verticesMove.AssignTransSegs(_transDatas[to].Ctsi);
+            verticesMove.AssignTransitionData(_transDatas[to].Ctsi);
         }
 
         if (ringDelta > 0)
         { 
-            verticesMove.AssignTransSegs(_transDatas[to].Utsi);
+            verticesMove.AssignTransitionData(_transDatas[to].Utsi);
         }
 
         if (ringDelta < 0)
         { 
-            verticesMove.AssignTransSegs(_transDatas[to].Dtsi);
+            verticesMove.AssignTransitionData(_transDatas[to].Dtsi);
         }
-    }
-
-    private void AssignRotation(WheelRotationMove rotationMove)
-    {
-        quaternion from = GetSideRotation(rotationMove.FromIndex);
-        quaternion to = GetSideRotation(rotationMove.ToIndex);
-        quaternion diff = math.mul(math.inverse(from), to);
-        rotationMove.AssignRotation(diff);
-    }
-
-    private void AssignSegmentMesh(WheelVerticesMove verticesMove)
-    { 
-        verticesMove.AssignSegmentMesh(_segmentMeshes[verticesMove.ToIndex.y]);
-    }
-
-    private void AssignTeleportMoveData(WheelTeleportMove teleportMove)
-    { 
-        teleportMove.AssignTargetOrientation(GetSideRotation(teleportMove.ToIndex));
-        teleportMove.AssignStartTeleportPosition(_startTeleportPosition);
-        teleportMove.AssignSegmentMesh(_segmentMeshes[teleportMove.ToIndex.y]);
     }
 
     [ContextMenu("Print")]

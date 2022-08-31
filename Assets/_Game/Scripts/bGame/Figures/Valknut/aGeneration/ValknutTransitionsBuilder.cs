@@ -7,6 +7,7 @@ using Orazum.Math;
 using static Orazum.Math.MathUtilities;
 using static QSTransSegment;
 
+// TODO: create all possible transitions for the shuffle state.
 public struct ValknutTransitionsBuilder
 {
     private enum TransitionType

@@ -13,13 +13,14 @@ MonoBehaviour:
   m_Name: ValknutParams
   m_EditorClassIdentifier: 
   FigureGenParamsSO: {fileID: 11400000, guid: ecb6ca1efe9f9484cad85bcc6f45140d, type: 2}
+  SelectMethod: 0
   ShuffleStepsAmount: 1
   ShufflePauseTime: 0.1
-  ShuffleLerpSpeed: 0.5
+  ShuffleLerpSpeed: 0.2
   MoveLerpSpeed: 2
   StartPositionForSegmentsInCompletionPhase: {x: 0, y: -10, z: 0}
   ShouldUsePredefinedEmptyPlaces: 1
   PredefinedEmptyPlaces:
-  - x: 1
+  - x: 2
     y: 0
   EmptyPlacesCount: 1

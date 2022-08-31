@@ -43,7 +43,7 @@ namespace Orazum.Math
 
         public static float3x4 GetSegmentRays(in float3x2 start, in float3x2 end)
         {
-            float3x2 r1 = RayFromDelta(start[0], end[1]);
+            float3x2 r1 = RayFromDelta(start[0], end[0]);
             float3x2 r2 = RayFromDelta(start[1], end[1]);
             return new float3x4(r1[0], r1[1], r2[0], r2[1]);
         }
@@ -99,6 +99,7 @@ namespace Orazum.Math
             out float3x2 intersection)
         { 
             intersection = new float3x2();
+
             bool first = IntersectRays2D(firstSegmentRay, ray, out intersection[0]);
             bool second = IntersectRays2D(secondSegmentRay, ray, out intersection[1]);
             return first && second;

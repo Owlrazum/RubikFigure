@@ -81,6 +81,7 @@ public abstract class FigureSegmentMover : MonoBehaviour
 
         if (move is FigureVerticesMove verticesMove)
         {
+            Debug.Log("Starting vertices move");
             StartCoroutine(MoveSequence(verticesMove));
         }
     }
@@ -153,7 +154,7 @@ public abstract class FigureSegmentMover : MonoBehaviour
         );
         mesh.SetSubMesh(0, subMesh);
 
-        mesh.RecalculateNormals();
+        // mesh.RecalculateNormals();
         mesh.RecalculateBounds();
     }
 

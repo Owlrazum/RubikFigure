@@ -4,14 +4,13 @@ using Unity.Collections;
 
 using Orazum.Meshing;
 
-[BurstCompile]
+// [BurstCompile]
 public struct FigureSegmentMoveJob : IJob
 {
     public float P_LerpParam;
 
     public QSTransition InputQuadStripTransition;
     
-    [WriteOnly]
     public MeshBuffersIndexersForJob OutputIndexers;
 
     public void Execute()

@@ -16,9 +16,9 @@ public class WheelCompleter : FigureCompleter
         _currentWheel = figure as Wheel;
         for (int i = 0; i < moves.Count; i++)
         {
-            moves[i] = ((WheelTeleportMove)moves[i]);
+            // moves[i] = ((WheelTeleportMove)moves[i]);
         }
-        _currentWheel.MakeMoves(moves, null);
+        // _currentWheel.MakeMoves(moves, null);
         StartCoroutine(CompletionSequence(1.0f / _teleportLerpSpeed));
         return null;
     }
