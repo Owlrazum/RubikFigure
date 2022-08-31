@@ -85,6 +85,7 @@ public class Wheel : Figure
         if (sideDelta > 0)
         {
             verticesMove.AssignTransitionData(_transDatas[to].Atsi);
+            verticesMove.ShouldReorientVertices = true;
         }
 
         if (sideDelta < 0)

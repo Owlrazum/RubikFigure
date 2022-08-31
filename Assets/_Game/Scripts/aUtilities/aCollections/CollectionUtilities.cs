@@ -49,6 +49,13 @@ namespace Orazum.Collections
             list[rhs] = element;
         }
 
+        public static void Swap<T>(ref NativeArray<T> nativeArray, int lhs, int rhs) where T : struct
+        {
+            T element = nativeArray[lhs];
+            nativeArray[lhs] = nativeArray[rhs];
+            nativeArray[rhs] = element;
+        }
+
         public static bool Contains<T>(List<T> list, T value) where T : System.IEquatable<T>
         {
             for (int i = 0; i < list.Count; i++)

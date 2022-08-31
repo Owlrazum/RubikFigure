@@ -19,24 +19,23 @@ namespace Orazum.Meshing
 
         public QSTransition(
             ref NativeArray<VertexData> vertices,
-            ref NativeArray<short> indices
+            ref NativeArray<short> indices,
+            in float3x2 normalUV
         )
         {
             _transitionSegments = new NativeArray<QSTransSegment>.ReadOnly();
-            _quadStripBuilder = new QuadStripBuilderVertexData(vertices, indices, float3x2.zero);
+            _quadStripBuilder = new QuadStripBuilderVertexData(vertices, indices, normalUV);
             _globalLerpParam = -1;
         }
 
         public void AssignTransitionData(
-            NativeArray<QSTransSegment>.ReadOnly transitionSegments,
-            in float3x2 normalAndUV
+            NativeArray<QSTransSegment>.ReadOnly transitionSegments
         )
         {
             _transitionSegments = transitionSegments;
-            _quadStripBuilder.SetNormalAndUV(normalAndUV);
         }
 
-        public void UpdateWithLerpPos(float globalLerpParam, ref MeshBuffersIndexers buffersIndexers)
+        public void UpdateWithLerpPos(float globalLerpParam, bool shouldReorientVertices, ref MeshBuffersIndexers buffersIndexers)
         {
             _globalLerpParam = globalLerpParam;
 
@@ -47,6 +46,11 @@ namespace Orazum.Meshing
                 {
                     ConsiderFillData(in segment, segment[j], ref buffersIndexers);
                 }
+            }
+
+            if (shouldReorientVertices)
+            {
+                _quadStripBuilder.ReorientVertices(buffersIndexers.Count.x);
             }
         }
 

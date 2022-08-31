@@ -3,7 +3,6 @@ using UnityEngine;
 using UnityEngine.Assertions;
 
 using Orazum.Collections;
-using static Orazum.Math.MathUtils;
 
 public class WheelShuffleState : FigureShuffleState
 {

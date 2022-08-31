@@ -22,4 +22,6 @@ public class FigureVerticesMove : FigureSegmentMove
     {
         TransSegments = transSegments;
     }
+
+    public bool ShouldReorientVertices { get; set; }
 }

@@ -2,8 +2,7 @@ using Unity.Mathematics;
 using Unity.Collections;
 
 using UnityEngine;
-
-using static Orazum.Math.MathUtils;
+using Orazum.Collections;
 
 namespace Orazum.Meshing
 {
@@ -22,9 +21,12 @@ namespace Orazum.Meshing
             _prevIndices = int2.zero;
         }
 
-        public void SetNormalAndUV(float3x2 normalAndUV)
+        public void ReorientVertices(int bufferLength)
         {
-            _normalAndUV = normalAndUV;
+            for (int i = 0; i < bufferLength; i += 2)
+            {
+                CollectionUtilities.Swap(ref _vertices, i, i + 1);
+            }   
         }
 
         public void Build(QuadStrip quadStrip, ref MeshBuffersIndexers buffersData)
