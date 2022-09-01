@@ -10,29 +10,26 @@ public struct ValknutGenJobData : IJobFor
     public QuadStripsCollection InputQuadStripsCollection;
 
     [ReadOnly]
-    public NativeArray<int2x2> InputIndexData;
+    public NativeArray<int2> InputOriginTargetIndices;
 
-    [WriteOnly]
-    public NativeArray<QSTransSegment> OutputTransitionsSegments;
+    public QSTransitionsCollection OutputTransitionsCollection;
     
     public void Execute(int i)
     {
-        int2x2 index = InputIndexData[i];
-        NativeArray<QSTransSegment> transitionSegments = 
-            OutputTransitionsSegments.GetSubArray(index[1].x, index[1].y);
+        int2 originTarget = InputOriginTargetIndices[i];
 
-        QuadStrip tempOrigin = InputQuadStripsCollection.GetTempQuadStrip(index[0].x);
-        QuadStrip tempTarget = InputQuadStripsCollection.GetTempQuadStrip(index[0].y);
+        int2 bufferIndexer = OutputTransitionsCollection.GetIndexer(i);
+        NativeArray<QSTransSegment> writeBuffer = 
+            OutputTransitionsCollection.GetWriteBufferAndWriteIndexer(bufferIndexer, i);
+
+        QuadStrip origin = InputQuadStripsCollection.GetQuadStrip(originTarget.x);
+        QuadStrip target = InputQuadStripsCollection.GetQuadStrip(originTarget.y);
 
         ValknutTransitionsBuilder dataBuilder = new ValknutTransitionsBuilder(
-            tempOrigin,
-            tempTarget,
-            ref transitionSegments
+            origin,
+            target
         );
 
-        dataBuilder.BuildTransitionData();
-
-        tempOrigin.Dispose();
-        tempTarget.Dispose();
+        dataBuilder.BuildTransition(ref writeBuffer);
     }
 }

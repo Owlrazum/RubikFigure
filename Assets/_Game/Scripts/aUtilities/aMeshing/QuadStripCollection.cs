@@ -2,63 +2,57 @@ using System;
 using Unity.Mathematics;
 using Unity.Collections;
 
-// for Unity's Job system
+using UnityEngine.Assertions;
+
+/// <summary>
+/// Unity's Jobs system.
+/// Fixed Collection size, which needs constructed buffers.
+/// Indexers contain information about start and count of line segment.
+/// </summary>
 public struct QuadStripsCollection : IDisposable
-{ 
+{
     private NativeArray<float3x2> _lineSegments;
     private NativeArray<int2> _quadStripsIndexers;
-    private int _quadStripsIndexersIndexer;
+    public int QuadStripsCount { get { return _quadStripsIndexers.Length; } }
 
     public QuadStripsCollection(NativeArray<float3x2> lineSegments, NativeArray<int2> quadStripsIndexers)
     {
         _lineSegments = lineSegments;
         _quadStripsIndexers = quadStripsIndexers;
-        _quadStripsIndexersIndexer = 0;
     }
 
-    public void AddQuadStrip(NativeArray<float3x2> localLineSegments, int2 indexer)
+    public NativeArray<float3x2> GetWriteBufferAndWriteIndexer(int2 indexer, int indexerIndex)
     {
-        int localLineSegmentsIndexer = 0;
-        for (int i = indexer.x; i < indexer.x + indexer.y; i++)
-        {
-            _lineSegments[i] = localLineSegments[localLineSegmentsIndexer++];
-        }
-        _quadStripsIndexers[_quadStripsIndexersIndexer++] = indexer;
+        Assert.IsTrue(indexerIndex < QuadStripsCount);
+        _quadStripsIndexers[indexerIndex] = indexer;
+        return _lineSegments.GetSubArray(indexer.x, indexer.y);
     }
 
-    public QuadStrip GetTempQuadStrip(int index)
+    public QuadStrip GetQuadStrip(int index)
     {
+        Assert.IsTrue(index < QuadStripsCount);
         int2 indexer = _quadStripsIndexers[index];
-        NativeArray<float3x2> localLineSegments = new NativeArray<float3x2>(indexer.y, Allocator.Temp);
-        int localLineSegmentsIndexer = 0;
-        for (int i = 0; i < indexer.y; i++)
-        {
-            localLineSegments[localLineSegmentsIndexer++] = _lineSegments[indexer.x + i];
-        }
+        NativeArray<float3x2> localLineSegments = _lineSegments.GetSubArray(indexer.x, indexer.y);
         return new QuadStrip(localLineSegments);
     }
 
-    public QuadStrip[] AllocatePersistently()
+    public int2 GetIndexer(int index)
     {
-        QuadStrip[] quadStrips = new QuadStrip[_quadStripsIndexers.Length];
-        int quadStripIndexer = 0;
-        for (int i = 0; i < _quadStripsIndexers.Length; i++)
-        {
-            int2 indexer = _quadStripsIndexers[i];
-            NativeArray<float3x2> localLineSegments = new NativeArray<float3x2>(indexer.y, Allocator.Persistent);
-            int localIndexer = 0;
-            for (int j = indexer.x; j < indexer.y; j++)
-            {
-                localLineSegments[localIndexer++] = _lineSegments[j];
-            }
-            QuadStrip quadStrip = new QuadStrip(localLineSegments);
-            quadStrips[quadStripIndexer++] = quadStrip;
-        }
-        return quadStrips;
+        Assert.IsTrue(index < QuadStripsCount);
+        return _quadStripsIndexers[index];
+    }
+
+    public int2 GetQuadIndexer(int index)
+    {
+        Assert.IsTrue(index < QuadStripsCount);
+        int2 indexer = _quadStripsIndexers[index];
+        indexer.x -= index;
+        indexer.y -= 1;
+        return indexer;
     }
 
     public void Dispose()
-    { 
+    {
         _lineSegments.Dispose();
         _quadStripsIndexers.Dispose();
     }

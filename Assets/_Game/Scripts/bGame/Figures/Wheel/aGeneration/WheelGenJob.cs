@@ -111,8 +111,8 @@ public struct WheelGenJob : IJob
     {
         _buffersData.LocalCount = int2.zero;
 
-        QuadStripBuilderVertexData quadStripBuilder =
-            new QuadStripBuilderVertexData(OutputVertices, OutputIndices, _normalAndUV);
+        QuadStripBuilder quadStripBuilder =
+            new QuadStripBuilder(OutputVertices, OutputIndices, _normalAndUV);
 
         float3 currentRay = _sideStartRay;
         float3x2 quadStripSegment = new float3x2(

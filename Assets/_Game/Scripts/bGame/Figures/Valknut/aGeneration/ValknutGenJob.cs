@@ -35,6 +35,8 @@ public struct ValknutGenJob : IJob
     private quaternion _rightRotate;
     private quaternion _leftRotate;
 
+    private int _quadStripIndexer;
+
     public void Execute()
     {
         _startRay = new float3(0, 0, 1);
@@ -50,6 +52,7 @@ public struct ValknutGenJob : IJob
             new float3(0, startUV, 0)
         );
 
+        _quadStripIndexer = 0;
         GenerateValknut();
     }
 
@@ -243,44 +246,40 @@ public struct ValknutGenJob : IJob
     {
         _buffersData.LocalCount = int2.zero;
 
-        NativeArray<float3x2> lineSegments = new NativeArray<float3x2>(3, Allocator.Temp);
-        lineSegments[0] = x0z(oas.s1);
-        lineSegments[1] = x0z(oas.s2);
-        lineSegments[2] = x0z(oas.s3);
-
-        _quadStripsCollectionIndexer.y = 3;
-        OutputQuadStripsCollection.AddQuadStrip(lineSegments, _quadStripsCollectionIndexer);
-        _quadStripsCollectionIndexer.x += 3;
-        lineSegments.Dispose();
-
-        QuadStripBuilderVertexData quadStripBuilder = 
-            new QuadStripBuilderVertexData(OutputVertices, OutputIndices, _normalAndUV);
+        QuadStripBuilder quadStripBuilder = 
+            new QuadStripBuilder(OutputVertices, OutputIndices, _normalAndUV);
         quadStripBuilder.Start(x0z(oas.s1), ref _buffersData);
         quadStripBuilder.Continue(x0z(oas.s2), ref _buffersData);
         quadStripBuilder.Continue(x0z(oas.s3), ref _buffersData);
+
+        _quadStripsCollectionIndexer.y = 3;
+        NativeArray<float3x2> lineSegments = 
+            OutputQuadStripsCollection.GetWriteBufferAndWriteIndexer(_quadStripsCollectionIndexer, _quadStripIndexer++);
+        lineSegments[0] = x0z(oas.s1);
+        lineSegments[1] = x0z(oas.s2);
+        lineSegments[2] = x0z(oas.s3);
+        _quadStripsCollectionIndexer.x += 3;
     }
 
     private void AddTwoAngleSegmentMeshData(TwoAngleSegment tas)
     {
         _buffersData.LocalCount = int2.zero;
 
-        NativeArray<float3x2> lineSegments = new NativeArray<float3x2>(4, Allocator.Temp);
-        lineSegments[0] = x0z(tas.s1);
-        lineSegments[1] = x0z(tas.s2);
-        lineSegments[2] = x0z(tas.s3);
-        lineSegments[3] = x0z(tas.s4);
-
-        _quadStripsCollectionIndexer.y = 4;
-        OutputQuadStripsCollection.AddQuadStrip(lineSegments, _quadStripsCollectionIndexer);
-        _quadStripsCollectionIndexer.x += 4;
-        lineSegments.Dispose();
- 
-        QuadStripBuilderVertexData quadStripBuilder 
-            = new QuadStripBuilderVertexData(OutputVertices, OutputIndices, _normalAndUV);
+        QuadStripBuilder quadStripBuilder 
+            = new QuadStripBuilder(OutputVertices, OutputIndices, _normalAndUV);
         quadStripBuilder.Start(x0z(tas.s1), ref _buffersData);
         quadStripBuilder.Continue(x0z(tas.s2), ref _buffersData);
         quadStripBuilder.Continue(x0z(tas.s3), ref _buffersData);
         quadStripBuilder.Continue(x0z(tas.s4), ref _buffersData);
+
+        _quadStripsCollectionIndexer.y = 4;
+        NativeArray<float3x2> lineSegments = 
+            OutputQuadStripsCollection.GetWriteBufferAndWriteIndexer(_quadStripsCollectionIndexer, _quadStripIndexer++);
+        lineSegments[0] = x0z(tas.s1);
+        lineSegments[1] = x0z(tas.s2);
+        lineSegments[2] = x0z(tas.s3);
+        lineSegments[3] = x0z(tas.s4);
+        _quadStripsCollectionIndexer.x += 4;
     }
 
     private float2 ExtrudeVertex(float2 start, float2 direction)

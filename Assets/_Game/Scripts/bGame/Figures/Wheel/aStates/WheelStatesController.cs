@@ -16,10 +16,5 @@ public class WheelStatesController : FigureStatesController
 
         MoveState = new WheelMoveState(this, wheel, figureParams.MoveLerpSpeed);
         ShuffleState = new WheelShuffleState(this, wheel, figureParams);
-
-        _currentState = ShuffleState;
-        _currentState.OnEnter();
-
-        StartCoroutine(StateSwitchSequence());
     }
 }

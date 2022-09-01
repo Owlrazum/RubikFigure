@@ -14,10 +14,5 @@ public class ValknutStatesController : FigureStatesController
         }
         MoveState = new ValknutMoveState(this, valknut, figureParams.MoveLerpSpeed);
         ShuffleState = new ValknutShuffleState(this, valknut, figureParams);
-
-        _currentState = ShuffleState;
-        _currentState.OnEnter();
-
-        StartCoroutine(StateSwitchSequence());
     }
 }

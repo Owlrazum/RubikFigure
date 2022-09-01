@@ -10,8 +10,15 @@ public abstract class FigureStatesController : MonoBehaviour
     public FigureShuffleState ShuffleState { get; protected set; }
 
     public abstract void Initialize(Figure figure, FigureParamsSO figureParams);
+    public void StartUpdating()
+    { 
+        _currentState = ShuffleState;
+        _currentState.OnEnter();
 
-    protected IEnumerator StateSwitchSequence()
+        StartCoroutine(StateSwitchSequence());
+    }
+
+    private IEnumerator StateSwitchSequence()
     {
         while (true)
         {

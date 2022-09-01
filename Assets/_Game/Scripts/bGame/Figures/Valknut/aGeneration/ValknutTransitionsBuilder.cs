@@ -23,7 +23,7 @@ public struct ValknutTransitionsBuilder
     private QuadStrip _origin;
     private QuadStrip _target;
 
-    private NativeArray<QSTransSegment> _transSegments;
+    private NativeArray<QSTransSegment> _writeBuffer;
     private NativeArray<float2x4> _startEndSegs;
     private NativeArray<float> _outFillDistances;
     private NativeArray<float> _inFillDistances;
@@ -33,19 +33,19 @@ public struct ValknutTransitionsBuilder
 
     public ValknutTransitionsBuilder(
         in QuadStrip origin,
-        in QuadStrip target,
-        ref NativeArray<QSTransSegment> toBuild
+        in QuadStrip target
     )
     {
         _origin = origin;
         _target = target;
-        _transSegments = toBuild;
+        _writeBuffer = new NativeArray<QSTransSegment>();
 
         _transSegmentsIndexer = new int2(0, _origin.QuadsCount + 1 + _target.QuadsCount);
-        _startEndSegs = new NativeArray<float2x4>(_transSegmentsIndexer.y, Allocator.Temp);
 
+        _startEndSegs = new NativeArray<float2x4>(_transSegmentsIndexer.y, Allocator.Temp);
         _outFillDistances = new NativeArray<float>(_origin.QuadsCount, Allocator.Temp);
         _inFillDistances = new NativeArray<float>(_target.QuadsCount, Allocator.Temp);
+
         _emptyZoneLength = 0;
 
         if (_origin.QuadsCount == 3)
@@ -78,17 +78,14 @@ public struct ValknutTransitionsBuilder
         throw new System.ArgumentOutOfRangeException("QuadStrips quadsCount should be in [2, 3]");
     }
 
-    public void BuildTransitionData()
+    public void BuildTransition(ref NativeArray<QSTransSegment> writeBuffer)
     {
+        _writeBuffer = writeBuffer;
         ComputeDistancesAndSegs(
             out float2 fillInOutTotalDistances
         );
         BuildFillOutData(in fillInOutTotalDistances.y, out QSTransSegment lastSegment);
         BuildFillInData(in fillInOutTotalDistances.x, ref lastSegment);
-
-        _startEndSegs.Dispose();
-        _outFillDistances.Dispose();
-        _inFillDistances.Dispose();
     }
 
     private void ComputeDistancesAndSegs(
@@ -239,7 +236,7 @@ public struct ValknutTransitionsBuilder
                 );
                 fillOutState.QuadType = QuadConstructType.NewQuadToEnd;
                 firstSegment[0] = fillOutState;
-                _transSegments[_transSegmentsIndexer.x++] = firstSegment;
+                _writeBuffer[_transSegmentsIndexer.x++] = firstSegment;
             }
             else
             {
@@ -258,7 +255,7 @@ public struct ValknutTransitionsBuilder
 
                 segment[0] = filledState;
                 segment[1] = fillingOutState;
-                _transSegments[_transSegmentsIndexer.x++] = segment;
+                _writeBuffer[_transSegmentsIndexer.x++] = segment;
             }
 
             dr.x = dr.y;
@@ -286,7 +283,7 @@ public struct ValknutTransitionsBuilder
 
         lastFillOutSegment[1] = lastSegFilledState;
         lastFillOutSegment[2] = lastSegFillingOutState;
-        _transSegments[_transSegmentsIndexer.x++] = lastFillOutSegment;
+        _writeBuffer[_transSegmentsIndexer.x++] = lastFillOutSegment;
     }
 
     private void BuildFillInData(in float inFillTotalDistance, ref QSTransSegment lastFillOutSegment)
@@ -301,7 +298,7 @@ public struct ValknutTransitionsBuilder
         QSTransSegFillData lastFilledState = lastFillOutSegment[1];
         lastFilledState.LerpRange = new float2(lerpOffset, lastFillOutSegment[1].LerpRange.y);
         lastFillOutSegment[1] = lastFilledState;
-        _transSegments[_transSegmentsIndexer.x - 1] = lastFillOutSegment;
+        _writeBuffer[_transSegmentsIndexer.x - 1] = lastFillOutSegment;
 
         int inFillDistancesIndexer = 0;
         float2 dr = new float2(lerpOffset, _inFillDistances[inFillDistancesIndexer++] / inFillTotalDistance + lerpOffset);
@@ -332,7 +329,7 @@ public struct ValknutTransitionsBuilder
                 firstFillInSegment[0] = fillInState;
                 firstFillInSegment[1] = filledState;
 
-                _transSegments[_transSegmentsIndexer.x++] = firstFillInSegment;
+                _writeBuffer[_transSegmentsIndexer.x++] = firstFillInSegment;
             }
             else if (i < _target.QuadsCount - 1)
             {
@@ -351,7 +348,7 @@ public struct ValknutTransitionsBuilder
                 filledState.QuadType = QuadConstructType.NewQuadStartToEnd;
                 segment[0] = fillInState;
                 segment[1] = filledState;
-                _transSegments[_transSegmentsIndexer.x++] = segment;
+                _writeBuffer[_transSegmentsIndexer.x++] = segment;
             }
             else
             {
@@ -362,7 +359,7 @@ public struct ValknutTransitionsBuilder
                 );
                 fillInState.QuadType = QuadConstructType.ContinueQuadFromStart;
                 lastFillInSegment[0] = fillInState;
-                _transSegments[_transSegmentsIndexer.x] = lastFillInSegment;
+                _writeBuffer[_transSegmentsIndexer.x] = lastFillInSegment;
                 break;
             }
 

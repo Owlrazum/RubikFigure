@@ -37,7 +37,7 @@ public abstract class FigureSegmentMover : MonoBehaviour
     private NativeArray<short> _indices;
     private MeshBuffersIndexersForJob _indexersForJob;
 
-    private QSTransition _quadStripTransition;
+    private QSTransitionAnimator _quadStripTransition;
 
     private bool _wasJobScheduled;
     private bool _wasMoveCompleted;
@@ -50,7 +50,7 @@ public abstract class FigureSegmentMover : MonoBehaviour
         _indexersForJob = new MeshBuffersIndexersForJob(new MeshBuffersIndexers());
         
         float3x2 normalUV = new float3x2(math.up(), new float3(uv, 0));
-        _quadStripTransition = new QSTransition(ref _vertices, ref _indices, normalUV);
+        _quadStripTransition = new QSTransitionAnimator(ref _vertices, ref _indices, normalUV);
     }
 
     protected virtual void Awake()
@@ -88,8 +88,8 @@ public abstract class FigureSegmentMover : MonoBehaviour
      private IEnumerator MoveSequence(FigureVerticesMove verticesMove)
     {
         float lerpParam = 0;
-        Assert.IsTrue(verticesMove.TransSegments.IsCreated);
-        _quadStripTransition.AssignTransitionData(verticesMove.TransSegments);
+        Assert.IsTrue(verticesMove.Transition.IsCreated);
+        _quadStripTransition.AssignTransition(verticesMove.Transition);
         FigureSegmentMoveJob moveJob = new FigureSegmentMoveJob()
         {
             P_ShouldReorientVertices = verticesMove.ShouldReorientVertices,

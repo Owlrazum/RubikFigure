@@ -1,10 +1,12 @@
+using System.Collections;
+
 using Unity.Jobs;
 using Unity.Collections;
+using Unity.Mathematics;
 
 using UnityEngine;
 using UnityEngine.Rendering;
 
-using Unity.Mathematics;
 using Orazum.Collections;
 using Orazum.Meshing;
 
@@ -27,7 +29,15 @@ public abstract class FigureGenerator : MonoBehaviour
     protected NativeArray<float3> _pointsColliderVertices;
     protected NativeArray<short> _pointsColliderIndices;
 
-    public abstract Figure FinishGeneration(FigureParamsSO figureParams);
+    protected QuadStripsCollection _quadStripsCollection;
+
+    public FigureStatesController FinishGeneration(FigureParamsSO figureParams)
+    {
+        FigureStatesController figureStatesController = CompleteGeneration(figureParams);
+        StartCoroutine(ShuffleTransitionsGeneration());
+        return figureStatesController;
+    }
+    protected abstract FigureStatesController CompleteGeneration(FigureParamsSO figureParams);
 
     public virtual void StartGeneration(FigureGenParamsSO figureGenParams)
     {
@@ -45,7 +55,12 @@ public abstract class FigureGenerator : MonoBehaviour
     protected abstract void StartMeshGeneration();
     protected abstract void GenerateFigureGameObject();
 
-    protected virtual void UpdateSegment(FigureSegment segment, in MeshBuffersIndexers indexers, int2 meshResPuzzleIndex)
+    private IEnumerator ShuffleTransitionsGeneration()
+    {
+        yield return null;
+    }
+
+    protected void UpdateSegment(FigureSegment segment, in MeshBuffersIndexers indexers, int2 meshResPuzzleIndex)
     {
         Mesh mesh = segment.MeshContainer.mesh;
         mesh.MarkDynamic();
@@ -116,6 +131,8 @@ public abstract class FigureGenerator : MonoBehaviour
 
     protected virtual void OnDestroy()
     {
+        _quadStripsCollection.DisposeIfNeeded();
+
         CollectionUtilities.DisposeIfNeeded(_figureVertices);
         CollectionUtilities.DisposeIfNeeded(_figureIndices);
 

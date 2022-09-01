@@ -67,11 +67,8 @@ public class ValknutGenerator : FigureGenerator
 
     private JobHandle _dataJobHandle;
 
-    private QuadStripsCollection _quadStripsCollection;
-
-    private NativeArray<int2x2> _transitionDataJobIndexData;
-    private NativeArray<QSTransSegment> _qsTransSegments;
-
+    private NativeArray<int2> _originTargetIndices;
+    private QSTransitionsCollection _transitionsCollection;
 
     private void Awake()
     {
@@ -112,15 +109,18 @@ public class ValknutGenerator : FigureGenerator
         _figureMeshGenJobHandle = valknutGenJob.Schedule();
 
 
-        _transitionDataJobIndexData = new NativeArray<int2x2>(TotalTransitionsCount, Allocator.Persistent);
-        _qsTransSegments = new NativeArray<QSTransSegment>(TotalRangesCount, Allocator.Persistent);
-        GenerateDataJobIndexData();
+        _originTargetIndices = new NativeArray<int2>(TotalTransitionsCount, Allocator.Persistent);
+        NativeArray<int2> bufferIndexers = new NativeArray<int2>(TotalTransitionsCount, Allocator.Persistent);
+        GenerateDataJobIndexData(originTargetIndices: ref _originTargetIndices, buffersIndexers: ref bufferIndexers);
+        
+        NativeArray<QSTransSegment> writeBuffer = new NativeArray<QSTransSegment>(TotalRangesCount, Allocator.Persistent);
+        _transitionsCollection = new QSTransitionsCollection(writeBuffer, bufferIndexers);
 
         ValknutGenJobData transitionDataJob = new ValknutGenJobData()
         {
             InputQuadStripsCollection = _quadStripsCollection,
-            InputIndexData = _transitionDataJobIndexData,
-            OutputTransitionsSegments = _qsTransSegments
+            InputOriginTargetIndices = _originTargetIndices,
+            OutputTransitionsCollection = _transitionsCollection
         };
         _dataJobHandle = transitionDataJob.ScheduleParallel(TotalTransitionsCount, 32, _figureMeshGenJobHandle);
 
@@ -147,24 +147,24 @@ public class ValknutGenerator : FigureGenerator
         JobHandle.ScheduleBatchedJobs();
     }
 
-    private void GenerateDataJobIndexData()
+    private void GenerateDataJobIndexData(ref NativeArray<int2> originTargetIndices, ref NativeArray<int2> buffersIndexers)
     {
         int2 originIndices = new int2(4, 5);
         int targetIndex = 0;
+        
         int bufferStart = 0;
         int2 rangesCount = new int2(7, 6);
-        
-        int rangeIndexer = 0;
+
+        int originTargetIndicesIndexer = 0;
+        int buffersIndexersIndexer = 0;
         for (int i = 0; i < 6; i += 2)
         {
-            _transitionDataJobIndexData[rangeIndexer++] = new int2x2(
-                new int2(originIndices.x, targetIndex),
-                new int2(bufferStart, rangesCount.x));
+            originTargetIndices[originTargetIndicesIndexer++] = new int2(originIndices.x, targetIndex);
+            buffersIndexers[buffersIndexersIndexer++] = new int2(bufferStart, rangesCount.x);
             bufferStart += rangesCount.x;
 
-            _transitionDataJobIndexData[rangeIndexer++] = new int2x2(
-                new int2(originIndices.y, targetIndex),
-                new int2(bufferStart, rangesCount.y));
+            originTargetIndices[originTargetIndicesIndexer++] = new int2(originIndices.y, targetIndex);
+            buffersIndexers[buffersIndexersIndexer++] = new int2(bufferStart, rangesCount.y);
             bufferStart += rangesCount.y;
 
             originIndices.x = originIndices.x + 2 >= 6 ? 0 : originIndices.x + 2;
@@ -177,14 +177,12 @@ public class ValknutGenerator : FigureGenerator
         rangesCount = new int2(5, 6);
         for (int i = 0; i < 6; i += 2)
         {
-            _transitionDataJobIndexData[rangeIndexer++] = new int2x2(
-                new int2(originIndices.x, targetIndex),
-                new int2(bufferStart, rangesCount.x));
+            originTargetIndices[originTargetIndicesIndexer++] = new int2(originIndices.x, targetIndex);
+            buffersIndexers[buffersIndexersIndexer++] = new int2(bufferStart, rangesCount.x);
             bufferStart += rangesCount.x;
 
-            _transitionDataJobIndexData[rangeIndexer++] = new int2x2(
-                new int2(originIndices.y, targetIndex),
-                new int2(bufferStart, rangesCount.y));
+            originTargetIndices[originTargetIndicesIndexer++] = new int2(originIndices.y, targetIndex);
+            buffersIndexers[buffersIndexersIndexer++] = new int2(bufferStart, rangesCount.y);
             bufferStart += rangesCount.y;
 
             originIndices.x = originIndices.x + 2 >= 6 ? 1 : originIndices.x + 2;
@@ -243,7 +241,7 @@ public class ValknutGenerator : FigureGenerator
     {
         FinishGeneration(_figureParams);
     }
-    public override Figure FinishGeneration(FigureParamsSO figureParams)
+    protected override FigureStatesController CompleteGeneration(FigureParamsSO figureParams)
     {
         _figureMeshGenJobHandle.Complete();
         _segmentPointsMeshGenJobHandle.Complete();
@@ -297,28 +295,20 @@ public class ValknutGenerator : FigureGenerator
 
         _dataJobHandle.Complete();
 
-        Array2D<ValknutQSTransSegs> transitionDatas =
-            new Array2D<ValknutQSTransSegs>(new int2(TrianglesCount, PartsCount));
-        for (int i = 0; i < _transitionDataJobIndexData.Length; i += 2)
+        Array2D<ValknutSegmentTransitions> transitionDatas =
+            new Array2D<ValknutSegmentTransitions>(new int2(TrianglesCount, PartsCount));
+        for (int i = 0; i < _transitionsCollection.QSTransSegsCount; i += 2)
         {
-            int2x2 index = int2x2.zero;
+            QSTransition clockWiseTransition = _transitionsCollection.GetQSTransition(i);
+            QSTransition antiClockWiseTransition = _transitionsCollection.GetQSTransition(i + 1);
 
-            index = _transitionDataJobIndexData[i];
-            NativeArray<QSTransSegment> targetQSTransSegmentsCW =
-                _qsTransSegments.GetSubArray(index[1].x, index[1].y);
+            ValknutSegmentTransitions transData = new ValknutSegmentTransitions();
+            ValknutSegmentTransitions.Clockwise(ref transData) = clockWiseTransition;
+            ValknutSegmentTransitions.AntiClockwise(ref transData) = antiClockWiseTransition;
 
-            index = _transitionDataJobIndexData[i + 1];
-            NativeArray<QSTransSegment> _targetSegmentTransitionDataAntiCW =
-                _qsTransSegments.GetSubArray(index[1].x, index[1].y);
-
-            ValknutQSTransSegs transitionData = new ValknutQSTransSegs()
-            {
-                CW = targetQSTransSegmentsCW.AsReadOnly(),
-                AntiCW = _targetSegmentTransitionDataAntiCW.AsReadOnly(),
-            };
-
-            int2 segmentIndex = new int2(index[0].y / PartsCount, index[0].y % PartsCount);
-            transitionDatas[segmentIndex] = transitionData;
+            int2 originTargetIndex = _originTargetIndices[i];
+            int2 segmentIndex = new int2(originTargetIndex.y / PartsCount, originTargetIndex.y % PartsCount);
+            transitionDatas[segmentIndex] = transData;
         }
 
         _valknut.AssignTransitionDatas(transitionDatas);
@@ -330,14 +320,13 @@ public class ValknutGenerator : FigureGenerator
 
         _figureVertices.Dispose();
         _figureIndices.Dispose();
-        _quadStripsCollection.Dispose();
 
         _pointsRenderVertices.Dispose();
         _pointsRenderIndices.Dispose();
         _pointsColliderVertices.Dispose();
         _pointsColliderIndices.Dispose();
 
-        return _valknut;
+        return _valknutStatesController;
     }
     private Mesh[] CreateColliderMultiMesh(ref MeshBuffersIndexers buffersData, bool isTas)
     {
@@ -357,8 +346,7 @@ public class ValknutGenerator : FigureGenerator
     {
         base.OnDestroy();
 
-        _quadStripsCollection.DisposeIfNeeded();
-        CollectionUtilities.DisposeIfNeeded(_transitionDataJobIndexData);
-        CollectionUtilities.DisposeIfNeeded(_qsTransSegments);
+        _transitionsCollection.DisposeIfNeeded();
+        CollectionUtilities.DisposeIfNeeded(_originTargetIndices);
     }
 }

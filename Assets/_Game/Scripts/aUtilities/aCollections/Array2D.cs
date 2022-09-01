@@ -44,6 +44,11 @@ namespace Orazum.Collections
             set { _array[IndexUtilities.IndexToX(index, ColCount), IndexUtilities.IndexToY(index, ColCount)] = value; }
         }
 
+        public ref T GetElementByRef(int2 index)
+        {
+            return ref _array[index.x, index.y];
+        }
+
         public int GetIndex1D(int2 index)
         {
             Assert.IsTrue(index.x >= 0 && index.x < _gridSize.x && index.y >= 0 && index.y < _gridSize.y);

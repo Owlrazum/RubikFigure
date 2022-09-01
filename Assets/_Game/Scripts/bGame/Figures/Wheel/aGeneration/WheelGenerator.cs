@@ -44,19 +44,6 @@ public class WheelGenerator : FigureGenerator
 
     private int3 _transSegsCount;
 
-    private void Awake()
-    {
-        if (enabled)
-        {
-            StartGeneration(_figureParams.FigureGenParamsSO);
-        }
-    }
-
-    private void Start()
-    {
-        FinishGeneration(_figureParams);
-    }
-
     protected override void InitializeParameters(FigureGenParamsSO figureGenParams)
     {
         base.InitializeParameters(figureGenParams);
@@ -191,7 +178,7 @@ public class WheelGenerator : FigureGenerator
         _wheelStatesController = _wheel.GetComponent<WheelStatesController>();
     }
 
-    public override Figure FinishGeneration(FigureParamsSO figureParams)
+    protected override FigureStatesController CompleteGeneration(FigureParamsSO figureParams)
     {
         _figureMeshGenJobHandle.Complete();
         _segmentPointsMeshGenJobHandle.Complete();
@@ -213,7 +200,7 @@ public class WheelGenerator : FigureGenerator
             }
         }
 
-        Array2D<WheelQSTransSegs> transitionDatas = new Array2D<WheelQSTransSegs>(_sidesRingsCount);
+        Array2D<WheelSegmentTransitions> transitionDatas = new Array2D<WheelSegmentTransitions>(_sidesRingsCount);
         int2x3 index = int2x3.zero;
         for (int side = 0; side < _sidesRingsCount.x; side++)
         {
@@ -247,13 +234,11 @@ public class WheelGenerator : FigureGenerator
                     index[2].y += VerticalTransSegCount * _segmentResolution;
                 }
 
-                WheelQSTransSegs transData = new WheelQSTransSegs()
-                {
-                    Atsi = atsi.AsReadOnly(),
-                    Ctsi = ctsi.AsReadOnly(),
-                    Dtsi = dtsi.AsReadOnly(),
-                    Utsi = utsi.AsReadOnly()
-                };
+                WheelSegmentTransitions transData = new WheelSegmentTransitions();
+                WheelSegmentTransitions.Atsi(ref transData) = new QSTransition(atsi);
+                WheelSegmentTransitions.Ctsi(ref transData) = new QSTransition(ctsi);
+                WheelSegmentTransitions.Dtsi(ref transData) = new QSTransition(dtsi);
+                WheelSegmentTransitions.Utsi(ref transData) = new QSTransition(utsi);
 
                 transitionDatas[side, ring] = transData;
             }
@@ -273,7 +258,7 @@ public class WheelGenerator : FigureGenerator
 
         _transitionGrid.Dispose();
 
-        return _wheel;
+        return _wheelStatesController;
     }
 
     private Mesh[] CreateSegmentPointMeshes()

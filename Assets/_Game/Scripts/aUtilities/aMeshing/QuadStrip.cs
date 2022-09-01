@@ -5,6 +5,7 @@ using Unity.Collections;
 using UnityEngine.Assertions;
 
 using Orazum.Math;
+using static Orazum.Math.LineSegmentUtilities;
 public struct QuadStrip : IDisposable
 {
     private NativeArray<float3x2> _lineSegments;
@@ -25,7 +26,7 @@ public struct QuadStrip : IDisposable
     }
     public int QuadsCount
     {
-        get 
+        get
         {
             return _lineSegments.Length - 1;
         }
@@ -37,11 +38,31 @@ public struct QuadStrip : IDisposable
         _lineSegments = lineSegments;
     }
 
+    public float ComputeSingleLength()
+    {
+        float singleLength = 0;
+        for (int i = 0; i < QuadsCount; i++)
+        {
+            singleLength += DistanceLineSegment(_lineSegments[i][0], _lineSegments[i + 1][0]);
+        }
+        return singleLength;
+    }
+
+    public float2 ComputeDoubleLength()
+    {
+        float2 doubleLength = float2.zero;
+        for (int i = 0; i < QuadsCount; i++)
+        {
+            doubleLength += DistanceLineSegments(_lineSegments[i], _lineSegments[i + 1]);
+        }
+        return doubleLength;
+    }
+
     public float3x4 GetRays(LineEndType quadStripEnd, LineEndDirectionType raysDirection)
     {
         float3x2 startSegment = float3x2.zero;
         float3x2 endSegment = float3x2.zero;
-        
+
         switch (quadStripEnd)
         {
             case LineEndType.Start:
@@ -63,7 +84,7 @@ public struct QuadStrip : IDisposable
         float3x2 endSegment = float3x2.zero;
 
         switch (quadStripEnd)
-        { 
+        {
             case LineEndType.Start:
                 GetSegmentsForStartRay(rayDirection, out startSegment, out endSegment);
                 break;
@@ -75,7 +96,7 @@ public struct QuadStrip : IDisposable
         }
 
         switch (lineSegmentEnd)
-        { 
+        {
             case LineEndType.Start:
                 return RaysUtilities.RayFromDelta(startSegment[0], endSegment[0]);
             case LineEndType.End:
@@ -90,10 +111,10 @@ public struct QuadStrip : IDisposable
         _lineSegments.Dispose();
     }
 
-     private void GetSegmentsForStartRay(LineEndDirectionType raysDirection, out float3x2 start, out float3x2 end)
+    private void GetSegmentsForStartRay(LineEndDirectionType raysDirection, out float3x2 start, out float3x2 end)
     {
         switch (raysDirection)
-        { 
+        {
             case LineEndDirectionType.StartToEnd:
                 start = _lineSegments[0];
                 end = _lineSegments[1];
@@ -110,7 +131,7 @@ public struct QuadStrip : IDisposable
     private void GetSegmentsForEndRay(LineEndDirectionType raysDirection, out float3x2 start, out float3x2 end)
     {
         switch (raysDirection)
-        { 
+        {
             case LineEndDirectionType.StartToEnd:
                 start = _lineSegments[LineSegmentsCount - 2];
                 end = _lineSegments[LineSegmentsCount - 1];
@@ -120,7 +141,7 @@ public struct QuadStrip : IDisposable
                 start = _lineSegments[LineSegmentsCount - 2];
                 return;
         }
-        
+
         throw new System.ArgumentOutOfRangeException("Unknown LineEndDirectionType");
     }
 }

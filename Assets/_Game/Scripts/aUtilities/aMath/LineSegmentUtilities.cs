@@ -13,6 +13,13 @@ namespace Orazum.Math
         {
             return DistanceLineSegment(lineSegment[0], lineSegment[1]);
         }
+        public static float2 DistanceLineSegments(in float3x2 lhs, in float3x2 rhs)
+        {
+            return new float2(
+                DistanceLineSegment(lhs[0], rhs[0]),
+                DistanceLineSegment(lhs[1], rhs[1])
+            );
+        }
 
         public static float3 GetPerpDirection(quaternion q, float3 p1, float3 p2)
         { 

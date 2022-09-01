@@ -1,4 +1,5 @@
 using System;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Assertions;
 
@@ -9,11 +10,11 @@ public class Valknut : Figure
     public const int TrianglesCount = 3;
     public const int TriangleSegmentsCount = 2;
 
-    private Array2D<ValknutQSTransSegs> _transitionDatas;
+    private Array2D<ValknutSegmentTransitions> _transitions;
 
-    public void AssignTransitionDatas(Array2D<ValknutQSTransSegs> transitionDatas)
+    public void AssignTransitionDatas(Array2D<ValknutSegmentTransitions> transitions)
     {
-        _transitionDatas = transitionDatas;
+        _transitions = transitions;
     }
 
     protected override void MakeSegmentMove(FigureSegment segment, FigureSegmentMove move, Action moveCompleteAction)
@@ -35,19 +36,17 @@ public class Valknut : Figure
 
     private void AssignTransitionData(FigureVerticesMove verticesMove)
     {
-        int from = verticesMove.FromIndex.y;
-        int to = verticesMove.ToIndex.y;
-        if (from == 0 && to == 0 ||
-            from == 1 && to == 1
+        int2 from = verticesMove.FromIndex;
+        int2 to = verticesMove.ToIndex;
+        if (from.y == 0 && to.y == 0 ||
+            from.y == 1 && to.y == 1
         )
         {
-            Assert.IsTrue(_transitionDatas[verticesMove.ToIndex].CW.IsCreated);
-            verticesMove.AssignTransitionData(_transitionDatas[verticesMove.ToIndex].CW);
+            verticesMove.Transition = ValknutSegmentTransitions.Clockwise(ref _transitions.GetElementByRef(to));
         }
         else
         { 
-            Assert.IsTrue(_transitionDatas[verticesMove.ToIndex].AntiCW.IsCreated);
-            verticesMove.AssignTransitionData(_transitionDatas[verticesMove.ToIndex].AntiCW);
+            verticesMove.Transition = ValknutSegmentTransitions.AntiClockwise(ref _transitions.GetElementByRef(to));
         }
     }
 

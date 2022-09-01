@@ -5,6 +5,7 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Assertions;
 
+using Orazum.Meshing;
 using Orazum.Collections;
 using static Orazum.Constants.Math;
 
@@ -13,11 +14,11 @@ public class Wheel : Figure
     public int SideCount { get { return _dims.x; } }
     public int RingCount { get { return _dims.y; } }
 
-    private Array2D<WheelQSTransSegs> _transDatas;
+    private Array2D<WheelSegmentTransitions> _transitions;
 
-    public void AssignTransitionDatas(Array2D<WheelQSTransSegs> transDatas)
+    public void AssignTransitionDatas(Array2D<WheelSegmentTransitions> transitions)
     {
-        _transDatas = transDatas;
+        _transitions = transitions;
     }
 
     public override void Initialize(
@@ -80,23 +81,23 @@ public class Wheel : Figure
         int ringDelta = to.y - from.y;
         if (sideDelta > 0)
         {
-            verticesMove.AssignTransitionData(_transDatas[to].Atsi);
+            verticesMove.Transition = WheelSegmentTransitions.Atsi(ref _transitions.GetElementByRef(to));
             verticesMove.ShouldReorientVertices = true;
         }
 
         if (sideDelta < 0)
         { 
-            verticesMove.AssignTransitionData(_transDatas[to].Ctsi);
+            verticesMove.Transition = WheelSegmentTransitions.Ctsi(ref _transitions.GetElementByRef(to));
         }
 
         if (ringDelta > 0)
         { 
-            verticesMove.AssignTransitionData(_transDatas[to].Utsi);
+            verticesMove.Transition = WheelSegmentTransitions.Utsi(ref _transitions.GetElementByRef(to));
         }
 
         if (ringDelta < 0)
         { 
-            verticesMove.AssignTransitionData(_transDatas[to].Dtsi);
+            verticesMove.Transition = WheelSegmentTransitions.Dtsi(ref _transitions.GetElementByRef(to));
         }
     }
 

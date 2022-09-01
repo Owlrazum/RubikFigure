@@ -1,5 +1,4 @@
 using Unity.Mathematics;
-using Unity.Collections;
 
 public class FigureVerticesMove : FigureSegmentMove
 {
@@ -17,11 +16,8 @@ public class FigureVerticesMove : FigureSegmentMove
         Mover = move.Mover;
     }
 
-    public NativeArray<QSTransSegment>.ReadOnly TransSegments { get; private set; }
-    public void AssignTransitionData(NativeArray<QSTransSegment>.ReadOnly transSegments)
-    {
-        TransSegments = transSegments;
-    }
+    private QSTransition _transition;
+    public ref QSTransition Transition { get { return ref _transition; } }
 
     public bool ShouldReorientVertices { get; set; }
 }

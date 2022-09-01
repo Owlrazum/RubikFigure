@@ -95,8 +95,6 @@ public class FigureCompleter : MonoBehaviour
 
     protected virtual List<FigureSegmentMove> Complete(Figure figure)
     {
-        FigureDelegatesContainer.FigureCompleted.Invoke();
-
         List<FigureSegmentMove> completionMoves = new List<FigureSegmentMove>(_potentialAssembleData.Count * 2);
         foreach (var entry in _potentialAssembleData)
         {
@@ -116,6 +114,8 @@ public class FigureCompleter : MonoBehaviour
                 segmentMovers[i].Appear();
             }
         }
+
+        FigureDelegatesContainer.FigureCompleted?.Invoke();
         return completionMoves;
     }
 }

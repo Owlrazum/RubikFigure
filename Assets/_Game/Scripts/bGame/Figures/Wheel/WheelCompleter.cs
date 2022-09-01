@@ -26,7 +26,6 @@ public class WheelCompleter : FigureCompleter
     private IEnumerator CompletionSequence(float beforeRotatePauseTime)
     {
         yield return new WaitForSeconds(beforeRotatePauseTime);
-        FigureDelegatesContainer.FigureCompleted?.Invoke();
         Vector3 rotationEuler = Vector3.zero;
         while (true)
         {
