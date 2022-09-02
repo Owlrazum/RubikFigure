@@ -7,7 +7,7 @@ using Orazum.Meshing;
 using static Orazum.Constants.Math;
 
 [BurstCompile]
-public struct WheelSegmentPointMeshGenJob : IJob
+public struct WheelGenJobSPM : IJob
 {
     public int P_SideCount;
     public int P_RingCount;

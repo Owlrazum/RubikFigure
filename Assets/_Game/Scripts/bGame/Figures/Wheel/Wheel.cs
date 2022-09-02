@@ -23,10 +23,9 @@ public class Wheel : Figure
 
     public override void Initialize(
         Array2D<FigureSegmentPoint> segmentPoints,
-        FigureStatesController statesController,
         FigureParamsSO figureParams)
     {
-        base.Initialize(segmentPoints, statesController, figureParams);
+        base.Initialize(segmentPoints, figureParams);
         RotateSegmentPointsOnGeneration();
     }
     private void RotateSegmentPointsOnGeneration()

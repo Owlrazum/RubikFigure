@@ -49,7 +49,7 @@ public class WheelMoveState : FigureMoveState
 
     private List<FigureSegmentMove> ConstructVerticesMove(int2 index, VertOrderType vertOrder)
     {
-        if (_wheel.IsValidIndexVertOrder(index, vertOrder))
+        if (_wheel.IsOutOfDimsVertOrder(index, vertOrder))
         {
             FigureVerticesMove verticesMove = new FigureVerticesMove();
             verticesMove.AssignFromIndex(index);

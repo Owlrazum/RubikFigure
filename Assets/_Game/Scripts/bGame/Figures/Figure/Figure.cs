@@ -9,6 +9,7 @@ using UnityEngine.Assertions;
 using Orazum.Collections;
 using Orazum.Math;
 
+[RequireComponent(typeof(FigureStatesController))]
 public abstract class Figure : MonoBehaviour
 {
     protected Array2D<FigureSegmentPoint> _segmentPoints;
@@ -24,16 +25,18 @@ public abstract class Figure : MonoBehaviour
     private Action _movesCompleteAction;
 
     private FigureSegment[] _movedSegmentsBuffer;
+    private FigureStatesController _statesController;
+    public FigureStatesController StatesController { get { return _statesController; } }
 
     protected abstract void MakeSegmentMove(FigureSegment segment, FigureSegmentMove move, Action moveCompleteAction);
 
     public virtual void Initialize(
         Array2D<FigureSegmentPoint> segmentPoints, 
-        FigureStatesController statesController,
         FigureParamsSO figureParams
     )
     {
         _segmentPoints = segmentPoints;
+        TryGetComponent(out _statesController);
 
         _dims.x = _segmentPoints.ColCount;
         _dims.y = _segmentPoints.RowCount;
@@ -43,7 +46,7 @@ public abstract class Figure : MonoBehaviour
         EmptyPoints(figureParams);
         _movedSegmentsBuffer = new FigureSegment[_dims.x * _dims.y];
 
-        statesController.Initialize(this, figureParams);
+        _statesController.Initialize(this, figureParams);
     }
 
     public void MakeMoves(IList<FigureSegmentMove> moves, Action movesCompleteAction)
@@ -93,83 +96,20 @@ public abstract class Figure : MonoBehaviour
 
     public int2 MoveIndexInClockOrder(int2 index, ClockOrderType clockOrder)
     {
-        switch (clockOrder)
-        { 
-            case ClockOrderType.CW:
-                index.x = index.x + 1 < _dims.x ? index.x + 1 : 0;
-                return index;
-            case ClockOrderType.AntiCW:
-                index.x = index.x - 1 >= 0 ? index.x - 1 : _dims.x - 1;
-                return index;
-        }
-
-        throw new ArgumentException("Unknown clock order type");
+        return MoveIndexClockOrder(index, clockOrder, _dims);
     }
     public bool IsValidIndexClockOrder(int2 index, ClockOrderType clockOrder)
-    { 
-        switch (clockOrder)
-        {
-            case ClockOrderType.CW:
-                index.x++;
-                if (index.x >= _dims.x)
-                {
-                    return false;
-                }
-
-                return IsPointEmpty(index);
-            case ClockOrderType.AntiCW:
-                index.x--;
-                if (index.x < 0)
-                {
-                    return false;
-                }
-
-                return IsPointEmpty(index);
-        }
-
-        throw new ArgumentException("Unknown clock order type");
+    {
+        return IsOutOfDimsClockOrder(index, clockOrder, _dims);
     }
     
     public int2 MoveIndexVertOrder(int2 index, VertOrderType vertOrder)
     {
-        switch(vertOrder)
-        {
-            case VertOrderType.Up:
-                index.y++;
-                return index;
-            case VertOrderType.Down:
-                index.y--;
-                return index;
-        }
-
-        throw new ArgumentException("Unknown vertical order type");
+        return MoveIndexVertOrder(index, vertOrder, _dims);
     }
-    public bool IsValidIndexVertOrder(int2 index, VertOrderType vertOrder)
+    public bool IsOutOfDimsVertOrder(int2 index, VertOrderType vertOrder)
     {
-        switch(vertOrder)
-        {
-            case VertOrderType.Up:
-                index.y++;
-                if (index.y >= _dims.y)
-                {
-                    Debug.Log("Index exceed");
-                    return false;
-                }
-                
-                bool isEmpty = IsPointEmpty(index);
-                return isEmpty;
-            case VertOrderType.Down:
-                index.y--;
-                if (index.y < 0)
-                {
-                    Debug.Log("Index exceed");
-                    return false;
-                }
-                isEmpty = IsPointEmpty(index);
-                return isEmpty;
-        }
-        
-        throw new ArgumentException("Unknown vertical order type");
+        return IsOutOfDimsVertOrder(index, vertOrder, _dims);
     }
 
     public bool IsValidIndex(int2 index)
@@ -235,6 +175,84 @@ public abstract class Figure : MonoBehaviour
         }
 
         return emptySegmentPointIndices;
+    }
+
+    public static int2 MoveIndexClockOrder(int2 index, ClockOrderType clockOrder, int2 dims)
+    {
+        switch (clockOrder)
+        { 
+            case ClockOrderType.CW:
+                index.x = index.x + 1 < dims.x ? index.x + 1 : 0;
+                return index;
+            case ClockOrderType.AntiCW:
+                index.x = index.x - 1 >= 0 ? index.x - 1 : dims.x - 1;
+                return index;
+        }
+
+        throw new ArgumentException("Unknown clock order type");
+    }
+    public static int2 MoveIndexVertOrder(int2 index, VertOrderType vertOrder, int2 dims)
+    {
+        switch(vertOrder)
+        {
+            case VertOrderType.Up:
+                index.y = index.y + 1 < dims.y ? index.y + 1 : 0;
+                return index;
+            case VertOrderType.Down:
+                index.y = index.y - 1 >= 0 ? index.y - 1 : dims.y - 1;
+                return index;
+        }
+
+        throw new ArgumentException("Unknown vertical order type");
+    }
+
+    public static bool IsOutOfDimsClockOrder(int2 index, ClockOrderType clockOrder, int2 dims)
+    {
+         switch (clockOrder)
+        {
+            case ClockOrderType.CW:
+                index.x++;
+                if (index.x >= dims.x)
+                {
+                    return false;
+                }
+
+                return true;
+            case ClockOrderType.AntiCW:
+                index.x--;
+                if (index.x < 0)
+                {
+                    return false;
+                }
+
+                return true;
+        }
+
+        throw new ArgumentException("Unknown clock order type");
+    }
+    public static bool IsOutOfDimsVertOrder(int2 index, VertOrderType vertOrder, int2 dims)
+    {
+        switch(vertOrder)
+        {
+            case VertOrderType.Up:
+                index.y++;
+                if (index.y >= dims.y)
+                {
+                    return false;
+                }
+                
+                return true;
+            case VertOrderType.Down:
+                index.y--;
+                if (index.y < 0)
+                {
+                    return false;
+                }
+
+                return true;
+        }
+        
+        throw new ArgumentException("Unknown vertical order type");
     }
 
     public override string ToString()

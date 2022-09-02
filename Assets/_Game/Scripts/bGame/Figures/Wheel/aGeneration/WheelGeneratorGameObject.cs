@@ -9,24 +9,8 @@ using Orazum.Collections;
 using Orazum.Meshing;
 using Orazum.Constants;
 
-public class WheelGenerator : FigureGenerator
+public class WheelGeneratorGameObject : FigureGeneratorGameObject
 {
-    private const int LevitationTransSegCount = 3;
-    private const int ClockOrderTransSegCount = 1;
-    private const int VerticalTransSegCount = 2;
-
-    [SerializeField]
-    private FigureParamsSO _figureParams;
-
-    private NativeArray<float3> _transitionGrid;
-
-    private NativeArray<QSTransSegment> _atsi;
-    private NativeArray<QSTransSegment> _ctsi;
-    private NativeArray<QSTransSegment> _dtsi;
-    private NativeArray<QSTransSegment> _utsi;
-    private NativeArray<QSTransSegment> _levDtsi;
-    private NativeArray<QSTransSegment> _levUtsi;
-
     private int2 _sidesRingsCount;
     private float2 _innerOuterRadii;
 
@@ -37,12 +21,9 @@ public class WheelGenerator : FigureGenerator
     private MeshBuffersIndexers _segmentPointBuffersData;
 
     private Wheel _wheel;
-    private WheelStatesController _wheelStatesController;
 
     private Array2D<WheelSegment> _segments;
     private Array2D<FigureSegmentPoint> _segmentPoints;
-
-    private int3 _transSegsCount;
 
     protected override void InitializeParameters(FigureGenParamsSO figureGenParams)
     {
@@ -67,28 +48,12 @@ public class WheelGenerator : FigureGenerator
         );
 
         _innerOuterRadii = new float2(generationParams.InnerRadius, generationParams.OuterRadius);
-
-        _transSegsCount.x = VerticalTransSegCount * 2 * (_sidesRingsCount.y - 1) * _segmentResolution * _sidesRingsCount.x;
-        _transSegsCount.y = LevitationTransSegCount * 2 * _sidesRingsCount.x;
-        _transSegsCount.z = ClockOrderTransSegCount * 2 * _sidesRingsCount.x * _sidesRingsCount.y;
     }
 
     protected override void StartMeshGeneration()
     {
         _figureVertices = new NativeArray<VertexData>(_segmentBuffersData.Count.x * _segmentCount, Allocator.TempJob);
         _figureIndices = new NativeArray<short>(_segmentBuffersData.Count.y * _segmentCount, Allocator.TempJob);
-
-        _transitionGrid = new NativeArray<float3>(
-            _sidesRingsCount.x * (_sidesRingsCount.y + 1) * _segmentResolution, Allocator.TempJob);
-
-        _dtsi = new NativeArray<QSTransSegment>(_transSegsCount.x, Allocator.Persistent);
-        _utsi = new NativeArray<QSTransSegment>(_transSegsCount.x, Allocator.Persistent);
-
-        _levDtsi = new NativeArray<QSTransSegment>(_transSegsCount.y, Allocator.Persistent);
-        _levUtsi = new NativeArray<QSTransSegment>(_transSegsCount.y, Allocator.Persistent);
-
-        _ctsi = new NativeArray<QSTransSegment>(_transSegsCount.z, Allocator.Persistent);
-        _atsi = new NativeArray<QSTransSegment>(_transSegsCount.z, Allocator.Persistent);
 
         WheelGenJob wheelMeshGenJob = new WheelGenJob()
         {
@@ -98,24 +63,16 @@ public class WheelGenerator : FigureGenerator
             P_InnerCircleRadius = _innerOuterRadii.x,
             P_OuterCircleRadius = _innerOuterRadii.y,
 
-            OutputVertices = _figureVertices,
-            OutputIndices = _figureIndices,
-
-            _HelperTransitionGrid = _transitionGrid,
-
-            OutputDownTransSegments = _dtsi,
-            OutputUpTransSegments = _utsi,
-            OutputLevDownTransSegments = _levDtsi,
-            OutputLevUpTransSegments = _levUtsi,
-            OutputAntiCWTransSegments = _atsi,
-            OutputCWTransSegments = _ctsi
+            OutVertices = _figureVertices,
+            OutIndices = _figureIndices,
+            OutQuadStripsCollection = _quadStripsCollection
         };
         _figureMeshGenJobHandle = wheelMeshGenJob.Schedule();
 
         _pointsRenderVertices = new NativeArray<float3>(_segmentPointBuffersData.Count.x * _sidesRingsCount.y, Allocator.TempJob);
         _pointsRenderIndices = new NativeArray<short>(_segmentPointBuffersData.Count.y * _sidesRingsCount.y, Allocator.TempJob);
 
-        WheelSegmentPointMeshGenJob segmentPointMeshGenJob = new WheelSegmentPointMeshGenJob()
+        WheelGenJobSPM segmentPointMeshGenJob = new WheelGenJobSPM()
         {
             P_SideCount = _sidesRingsCount.x,
             P_RingCount = _sidesRingsCount.y,
@@ -132,7 +89,7 @@ public class WheelGenerator : FigureGenerator
         JobHandle.ScheduleBatchedJobs();
     }
 
-    protected override void GenerateFigureGameObject()
+    protected override Figure GenerateFigureGameObject()
     {
         GameObject wheelGb = new GameObject("Wheel", typeof(Wheel), typeof(WheelStatesController));
         wheelGb.layer = Layers.FigureLayer;
@@ -175,10 +132,10 @@ public class WheelGenerator : FigureGenerator
         }
 
         _wheel = wheelGb.GetComponent<Wheel>();
-        _wheelStatesController = _wheel.GetComponent<WheelStatesController>();
+        return _wheel;
     }
 
-    protected override FigureStatesController CompleteGeneration(FigureParamsSO figureParams)
+    protected override void CompleteGeneration(FigureParamsSO figureParams)
     {
         _figureMeshGenJobHandle.Complete();
         _segmentPointsMeshGenJobHandle.Complete();
@@ -200,53 +157,8 @@ public class WheelGenerator : FigureGenerator
             }
         }
 
-        Array2D<WheelSegmentTransitions> transitionDatas = new Array2D<WheelSegmentTransitions>(_sidesRingsCount);
-        int2x3 index = int2x3.zero;
-        for (int side = 0; side < _sidesRingsCount.x; side++)
-        {
-            for (int ring = 0; ring < _sidesRingsCount.y; ring++)
-            {
-                NativeArray<QSTransSegment> atsi = _atsi.GetSubArray(index[0].x, ClockOrderTransSegCount);
-                NativeArray<QSTransSegment> ctsi = _ctsi.GetSubArray(index[0].x, ClockOrderTransSegCount);
-                index[0].x += ClockOrderTransSegCount;
-
-                NativeArray<QSTransSegment> dtsi;
-                if (ring == 0)
-                { 
-                    dtsi = _levDtsi.GetSubArray(index[1].x, LevitationTransSegCount);
-                    index[1].x += LevitationTransSegCount;
-                }
-                else
-                { 
-                    dtsi = _dtsi.GetSubArray(index[2].x, VerticalTransSegCount * _segmentResolution);
-                    index[2].x += VerticalTransSegCount * _segmentResolution;
-                }
-
-                NativeArray<QSTransSegment> utsi;
-                if (ring == _sidesRingsCount.y - 1)
-                {
-                    utsi = _levUtsi.GetSubArray(index[1].y, LevitationTransSegCount);
-                    index[1].y += LevitationTransSegCount;
-                }
-                else 
-                {
-                    utsi = _utsi.GetSubArray(index[2].y, VerticalTransSegCount * _segmentResolution);
-                    index[2].y += VerticalTransSegCount * _segmentResolution;
-                }
-
-                WheelSegmentTransitions transData = new WheelSegmentTransitions();
-                WheelSegmentTransitions.Atsi(ref transData) = new QSTransition(atsi);
-                WheelSegmentTransitions.Ctsi(ref transData) = new QSTransition(ctsi);
-                WheelSegmentTransitions.Dtsi(ref transData) = new QSTransition(dtsi);
-                WheelSegmentTransitions.Utsi(ref transData) = new QSTransition(utsi);
-
-                transitionDatas[side, ring] = transData;
-            }
-        }
-        _wheel.AssignTransitionDatas(transitionDatas);
         _wheel.Initialize(
             _segmentPoints,
-            _wheelStatesController,
             figureParams
         );
 
@@ -255,10 +167,6 @@ public class WheelGenerator : FigureGenerator
 
         _pointsRenderVertices.Dispose();
         _pointsRenderIndices.Dispose();
-
-        _transitionGrid.Dispose();
-
-        return _wheelStatesController;
     }
 
     private Mesh[] CreateSegmentPointMeshes()
@@ -281,14 +189,5 @@ public class WheelGenerator : FigureGenerator
     protected override void OnDestroy()
     {
         base.OnDestroy();
-
-        CollectionUtilities.DisposeIfNeeded(_transitionGrid);
-
-        CollectionUtilities.DisposeIfNeeded(_atsi);
-        CollectionUtilities.DisposeIfNeeded(_ctsi);
-        CollectionUtilities.DisposeIfNeeded(_dtsi);
-        CollectionUtilities.DisposeIfNeeded(_utsi);
-        CollectionUtilities.DisposeIfNeeded(_levDtsi);
-        CollectionUtilities.DisposeIfNeeded(_levUtsi);
     }
 }

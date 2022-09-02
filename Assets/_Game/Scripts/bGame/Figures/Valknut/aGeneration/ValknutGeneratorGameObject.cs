@@ -9,17 +9,10 @@ using Orazum.Constants;
 using Orazum.Meshing;
 using Orazum.Collections;
 
-public class ValknutGenerator : FigureGenerator
+public class ValknutGeneratorGameObject : FigureGeneratorGameObject
 {
-    public const int MaxRangesCountForOneSegment = 7;
-
-    private const int TrianglesCount = 3;
-    private const int PartsCount = 2;
-
-    private const int TotalRangesCount = (7 + 6) * 3 + (6 + 5) * 3;
-    private const int TotalTransitionsCount = 2 * 3 + 2 * 3;
-
-    private const int SegmentsCount = Valknut.TrianglesCount * Valknut.TriangleSegmentsCount; // three outer and three inner;
+    #region Constants
+    private const int SegmentsCount = Valknut.TrianglesCount * Valknut.PartsCount; // three outer and three inner;
     private const int SegmentQuadsCountTAS = 3;
     private const int SegmentQuadsCountOAS = 2;
 
@@ -49,6 +42,7 @@ public class ValknutGenerator : FigureGenerator
     private const int PointColliderIndexCountTAS = SegmentQuadsCountTAS * CubeIndexCount;
     private const int PointColliderIndexCountOAS = SegmentQuadsCountOAS * CubeIndexCount;
     private const int PointColliderTotalIndexCount = (PointColliderIndexCountTAS + PointColliderIndexCountOAS) * 3;
+    #endregion
 
     [SerializeField]
     private FigureParamsSO _figureParams;
@@ -58,22 +52,12 @@ public class ValknutGenerator : FigureGenerator
     private float _gapSize;
 
     private Valknut _valknut;
-    private ValknutStatesController _valknutStatesController;
 
     private int2 _dims;
 
     private Array2D<ValknutSegment> _segments;
     private Array2D<FigureSegmentPoint> _segmentPoints;
 
-    private JobHandle _dataJobHandle;
-
-    private NativeArray<int2> _originTargetIndices;
-    private QSTransitionsCollection _transitionsCollection;
-
-    private void Awake()
-    {
-        StartGeneration(_figureParams.FigureGenParamsSO);
-    }
     protected override void InitializeParameters(FigureGenParamsSO figureGenParams)
     {
         base.InitializeParameters(figureGenParams);
@@ -93,7 +77,7 @@ public class ValknutGenerator : FigureGenerator
 
         NativeArray<float3x2> lineSegments = new NativeArray<float3x2>(SegmentsTotalVertexCount, Allocator.TempJob);
         NativeArray<int2> quadStripsIndexers = new NativeArray<int2>(SegmentsCount, Allocator.TempJob);
-        _quadStripsCollection = new QuadStripsCollection(lineSegments, quadStripsIndexers);
+        _quadStripsCollection = new QuadStripsBuffer(lineSegments, quadStripsIndexers);
 
         ValknutGenJob valknutGenJob = new ValknutGenJob()
         {
@@ -101,28 +85,12 @@ public class ValknutGenerator : FigureGenerator
             P_Width = _width,
             P_GapSize = _gapSize,
 
-            OutputVertices = _figureVertices,
-            OutputIndices = _figureIndices,
+            OutVertices = _figureVertices,
+            OutIndices = _figureIndices,
 
-            OutputQuadStripsCollection = _quadStripsCollection
+            OutQuadStripsCollection = _quadStripsCollection
         };
         _figureMeshGenJobHandle = valknutGenJob.Schedule();
-
-
-        _originTargetIndices = new NativeArray<int2>(TotalTransitionsCount, Allocator.Persistent);
-        NativeArray<int2> bufferIndexers = new NativeArray<int2>(TotalTransitionsCount, Allocator.Persistent);
-        GenerateDataJobIndexData(originTargetIndices: ref _originTargetIndices, buffersIndexers: ref bufferIndexers);
-        
-        NativeArray<QSTransSegment> writeBuffer = new NativeArray<QSTransSegment>(TotalRangesCount, Allocator.Persistent);
-        _transitionsCollection = new QSTransitionsCollection(writeBuffer, bufferIndexers);
-
-        ValknutGenJobData transitionDataJob = new ValknutGenJobData()
-        {
-            InputQuadStripsCollection = _quadStripsCollection,
-            InputOriginTargetIndices = _originTargetIndices,
-            OutputTransitionsCollection = _transitionsCollection
-        };
-        _dataJobHandle = transitionDataJob.ScheduleParallel(TotalTransitionsCount, 32, _figureMeshGenJobHandle);
 
         _pointsRenderVertices = new NativeArray<float3>(PointRendererTotalVertexCount, Allocator.TempJob);
         _pointsRenderIndices = new NativeArray<short>(PointRendererTotalIndexCount, Allocator.TempJob);
@@ -137,61 +105,17 @@ public class ValknutGenerator : FigureGenerator
             P_GapSize = _gapSize,
             P_Height = _segmentPointHeight,
 
-            OutputCollidersVertices = _pointsColliderVertices,
-            OutputCollidersIndices = _pointsColliderIndices,
-            OutputRenderVertices = _pointsRenderVertices,
-            OutputRenderIndices = _pointsRenderIndices
+            OutCollidersVertices = _pointsColliderVertices,
+            OutCollidersIndices = _pointsColliderIndices,
+            OutRenderVertices = _pointsRenderVertices,
+            OutRenderIndices = _pointsRenderIndices
         };
         _segmentPointsMeshGenJobHandle = valknutSegmentPointGenJob.Schedule();
 
         JobHandle.ScheduleBatchedJobs();
     }
 
-    private void GenerateDataJobIndexData(ref NativeArray<int2> originTargetIndices, ref NativeArray<int2> buffersIndexers)
-    {
-        int2 originIndices = new int2(4, 5);
-        int targetIndex = 0;
-        
-        int bufferStart = 0;
-        int2 rangesCount = new int2(7, 6);
-
-        int originTargetIndicesIndexer = 0;
-        int buffersIndexersIndexer = 0;
-        for (int i = 0; i < 6; i += 2)
-        {
-            originTargetIndices[originTargetIndicesIndexer++] = new int2(originIndices.x, targetIndex);
-            buffersIndexers[buffersIndexersIndexer++] = new int2(bufferStart, rangesCount.x);
-            bufferStart += rangesCount.x;
-
-            originTargetIndices[originTargetIndicesIndexer++] = new int2(originIndices.y, targetIndex);
-            buffersIndexers[buffersIndexersIndexer++] = new int2(bufferStart, rangesCount.y);
-            bufferStart += rangesCount.y;
-
-            originIndices.x = originIndices.x + 2 >= 6 ? 0 : originIndices.x + 2;
-            originIndices.y = originIndices.y + 2 >= 6 ? 1 : originIndices.y + 2;
-            targetIndex += 2;
-        }
-
-        targetIndex = 1;
-        originIndices = new int2(5, 4);
-        rangesCount = new int2(5, 6);
-        for (int i = 0; i < 6; i += 2)
-        {
-            originTargetIndices[originTargetIndicesIndexer++] = new int2(originIndices.x, targetIndex);
-            buffersIndexers[buffersIndexersIndexer++] = new int2(bufferStart, rangesCount.x);
-            bufferStart += rangesCount.x;
-
-            originTargetIndices[originTargetIndicesIndexer++] = new int2(originIndices.y, targetIndex);
-            buffersIndexers[buffersIndexersIndexer++] = new int2(bufferStart, rangesCount.y);
-            bufferStart += rangesCount.y;
-
-            originIndices.x = originIndices.x + 2 >= 6 ? 1 : originIndices.x + 2;
-            originIndices.y = originIndices.y + 2 >= 6 ? 0 : originIndices.y + 2;
-            targetIndex += 2;
-        }
-    }
-
-    protected override void GenerateFigureGameObject()
+    protected override Figure GenerateFigureGameObject()
     {
         GameObject valknutGb = new GameObject("Valknut", typeof(Valknut), typeof(ValknutStatesController));
         valknutGb.layer = Layers.FigureLayer;
@@ -234,14 +158,10 @@ public class ValknutGenerator : FigureGenerator
         }
 
         _valknut = valknutGb.GetComponent<Valknut>();
-        _valknutStatesController = valknutGb.GetComponent<ValknutStatesController>();
+        return _valknut;
     }
 
-    private void Start()
-    {
-        FinishGeneration(_figureParams);
-    }
-    protected override FigureStatesController CompleteGeneration(FigureParamsSO figureParams)
+    protected override void CompleteGeneration(FigureParamsSO figureParams)
     {
         _figureMeshGenJobHandle.Complete();
         _segmentPointsMeshGenJobHandle.Complete();
@@ -293,28 +213,8 @@ public class ValknutGenerator : FigureGenerator
             }
         }
 
-        _dataJobHandle.Complete();
-
-        Array2D<ValknutSegmentTransitions> transitionDatas =
-            new Array2D<ValknutSegmentTransitions>(new int2(TrianglesCount, PartsCount));
-        for (int i = 0; i < _transitionsCollection.QSTransSegsCount; i += 2)
-        {
-            QSTransition clockWiseTransition = _transitionsCollection.GetQSTransition(i);
-            QSTransition antiClockWiseTransition = _transitionsCollection.GetQSTransition(i + 1);
-
-            ValknutSegmentTransitions transData = new ValknutSegmentTransitions();
-            ValknutSegmentTransitions.Clockwise(ref transData) = clockWiseTransition;
-            ValknutSegmentTransitions.AntiClockwise(ref transData) = antiClockWiseTransition;
-
-            int2 originTargetIndex = _originTargetIndices[i];
-            int2 segmentIndex = new int2(originTargetIndex.y / PartsCount, originTargetIndex.y % PartsCount);
-            transitionDatas[segmentIndex] = transData;
-        }
-
-        _valknut.AssignTransitionDatas(transitionDatas);
         _valknut.Initialize(
             _segmentPoints,
-            _valknutStatesController,
             figureParams
         );
 
@@ -325,9 +225,8 @@ public class ValknutGenerator : FigureGenerator
         _pointsRenderIndices.Dispose();
         _pointsColliderVertices.Dispose();
         _pointsColliderIndices.Dispose();
-
-        return _valknutStatesController;
     }
+
     private Mesh[] CreateColliderMultiMesh(ref MeshBuffersIndexers buffersData, bool isTas)
     {
         int meshCount = isTas ? 3 : 2;
@@ -340,13 +239,5 @@ public class ValknutGenerator : FigureGenerator
         }
 
         return meshes;
-    }
-
-    protected override void OnDestroy()
-    {
-        base.OnDestroy();
-
-        _transitionsCollection.DisposeIfNeeded();
-        CollectionUtilities.DisposeIfNeeded(_originTargetIndices);
     }
 }

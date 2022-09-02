@@ -7,24 +7,32 @@ using UnityEngine.Assertions;
 /// <summary>
 /// Unity's Jobs system.
 /// Fixed Collection size, which needs constructed buffers.
+/// It is a segmented buffer in other words.
 /// Indexers contain information about start and count of QuadStripTransitionSegment.
 /// </summary>
-public struct QSTransitionsCollection
+public struct QSTransitionsBuffer
 { 
     private NativeArray<QSTransSegment> _qsTransSegmentsBuffer;
     private NativeArray<int2> _qsTransSegsIndexersBuffer;
     public int QSTransSegsCount { get { return _qsTransSegsIndexersBuffer.Length; } }
 
-    public QSTransitionsCollection(NativeArray<QSTransSegment> qsTransSegments, NativeArray<int2> qsTransSegsIndexers)
+    public QSTransitionsBuffer(NativeArray<QSTransSegment> qsTransSegmentsBuffer, NativeArray<int2> qsTransSegsIndexersBuffer)
     {
-        _qsTransSegmentsBuffer = qsTransSegments;
-        _qsTransSegsIndexersBuffer = qsTransSegsIndexers;
+        _qsTransSegmentsBuffer = qsTransSegmentsBuffer;
+        _qsTransSegsIndexersBuffer = qsTransSegsIndexersBuffer;
     }
 
-    public NativeArray<QSTransSegment> GetWriteBufferAndWriteIndexer(int2 indexer, int indexerIndex)
+    public NativeArray<QSTransSegment> GetBufferSegmentAndWriteIndexer(int2 indexer, int indexerIndex)
     {
         Assert.IsTrue(indexerIndex < QSTransSegsCount);
         _qsTransSegsIndexersBuffer[indexerIndex] = indexer;
+        return _qsTransSegmentsBuffer.GetSubArray(indexer.x, indexer.y);
+    }
+
+    public NativeArray<QSTransSegment> GetBufferSegment(int indexerIndex)
+    {
+        Assert.IsTrue(indexerIndex < QSTransSegsCount);
+        int2 indexer = _qsTransSegsIndexersBuffer[indexerIndex];
         return _qsTransSegmentsBuffer.GetSubArray(indexer.x, indexer.y);
     }
 

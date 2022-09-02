@@ -62,7 +62,7 @@ public abstract class FigureMoveState : FigureState
     protected void OnMovesCompleted()
     {
         _areSegmentsMoving = false;
-        FigureDelegatesContainer.ActionCheckFigureCompletion(_figure);
+        FigureDelegatesContainer.ActionCheckCompletion(_figure);
     }
 
     public override FigureState HandleTransitions()

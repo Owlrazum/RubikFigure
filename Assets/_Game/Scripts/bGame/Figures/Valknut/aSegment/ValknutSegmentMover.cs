@@ -13,8 +13,9 @@ using Orazum.Meshing;
 [RequireComponent(typeof(MeshFilter))]
 public class ValknutSegmentMover : FigureSegmentMover
 { 
-    protected override int MaxVertexCount { get { return (ValknutGenerator.MaxRangesCountForOneSegment + 2) * 2; } }
-    protected override int MaxIndexCount { get { return ValknutGenerator.MaxRangesCountForOneSegment * 6; } }
+    private const int MaxRangesCountForOneSegment = 7;
+    protected override int MaxVertexCount { get { return (MaxRangesCountForOneSegment + 2) * 2; } }
+    protected override int MaxIndexCount { get { return MaxRangesCountForOneSegment * 6; } }
 }
 
 /// <summary>

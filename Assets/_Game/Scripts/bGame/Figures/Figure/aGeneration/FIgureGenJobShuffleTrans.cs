@@ -9,16 +9,16 @@ using Orazum.Meshing;
 public struct FigureGenJobShuffleTrans : IJobFor
 {
     [ReadOnly]
-    public QuadStripsCollection InputQuadStripsCollection;
+    public QuadStripsBuffer InputQuadStripsCollection;
 
     [WriteOnly]
     public NativeArray<QSTransSegment> InputQSTransSegmentBuffer;
 
     [WriteOnly]
-    public QSTransitionsCollection OutputFadeOutTransitions;
+    public QSTransitionsBuffer OutputFadeOutTransitions;
 
     [WriteOnly]
-    public QSTransitionsCollection OutputFadeInTransitions;
+    public QSTransitionsBuffer OutputFadeInTransitions;
 
     public void Execute(int i)
     {
@@ -26,10 +26,10 @@ public struct FigureGenJobShuffleTrans : IJobFor
         int2 indexer = InputQuadStripsCollection.GetQuadIndexer(i);
 
         NativeArray<QSTransSegment> fadeOutWriteBuffer = 
-            OutputFadeOutTransitions.GetWriteBufferAndWriteIndexer(indexer, i);
+            OutputFadeOutTransitions.GetBufferSegmentAndWriteIndexer(indexer, i);
 
         NativeArray<QSTransSegment> fadeInWriteBuffer =
-            OutputFadeInTransitions.GetWriteBufferAndWriteIndexer(indexer, i);
+            OutputFadeInTransitions.GetBufferSegmentAndWriteIndexer(indexer, i);
 
         QSTransitionBuilder shuffleTransBuilder = new QSTransitionBuilder();
         

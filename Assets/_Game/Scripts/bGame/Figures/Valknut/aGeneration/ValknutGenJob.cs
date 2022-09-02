@@ -18,13 +18,13 @@ public struct ValknutGenJob : IJob
     public float P_GapSize;
 
     [WriteOnly]
-    public NativeArray<VertexData> OutputVertices;
+    public NativeArray<VertexData> OutVertices;
 
     [WriteOnly]
-    public NativeArray<short> OutputIndices;
+    public NativeArray<short> OutIndices;
 
     [WriteOnly]
-    public QuadStripsCollection OutputQuadStripsCollection;
+    public QuadStripsBuffer OutQuadStripsCollection;
 
     private MeshBuffersIndexers _buffersData;
     private int2 _quadStripsCollectionIndexer;
@@ -247,14 +247,14 @@ public struct ValknutGenJob : IJob
         _buffersData.LocalCount = int2.zero;
 
         QuadStripBuilder quadStripBuilder = 
-            new QuadStripBuilder(OutputVertices, OutputIndices, _normalAndUV);
+            new QuadStripBuilder(OutVertices, OutIndices, _normalAndUV);
         quadStripBuilder.Start(x0z(oas.s1), ref _buffersData);
         quadStripBuilder.Continue(x0z(oas.s2), ref _buffersData);
         quadStripBuilder.Continue(x0z(oas.s3), ref _buffersData);
 
         _quadStripsCollectionIndexer.y = 3;
         NativeArray<float3x2> lineSegments = 
-            OutputQuadStripsCollection.GetWriteBufferAndWriteIndexer(_quadStripsCollectionIndexer, _quadStripIndexer++);
+            OutQuadStripsCollection.GetBufferSegmentAndWriteIndexer(_quadStripsCollectionIndexer, _quadStripIndexer++);
         lineSegments[0] = x0z(oas.s1);
         lineSegments[1] = x0z(oas.s2);
         lineSegments[2] = x0z(oas.s3);
@@ -266,7 +266,7 @@ public struct ValknutGenJob : IJob
         _buffersData.LocalCount = int2.zero;
 
         QuadStripBuilder quadStripBuilder 
-            = new QuadStripBuilder(OutputVertices, OutputIndices, _normalAndUV);
+            = new QuadStripBuilder(OutVertices, OutIndices, _normalAndUV);
         quadStripBuilder.Start(x0z(tas.s1), ref _buffersData);
         quadStripBuilder.Continue(x0z(tas.s2), ref _buffersData);
         quadStripBuilder.Continue(x0z(tas.s3), ref _buffersData);
@@ -274,7 +274,7 @@ public struct ValknutGenJob : IJob
 
         _quadStripsCollectionIndexer.y = 4;
         NativeArray<float3x2> lineSegments = 
-            OutputQuadStripsCollection.GetWriteBufferAndWriteIndexer(_quadStripsCollectionIndexer, _quadStripIndexer++);
+            OutQuadStripsCollection.GetBufferSegmentAndWriteIndexer(_quadStripsCollectionIndexer, _quadStripIndexer++);
         lineSegments[0] = x0z(tas.s1);
         lineSegments[1] = x0z(tas.s2);
         lineSegments[2] = x0z(tas.s3);

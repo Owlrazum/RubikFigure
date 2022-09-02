@@ -8,7 +8,7 @@ using Orazum.Collections;
 public class Valknut : Figure
 {
     public const int TrianglesCount = 3;
-    public const int TriangleSegmentsCount = 2;
+    public const int PartsCount = 2;
 
     private Array2D<ValknutSegmentTransitions> _transitions;
 

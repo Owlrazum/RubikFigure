@@ -30,13 +30,13 @@ public class FigureCompleter : MonoBehaviour
         _emptyIndices = new List<int2>(_maxEmptyPlacesCount);
 
         FigureDelegatesContainer.EventSegmentsWereEmptied += OnSegmentsWereEmptied;
-        FigureDelegatesContainer.ActionCheckFigureCompletion += CheckCompletion;
+        FigureDelegatesContainer.ActionCheckCompletion += CheckCompletion;
     }
 
     protected virtual void OnDestroy()
     {
         FigureDelegatesContainer.EventSegmentsWereEmptied -= OnSegmentsWereEmptied;
-        FigureDelegatesContainer.ActionCheckFigureCompletion -= CheckCompletion;
+        FigureDelegatesContainer.ActionCheckCompletion -= CheckCompletion;
     }
 
     private void OnSegmentsWereEmptied(FigureSegment[] segmentsArg)
@@ -115,7 +115,7 @@ public class FigureCompleter : MonoBehaviour
             }
         }
 
-        FigureDelegatesContainer.FigureCompleted?.Invoke();
+        FigureDelegatesContainer.Completed?.Invoke();
         return completionMoves;
     }
 }

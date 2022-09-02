@@ -22,16 +22,16 @@ public struct ValknutGenJobSPM : IJob
     public float P_GapSize;
 
     [WriteOnly]
-    public NativeArray<float3> OutputCollidersVertices;
+    public NativeArray<float3> OutCollidersVertices;
 
     [WriteOnly]
-    public NativeArray<short> OutputCollidersIndices;
+    public NativeArray<short> OutCollidersIndices;
 
     [WriteOnly]
-    public NativeArray<float3> OutputRenderVertices;
+    public NativeArray<float3> OutRenderVertices;
 
     [WriteOnly]
-    public NativeArray<short> OutputRenderIndices;
+    public NativeArray<short> OutRenderIndices;
 
     private MeshBuffersIndexers _rendererBuffersData;
     private MeshBuffersIndexers _colliderBuffersData;
@@ -267,7 +267,7 @@ public struct ValknutGenJobSPM : IJob
     
     private void AddOneAngleSegmentColliderMesh(OneAngleSegment oneAngleSegment)
     {
-        CubeStripSegmented cubeStrip = new CubeStripSegmented(OutputCollidersVertices, OutputCollidersIndices);
+        CubeStripSegmented cubeStrip = new CubeStripSegmented(OutCollidersVertices, OutCollidersIndices);
         cubeStrip.Start(oneAngleSegment.s1, ref _colliderBuffersData);
         cubeStrip.Continue(oneAngleSegment.s2, ref _colliderBuffersData);
         cubeStrip.Finish(oneAngleSegment.s3, ref _colliderBuffersData);
@@ -275,7 +275,7 @@ public struct ValknutGenJobSPM : IJob
 
     private void AddTwoAngleSegmentColliderMesh(TwoAngleSegment twoAngleSegment)
     {
-        CubeStripSegmented cubeStrip = new CubeStripSegmented(OutputCollidersVertices, OutputCollidersIndices);
+        CubeStripSegmented cubeStrip = new CubeStripSegmented(OutCollidersVertices, OutCollidersIndices);
         cubeStrip.Start(twoAngleSegment.s1, ref _colliderBuffersData);
         cubeStrip.Continue(twoAngleSegment.s2, ref _colliderBuffersData);
         cubeStrip.Continue(twoAngleSegment.s3, ref _colliderBuffersData);
@@ -285,7 +285,7 @@ public struct ValknutGenJobSPM : IJob
     private void AddOneAngleSegmentRendererMesh(OneAngleSegment oneAngleSegment)
     {
         _rendererBuffersData.LocalCount = int2.zero; 
-        CubeStrip cubeStrip = new CubeStrip(OutputRenderVertices, OutputRenderIndices);
+        CubeStrip cubeStrip = new CubeStrip(OutRenderVertices, OutRenderIndices);
         cubeStrip.Start(oneAngleSegment.s1, ref _rendererBuffersData);
         cubeStrip.Continue(oneAngleSegment.s2, ref _rendererBuffersData);
         cubeStrip.Finish(oneAngleSegment.s3, ref _rendererBuffersData);
@@ -294,7 +294,7 @@ public struct ValknutGenJobSPM : IJob
     private void AddTwoAngleSegmentRendererMesh(TwoAngleSegment twoAngleSegment)
     {
         _rendererBuffersData.LocalCount = int2.zero;
-        CubeStrip cubeStrip = new CubeStrip(OutputRenderVertices, OutputRenderIndices);
+        CubeStrip cubeStrip = new CubeStrip(OutRenderVertices, OutRenderIndices);
         cubeStrip.Start(twoAngleSegment.s1, ref _rendererBuffersData);
         cubeStrip.Continue(twoAngleSegment.s2, ref _rendererBuffersData);
         cubeStrip.Continue(twoAngleSegment.s3, ref _rendererBuffersData);

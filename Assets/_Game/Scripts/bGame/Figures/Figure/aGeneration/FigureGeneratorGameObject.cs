@@ -6,12 +6,66 @@ using Unity.Mathematics;
 
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.Assertions;
 
 using Orazum.Collections;
 using Orazum.Meshing;
 
-public abstract class FigureGenerator : MonoBehaviour
+public abstract class FigureGeneratorGameObject : MonoBehaviour
 {
+    [SerializeField]
+    private FigureParamsSO _figureParams;
+
+    private Figure _figure;
+    private FigureGeneratorTransitions _transitionsGenerator;
+
+    private void Awake()
+    {
+        bool isFound = TryGetComponent(out _transitionsGenerator);
+        Assert.IsTrue(isFound);
+        StartFigureGeneration();
+        FigureDelegatesContainer.GetFigure += GetFigure;
+        FigureDelegatesContainer.FinishMeshGeneration += FinishFigureGeneration;
+    }
+
+    private void Unsubscribe()
+    {
+        FigureDelegatesContainer.GetFigure -= GetFigure;
+        FigureDelegatesContainer.FinishMeshGeneration -= FinishFigureGeneration;
+    }
+
+    private void StartFigureGeneration()
+    {
+        InitializeParameters(_figureParams.FigureGenParamsSO);
+        StartMeshGeneration();
+        _figure = GenerateFigureGameObject();
+        _transitionsGenerator.StartGeneration(_quadStripsCollection, _figureMeshGenJobHandle);
+    }
+
+    protected abstract void StartMeshGeneration();
+    protected abstract Figure GenerateFigureGameObject();
+
+    private void FinishFigureGeneration()
+    {
+        CompleteGeneration(_figureParams);
+    }
+
+    protected abstract void CompleteGeneration(FigureParamsSO figureParams);
+
+    private void StartShuffleTransitionsGeneration()
+    {
+    }
+
+    private void FinishShuffleTransitionsGeneration()
+    {
+
+    }
+
+    private Figure GetFigure()
+    {
+        return _figure;
+    }
+
     protected const MeshUpdateFlags GenerationMeshUpdateFlags = MeshUpdateFlags.Default;
 
     protected float _segmentPointHeight;
@@ -29,35 +83,14 @@ public abstract class FigureGenerator : MonoBehaviour
     protected NativeArray<float3> _pointsColliderVertices;
     protected NativeArray<short> _pointsColliderIndices;
 
-    protected QuadStripsCollection _quadStripsCollection;
+    protected QuadStripsBuffer _quadStripsCollection;
 
-    public FigureStatesController FinishGeneration(FigureParamsSO figureParams)
-    {
-        FigureStatesController figureStatesController = CompleteGeneration(figureParams);
-        StartCoroutine(ShuffleTransitionsGeneration());
-        return figureStatesController;
-    }
-    protected abstract FigureStatesController CompleteGeneration(FigureParamsSO figureParams);
-
-    public virtual void StartGeneration(FigureGenParamsSO figureGenParams)
-    {
-        InitializeParameters(figureGenParams);
-        StartMeshGeneration();
-        GenerateFigureGameObject();
-    }
     protected virtual void InitializeParameters(FigureGenParamsSO figureGenParams)
     { 
         _segmentPointHeight = figureGenParams.Height;
 
         _segmentPrefab = figureGenParams.SegmentPrefab;
         _segmentPointPrefab = figureGenParams.SegmentPointPrefab;
-    }
-    protected abstract void StartMeshGeneration();
-    protected abstract void GenerateFigureGameObject();
-
-    private IEnumerator ShuffleTransitionsGeneration()
-    {
-        yield return null;
     }
 
     protected void UpdateSegment(FigureSegment segment, in MeshBuffersIndexers indexers, int2 meshResPuzzleIndex)
@@ -82,7 +115,6 @@ public abstract class FigureGenerator : MonoBehaviour
 
         segment.Initialize(_figureVertices[indexers.Start.x].uv, meshResPuzzleIndex.x, meshResPuzzleIndex.y);
     }
-    
     protected Mesh CreateSegmentPointRenderMesh(in MeshBuffersIndexers buffersData)
     {
         Mesh segmentPointMesh = new Mesh();
@@ -105,7 +137,6 @@ public abstract class FigureGenerator : MonoBehaviour
 
         return segmentPointMesh;
     }
-
     protected Mesh CreateSegmentPointColliderMesh(in MeshBuffersIndexers buffersData)
     { 
         Mesh segmentPointMesh = new Mesh();
@@ -131,6 +162,8 @@ public abstract class FigureGenerator : MonoBehaviour
 
     protected virtual void OnDestroy()
     {
+        Unsubscribe();
+
         _quadStripsCollection.DisposeIfNeeded();
 
         CollectionUtilities.DisposeIfNeeded(_figureVertices);
