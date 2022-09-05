@@ -37,7 +37,7 @@ public abstract class FigureSegmentMover : MonoBehaviour
     private NativeArray<short> _indices;
     private MeshBuffersIndexersForJob _indexersForJob;
 
-    private QSTransitionAnimator _quadStripTransition;
+    private QST_Animator _quadStripTransition;
 
     private bool _wasJobScheduled;
     private bool _wasMoveCompleted;
@@ -50,7 +50,7 @@ public abstract class FigureSegmentMover : MonoBehaviour
         _indexersForJob = new MeshBuffersIndexersForJob(new MeshBuffersIndexers());
         
         float3x2 normalUV = new float3x2(math.up(), new float3(uv, 0));
-        _quadStripTransition = new QSTransitionAnimator(ref _vertices, ref _indices, normalUV);
+        _quadStripTransition = new QST_Animator(ref _vertices, ref _indices, normalUV);
     }
 
     protected virtual void Awake()

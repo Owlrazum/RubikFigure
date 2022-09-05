@@ -16,7 +16,7 @@ public abstract class FigureGeneratorTransitions : MonoBehaviour
     public abstract void FinishGeneration(Figure figure);
 
     protected JobHandle _dataJobHandle;
-    protected QSTransitionsBuffer _transitionsCollection;
+    protected QS_TransitionsBuffer _transitionsCollection;
 
     protected virtual void OnDestroy()
     {

@@ -10,38 +10,38 @@ using UnityEngine.Assertions;
 /// It is a segmented buffer in other words.
 /// Indexers contain information about start and count of QuadStripTransitionSegment.
 /// </summary>
-public struct QSTransitionsBuffer
+public struct QS_TransitionsBuffer
 { 
-    private NativeArray<QSTransSegment> _qsTransSegmentsBuffer;
+    private NativeArray<QST_Segment> _qsTransSegmentsBuffer;
     private NativeArray<int2> _qsTransSegsIndexersBuffer;
     public int QSTransSegsCount { get { return _qsTransSegsIndexersBuffer.Length; } }
 
-    public QSTransitionsBuffer(NativeArray<QSTransSegment> qsTransSegmentsBuffer, NativeArray<int2> qsTransSegsIndexersBuffer)
+    public QS_TransitionsBuffer(NativeArray<QST_Segment> qsTransSegmentsBuffer, NativeArray<int2> qsTransSegsIndexersBuffer)
     {
         _qsTransSegmentsBuffer = qsTransSegmentsBuffer;
         _qsTransSegsIndexersBuffer = qsTransSegsIndexersBuffer;
     }
 
-    public NativeArray<QSTransSegment> GetBufferSegmentAndWriteIndexer(int2 indexer, int indexerIndex)
+    public NativeArray<QST_Segment> GetBufferSegmentAndWriteIndexer(int2 indexer, int indexerIndex)
     {
         Assert.IsTrue(indexerIndex < QSTransSegsCount);
         _qsTransSegsIndexersBuffer[indexerIndex] = indexer;
         return _qsTransSegmentsBuffer.GetSubArray(indexer.x, indexer.y);
     }
 
-    public NativeArray<QSTransSegment> GetBufferSegment(int indexerIndex)
+    public NativeArray<QST_Segment> GetBufferSegment(int indexerIndex)
     {
         Assert.IsTrue(indexerIndex < QSTransSegsCount);
         int2 indexer = _qsTransSegsIndexersBuffer[indexerIndex];
         return _qsTransSegmentsBuffer.GetSubArray(indexer.x, indexer.y);
     }
 
-    public QSTransition GetQSTransition(int index)
+    public QS_Transition GetQSTransition(int index)
     {
         Assert.IsTrue(index < QSTransSegsCount);
         int2 indexer = _qsTransSegsIndexersBuffer[index];
-        NativeArray<QSTransSegment> localLineSegments = _qsTransSegmentsBuffer.GetSubArray(indexer.x, indexer.y);
-        return new QSTransition(localLineSegments);
+        NativeArray<QST_Segment> localLineSegments = _qsTransSegmentsBuffer.GetSubArray(indexer.x, indexer.y);
+        return new QS_Transition(localLineSegments);
     }
 
     public int2 GetIndexer(int index)

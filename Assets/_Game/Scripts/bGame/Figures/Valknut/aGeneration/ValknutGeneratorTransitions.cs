@@ -23,8 +23,8 @@ public class ValknutGeneratorTransitions : FigureGeneratorTransitions
         NativeArray<int2> bufferIndexers = new NativeArray<int2>(TotalTransitionsCount, Allocator.Persistent);
         GenerateDataJobIndexData(originTargetIndices: ref _originTargetIndices, buffersIndexers: ref bufferIndexers);
         
-        NativeArray<QSTransSegment> writeBuffer = new NativeArray<QSTransSegment>(TotalRangesCount, Allocator.Persistent);
-        _transitionsCollection = new QSTransitionsBuffer(writeBuffer, bufferIndexers);
+        NativeArray<QST_Segment> writeBuffer = new NativeArray<QST_Segment>(TotalRangesCount, Allocator.Persistent);
+        _transitionsCollection = new QS_TransitionsBuffer(writeBuffer, bufferIndexers);
 
         ValknutGenJobTransData transitionDataJob = new ValknutGenJobTransData()
         {
@@ -90,8 +90,8 @@ public class ValknutGeneratorTransitions : FigureGeneratorTransitions
             new Array2D<ValknutSegmentTransitions>(new int2(Valknut.TrianglesCount, Valknut.PartsCount));
         for (int i = 0; i < _transitionsCollection.QSTransSegsCount; i += 2)
         {
-            QSTransition clockWiseTransition = _transitionsCollection.GetQSTransition(i);
-            QSTransition antiClockWiseTransition = _transitionsCollection.GetQSTransition(i + 1);
+            QS_Transition clockWiseTransition = _transitionsCollection.GetQSTransition(i);
+            QS_Transition antiClockWiseTransition = _transitionsCollection.GetQSTransition(i + 1);
 
             ValknutSegmentTransitions transData = new ValknutSegmentTransitions();
             ValknutSegmentTransitions.Clockwise(ref transData) = clockWiseTransition;

@@ -2,16 +2,16 @@ using Unity.Collections;
 using UnityEngine.Assertions;
 
 // QS - quad strip
-public struct QSTransition
+public struct QS_Transition
 {
-    private NativeArray<QSTransSegment>.ReadOnly _transSegs;
-    public QSTransition(NativeArray<QSTransSegment> persistentAllocation)
+    private NativeArray<QST_Segment>.ReadOnly _transSegs;
+    public QS_Transition(NativeArray<QST_Segment> persistentAllocation)
     {
         _transSegs = persistentAllocation.AsReadOnly();
     }
 
     public int Length { get { return _transSegs.Length; } }
-    public QSTransSegment this[int index]
+    public QST_Segment this[int index]
     {
         get
         {
@@ -20,10 +20,10 @@ public struct QSTransition
     }
     public bool IsCreated { get { return _transSegs.IsCreated; } }
 
-    public static QSTransition Concatenate(
-        QSTransition t1, 
-        QSTransition t2, 
-        NativeArray<QSTransSegment> buffer
+    public static QS_Transition Concatenate(
+        QS_Transition t1, 
+        QS_Transition t2, 
+        NativeArray<QST_Segment> buffer
     )
     {
         Assert.IsTrue(buffer.Length == t1.Length + t2.Length);
@@ -37,16 +37,16 @@ public struct QSTransition
         {
             buffer[bufferIndexer++] = t2[i];
         }
-        return new QSTransition(buffer);
+        return new QS_Transition(buffer);
     }
 
-    public static NativeArray<QSTransSegment> PrepareConcatenationBuffer(
-        QSTransition t1,
-        QSTransition t2,
+    public static NativeArray<QST_Segment> PrepareConcatenationBuffer(
+        QS_Transition t1,
+        QS_Transition t2,
         Allocator allocator
     )
     {
-        NativeArray<QSTransSegment> buffer = new NativeArray<QSTransSegment>(t1.Length + t2.Length, allocator);
+        NativeArray<QST_Segment> buffer = new NativeArray<QST_Segment>(t1.Length + t2.Length, allocator);
         return buffer;
     }
 }

@@ -12,26 +12,26 @@ public struct FigureGenJobShuffleTrans : IJobFor
     public QuadStripsBuffer InputQuadStripsCollection;
 
     [WriteOnly]
-    public NativeArray<QSTransSegment> InputQSTransSegmentBuffer;
+    public NativeArray<QST_Segment> InputQSTransSegmentBuffer;
 
     [WriteOnly]
-    public QSTransitionsBuffer OutputFadeOutTransitions;
+    public QS_TransitionsBuffer OutputFadeOutTransitions;
 
     [WriteOnly]
-    public QSTransitionsBuffer OutputFadeInTransitions;
+    public QS_TransitionsBuffer OutputFadeInTransitions;
 
     public void Execute(int i)
     {
         QuadStrip qs = InputQuadStripsCollection.GetQuadStrip(i);
         int2 indexer = InputQuadStripsCollection.GetQuadIndexer(i);
 
-        NativeArray<QSTransSegment> fadeOutWriteBuffer = 
+        NativeArray<QST_Segment> fadeOutWriteBuffer = 
             OutputFadeOutTransitions.GetBufferSegmentAndWriteIndexer(indexer, i);
 
-        NativeArray<QSTransSegment> fadeInWriteBuffer =
+        NativeArray<QST_Segment> fadeInWriteBuffer =
             OutputFadeInTransitions.GetBufferSegmentAndWriteIndexer(indexer, i);
 
-        QSTransitionBuilder shuffleTransBuilder = new QSTransitionBuilder();
+        QSTS_QuadBuilder shuffleTransBuilder = new QSTS_QuadBuilder();
         
         shuffleTransBuilder.BuildFadeOutTransition(qs, ref fadeOutWriteBuffer);
         shuffleTransBuilder.BuildFadeInTransition(qs, ref fadeInWriteBuffer);

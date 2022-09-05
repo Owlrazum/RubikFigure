@@ -1,49 +1,36 @@
 using Unity.Mathematics;
-using Unity.Collections;
 
-public struct QSTransSegment
+public struct QST_Segment
 {
-    public enum MeshConstructType
+    public enum QSTS_Type
     {
         Quad,
         Radial
     }
-
-    public enum QuadConstructType
-    {
-        NewQuadStartToEnd,
-        ContinueQuadStartToEnd,
-        ContinueQuadFromStart,
-        NewQuadFromStart,
-        NewQuadToEnd
-    }
-
-    public enum RadialConstructType
-    { 
-        Single,
-        Double
-    }
+    public QSTS_Type Type { get; set; }
 
     public float3x2 StartLineSegment { get; private set; }
     public float3x2 EndLineSegment { get; private set; }
     public int FillDataLength { get; private set; }
     
-    private QSTransSegFillData _f1;
-    private QSTransSegFillData _f2;
-    private QSTransSegFillData _f3;
+    private QSTS_FillData _f1;
+    private QSTS_FillData _f2;
+    private QSTS_FillData _f3;
 
-    public QSTransSegment(float3x2 startLineSegment, float3x2 endLineSegment, int fillDataLength)
-    { 
+    public QST_Segment(float3x2 startLineSegment, float3x2 endLineSegment, int fillDataLength)
+    {
+        Type = QSTS_Type.Quad;
+
         StartLineSegment = startLineSegment;
         EndLineSegment = endLineSegment;
         FillDataLength = fillDataLength;
 
-        _f1 = new QSTransSegFillData();
-        _f2 = new QSTransSegFillData();
-        _f3 = new QSTransSegFillData();
+        _f1 = new QSTS_FillData();
+        _f2 = new QSTS_FillData();
+        _f3 = new QSTS_FillData();
     }
 
-    public QSTransSegFillData this[int index]
+    public QSTS_FillData this[int index]
     {
         get
         {

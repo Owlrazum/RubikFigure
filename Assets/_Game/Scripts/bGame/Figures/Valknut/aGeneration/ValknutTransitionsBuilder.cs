@@ -6,7 +6,8 @@ using UnityEngine.Assertions;
 using Orazum.Math;
 using static Orazum.Math.RaysUtilities;
 using static Orazum.Math.MathUtils;
-using static QSTransSegment;
+using static QST_Segment;
+using static QSTS_FillData;
 
 public struct ValknutTransitionsBuilder
 {
@@ -22,7 +23,7 @@ public struct ValknutTransitionsBuilder
     private QuadStrip _origin;
     private QuadStrip _target;
 
-    private NativeArray<QSTransSegment> _writeBuffer;
+    private NativeArray<QST_Segment> _writeBuffer;
     private NativeArray<float2x4> _startEndSegs;
     private NativeArray<float> _outFillDistances;
     private NativeArray<float> _inFillDistances;
@@ -37,7 +38,7 @@ public struct ValknutTransitionsBuilder
     {
         _origin = origin;
         _target = target;
-        _writeBuffer = new NativeArray<QSTransSegment>();
+        _writeBuffer = new NativeArray<QST_Segment>();
 
         _transSegmentsIndexer = new int2(0, _origin.QuadsCount + 1 + _target.QuadsCount);
 
@@ -77,13 +78,13 @@ public struct ValknutTransitionsBuilder
         throw new System.ArgumentOutOfRangeException("QuadStrips quadsCount should be in [2, 3]");
     }
 
-    public void BuildTransition(ref NativeArray<QSTransSegment> writeBuffer)
+    public void BuildTransition(ref NativeArray<QST_Segment> writeBuffer)
     {
         _writeBuffer = writeBuffer;
         ComputeDistancesAndSegs(
             out float2 fillInOutTotalDistances
         );
-        BuildFillOutData(in fillInOutTotalDistances.y, out QSTransSegment lastSegment);
+        BuildFillOutData(in fillInOutTotalDistances.y, out QST_Segment lastSegment);
         BuildFillInData(in fillInOutTotalDistances.x, ref lastSegment);
     }
 
@@ -213,7 +214,7 @@ public struct ValknutTransitionsBuilder
 
     private void BuildFillOutData(
         in float outFillTotalDistance,
-        out QSTransSegment lastFillOutSegment
+        out QST_Segment lastFillOutSegment
     )
     {
         _transSegmentsIndexer.x = 0;
@@ -228,29 +229,27 @@ public struct ValknutTransitionsBuilder
 
             if (i == 0)
             {
-                QSTransSegment firstSegment = new QSTransSegment(x0z(startLineSeg), x0z(endLineSeg), fillDataLength: 1);
-                QSTransSegFillData fillOutState = new QSTransSegFillData(
-                    new float2(0, dr.y),
-                    MeshConstructType.Quad
+                QST_Segment firstSegment = new QST_Segment(x0z(startLineSeg), x0z(endLineSeg), fillDataLength: 1);
+                firstSegment.Type = QSTS_Type.Quad;
+                QSTS_FillData fillOutState = new QSTS_FillData(
+                    FillType.NewToEnd,
+                    new float2(0, dr.y)
                 );
-                fillOutState.QuadType = QuadConstructType.NewQuadToEnd;
                 firstSegment[0] = fillOutState;
                 _writeBuffer[_transSegmentsIndexer.x++] = firstSegment;
             }
             else
             {
-                QSTransSegment segment = new QSTransSegment(x0z(startLineSeg), x0z(endLineSeg), fillDataLength: 2);
-                QSTransSegFillData filledState = new QSTransSegFillData(
-                    new float2(0, dr.x),
-                    MeshConstructType.Quad
+                QST_Segment segment = new QST_Segment(x0z(startLineSeg), x0z(endLineSeg), fillDataLength: 2);
+                QSTS_FillData filledState = new QSTS_FillData(
+                    FillType.ContinueStartToEnd,
+                    new float2(0, dr.x)
                 );
-                filledState.QuadType = QuadConstructType.ContinueQuadStartToEnd;
 
-                QSTransSegFillData fillingOutState = new QSTransSegFillData(
-                    new float2(dr.x, dr.y),
-                    MeshConstructType.Quad
+                QSTS_FillData fillingOutState = new QSTS_FillData(
+                    FillType.NewToEnd,
+                    new float2(dr.x, dr.y)
                 );
-                fillingOutState.QuadType = QuadConstructType.NewQuadToEnd;
 
                 segment[0] = filledState;
                 segment[1] = fillingOutState;
@@ -267,34 +266,31 @@ public struct ValknutTransitionsBuilder
         float2x4 lastStartEndSeg = _startEndSegs[_transSegmentsIndexer.x];
         float2x2 lastStartLineSeg = new float2x2(lastStartEndSeg[0], lastStartEndSeg[1]);
         float2x2 lastEndLineSeg = new float2x2(lastStartEndSeg[2], lastStartEndSeg[3]);
-        lastFillOutSegment = new QSTransSegment(x0z(lastStartLineSeg), x0z(lastEndLineSeg), 3);
-        QSTransSegFillData lastSegFilledState = new QSTransSegFillData(
-            new float2(0, dr.x),
-            MeshConstructType.Quad
+        lastFillOutSegment = new QST_Segment(x0z(lastStartLineSeg), x0z(lastEndLineSeg), 3);
+        QSTS_FillData lastSegFilledState = new QSTS_FillData(
+            FillType.ContinueStartToEnd,            
+            new float2(0, dr.x)
         );
-        lastSegFilledState.QuadType = QuadConstructType.ContinueQuadStartToEnd;
 
-        QSTransSegFillData lastSegFillingOutState = new QSTransSegFillData(
-            new float2(dr.x, 1),
-            MeshConstructType.Quad
+        QSTS_FillData lastSegFillingOutState = new QSTS_FillData(
+            FillType.NewToEnd,
+            new float2(dr.x, 1)
         );
-        lastSegFillingOutState.QuadType = QuadConstructType.NewQuadToEnd;
 
         lastFillOutSegment[1] = lastSegFilledState;
         lastFillOutSegment[2] = lastSegFillingOutState;
         _writeBuffer[_transSegmentsIndexer.x++] = lastFillOutSegment;
     }
 
-    private void BuildFillInData(in float inFillTotalDistance, ref QSTransSegment lastFillOutSegment)
+    private void BuildFillInData(in float inFillTotalDistance, ref QST_Segment lastFillOutSegment)
     {
         float lerpOffset = _emptyZoneLength / inFillTotalDistance;
-        QSTransSegFillData firstSegFillInData = new QSTransSegFillData(
-            new float2(0, lerpOffset),
-            MeshConstructType.Quad
+        QSTS_FillData firstSegFillInData = new QSTS_FillData(
+            FillType.ContinueFromStart,
+            new float2(0, lerpOffset)
         );
-        firstSegFillInData.QuadType = QuadConstructType.ContinueQuadFromStart;
         lastFillOutSegment[0] = firstSegFillInData;
-        QSTransSegFillData lastFilledState = lastFillOutSegment[1];
+        QSTS_FillData lastFilledState = lastFillOutSegment[1];
         lastFilledState.LerpRange = new float2(lerpOffset, lastFillOutSegment[1].LerpRange.y);
         lastFillOutSegment[1] = lastFilledState;
         _writeBuffer[_transSegmentsIndexer.x - 1] = lastFillOutSegment;
@@ -310,20 +306,16 @@ public struct ValknutTransitionsBuilder
 
             if (i == 0)
             {
-                QSTransSegment firstFillInSegment = new QSTransSegment(x0z(startLineSeg), x0z(endLineSeg), fillDataLength: 2);
-                QSTransSegFillData fillInState = new QSTransSegFillData(
-                    new float2(dr.x, dr.y),
-                    MeshConstructType.Quad
-                    
+                QST_Segment firstFillInSegment = new QST_Segment(x0z(startLineSeg), x0z(endLineSeg), fillDataLength: 2);
+                QSTS_FillData fillInState = new QSTS_FillData(
+                    FillType.NewFromStart,
+                    new float2(dr.x, dr.y)
                 );
-                fillInState.QuadType = QuadConstructType.NewQuadFromStart;
 
-                QSTransSegFillData filledState = new QSTransSegFillData(
-                    new float2(dr.y, 1),
-                    MeshConstructType.Quad
-                    
+                QSTS_FillData filledState = new QSTS_FillData(
+                    FillType.NewStartToEnd,
+                    new float2(dr.y, 1)
                 );
-                filledState.QuadType = QuadConstructType.NewQuadStartToEnd;
 
                 firstFillInSegment[0] = fillInState;
                 firstFillInSegment[1] = filledState;
@@ -332,31 +324,26 @@ public struct ValknutTransitionsBuilder
             }
             else if (i < _target.QuadsCount - 1)
             {
-                QSTransSegment segment = new QSTransSegment(x0z(startLineSeg), x0z(endLineSeg), fillDataLength: 2);
-                QSTransSegFillData fillInState = new QSTransSegFillData(
-                    new float2(dr.x, dr.y),
-                    MeshConstructType.Quad
-                    
+                QST_Segment segment = new QST_Segment(x0z(startLineSeg), x0z(endLineSeg), fillDataLength: 2);
+                QSTS_FillData fillInState = new QSTS_FillData(
+                    FillType.ContinueFromStart,
+                    new float2(dr.x, dr.y)
                 );
-                fillInState.QuadType = QuadConstructType.ContinueQuadFromStart;
-                QSTransSegFillData filledState = new QSTransSegFillData(
-                    new float2(dr.y, 1),
-                    MeshConstructType.Quad
-                    
+                QSTS_FillData filledState = new QSTS_FillData(
+                    FillType.NewStartToEnd,
+                    new float2(dr.y, 1)
                 );
-                filledState.QuadType = QuadConstructType.NewQuadStartToEnd;
                 segment[0] = fillInState;
                 segment[1] = filledState;
                 _writeBuffer[_transSegmentsIndexer.x++] = segment;
             }
             else
             {
-                QSTransSegment lastFillInSegment = new QSTransSegment(x0z(startLineSeg), x0z(endLineSeg), fillDataLength: 1);
-                QSTransSegFillData fillInState = new QSTransSegFillData(
-                    new float2(dr.x, 1),
-                    MeshConstructType.Quad
+                QST_Segment lastFillInSegment = new QST_Segment(x0z(startLineSeg), x0z(endLineSeg), fillDataLength: 1);
+                QSTS_FillData fillInState = new QSTS_FillData(
+                    FillType.ContinueFromStart,
+                    new float2(dr.x, 1)
                 );
-                fillInState.QuadType = QuadConstructType.ContinueQuadFromStart;
                 lastFillInSegment[0] = fillInState;
                 _writeBuffer[_transSegmentsIndexer.x] = lastFillInSegment;
                 break;

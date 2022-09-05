@@ -16,8 +16,8 @@ public class FigureVerticesMove : FigureSegmentMove
         Mover = move.Mover;
     }
 
-    private QSTransition _transition;
-    public ref QSTransition Transition { get { return ref _transition; } }
+    private QS_Transition _transition;
+    public ref QS_Transition Transition { get { return ref _transition; } }
 
     public bool ShouldReorientVertices { get; set; }
 }

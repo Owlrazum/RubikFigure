@@ -10,7 +10,7 @@ public struct FigureSegmentMoveJob : IJob
     public float P_LerpParam;
     public bool P_ShouldReorientVertices;
 
-    public QSTransitionAnimator InputQuadStripTransition;
+    public QST_Animator InputQuadStripTransition;
     
     public MeshBuffersIndexersForJob OutputIndexers;
 

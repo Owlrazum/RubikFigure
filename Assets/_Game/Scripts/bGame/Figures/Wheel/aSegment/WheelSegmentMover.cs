@@ -9,24 +9,24 @@ public class WheelSegmentMover : FigureSegmentMover
 
 public struct WheelSegmentTransitions
 { 
-    private QSTransition atsi;
-    private QSTransition ctsi;
-    private QSTransition dtsi;
-    private QSTransition utsi;
+    private QS_Transition atsi;
+    private QS_Transition ctsi;
+    private QS_Transition dtsi;
+    private QS_Transition utsi;
 
-    public static ref QSTransition Atsi(ref WheelSegmentTransitions instance)
+    public static ref QS_Transition Atsi(ref WheelSegmentTransitions instance)
     {
         return ref instance.atsi;
     }
-    public static ref QSTransition Ctsi(ref WheelSegmentTransitions instance)
+    public static ref QS_Transition Ctsi(ref WheelSegmentTransitions instance)
     {
         return ref instance.ctsi;
     }
-    public static ref QSTransition Dtsi(ref WheelSegmentTransitions instance)
+    public static ref QS_Transition Dtsi(ref WheelSegmentTransitions instance)
     {
         return ref instance.dtsi;
     }
-    public static ref QSTransition Utsi(ref WheelSegmentTransitions instance)
+    public static ref QS_Transition Utsi(ref WheelSegmentTransitions instance)
     {
         return ref instance.utsi;
     }

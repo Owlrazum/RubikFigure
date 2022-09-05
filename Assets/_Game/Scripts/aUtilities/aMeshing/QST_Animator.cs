@@ -6,28 +6,30 @@ using UnityEngine.Assertions;
 
 using static Orazum.Math.LineSegmentUtilities;
 using static Orazum.Math.MathUtils;
-using static QSTransSegment;
+using static QST_Segment;
+using static QSTS_FillData;
+using static QSTSFD_Radial;
 
 namespace Orazum.Meshing
 {
-    public struct QSTransitionAnimator
+    public struct QST_Animator
     {
-        private QSTransition _transition;
+        private QS_Transition _transition;
         private QuadStripBuilder _quadStripBuilder;
         private float _globalLerpParam;
 
-        public QSTransitionAnimator(
+        public QST_Animator(
             ref NativeArray<VertexData> vertices,
             ref NativeArray<short> indices,
             in float3x2 normalUV
         )
         {
-            _transition = new QSTransition();
+            _transition = new QS_Transition();
             _quadStripBuilder = new QuadStripBuilder(vertices, indices, normalUV);
             _globalLerpParam = -1;
         }
 
-        public void AssignTransition(QSTransition transition)
+        public void AssignTransition(QS_Transition transition)
         {
             _transition = transition;
         }
@@ -39,7 +41,7 @@ namespace Orazum.Meshing
 
             for (int i = 0; i < _transition.Length; i++)
             {
-                QSTransSegment segment = _transition[i];
+                QST_Segment segment = _transition[i];
                 for (int j = 0; j < segment.FillDataLength; j++)
                 {
                     ConsiderFillData(in segment, segment[j], ref buffersIndexers);
@@ -53,8 +55,8 @@ namespace Orazum.Meshing
         }
 
         private void ConsiderFillData(
-            in QSTransSegment segment,
-            in QSTransSegFillData fillData,
+            in QST_Segment segment,
+            in QSTS_FillData fillData,
             ref MeshBuffersIndexers buffersIndexers)
         {
             if (_globalLerpParam >= fillData.LerpRange.x && _globalLerpParam <= fillData.LerpRange.y)
@@ -66,7 +68,7 @@ namespace Orazum.Meshing
                     segment.EndLineSegment[1]
                 );
 
-                if (fillData.ConstructType == MeshConstructType.Quad)
+                if (segment.Type == QSTS_Type.Quad)
                 {
                     ConstructWithQuadType(
                         in fillData,
@@ -74,7 +76,7 @@ namespace Orazum.Meshing
                         ref buffersIndexers
                     );
                 }
-                else if (fillData.ConstructType == MeshConstructType.Radial)
+                else if (segment.Type == QSTS_Type.Radial)
                 {
                     ConstructWithRadialType(
                         in fillData,
@@ -90,19 +92,19 @@ namespace Orazum.Meshing
         }
 
         private void ConstructWithQuadType(
-            in QSTransSegFillData fillData,
+            in QSTS_FillData fillData,
             in float3x4 startEndLineSegs,
             ref MeshBuffersIndexers buffersIndexers)
         {
-            QuadConstructType quadType = fillData.QuadType;
+            FillType fillType = fillData.Fill;
             float2 lerpRange = fillData.LerpRange;
             float3x2 start = new float3x2(startEndLineSegs[0], startEndLineSegs[1]);
             float3x2 end = new float3x2(startEndLineSegs[2], startEndLineSegs[3]);
 
-            if (quadType == QuadConstructType.NewQuadStartToEnd ||
-                quadType == QuadConstructType.ContinueQuadStartToEnd)
+            if (fillType == FillType.NewStartToEnd ||
+                fillType == FillType.ContinueStartToEnd)
             {
-                if (quadType == QuadConstructType.NewQuadStartToEnd)
+                if (fillType == FillType.NewStartToEnd)
                 {
                     _quadStripBuilder.Start(start, ref buffersIndexers);
                 }
@@ -115,17 +117,17 @@ namespace Orazum.Meshing
                     math.lerp(start[0], end[0], localLerpParam),
                     math.lerp(start[1], end[1], localLerpParam)
                 );
-                if (quadType == QuadConstructType.NewQuadFromStart)
+                if (fillType == FillType.NewFromStart)
                 {
                     _quadStripBuilder.Start(start, ref buffersIndexers);
                     _quadStripBuilder.Continue(middle, ref buffersIndexers);
                 }
-                else if (quadType == QuadConstructType.NewQuadToEnd)
+                else if (fillType == FillType.NewToEnd)
                 {
                     _quadStripBuilder.Start(middle, ref buffersIndexers);
                     _quadStripBuilder.Continue(end, ref buffersIndexers);
                 }
-                else if (quadType == QuadConstructType.ContinueQuadFromStart)
+                else if (fillType == FillType.ContinueFromStart)
                 {
                     _quadStripBuilder.Continue(middle, ref buffersIndexers);
                 }
@@ -137,13 +139,13 @@ namespace Orazum.Meshing
         }
 
         private void ConstructWithRadialType(
-            in QSTransSegFillData fillData,
+            in QSTS_FillData fillData,
             in float3x4 startEndLineSegs,
             ref MeshBuffersIndexers buffersIndexers
         )
         {
-            RadialConstructType constructType = fillData.RadialType;
-            QSTransSegFillRadialData radialData = fillData.RadialData;
+            RadialType radialType = fillData.Radial.Type;
+            QSTSFD_Radial radialData = fillData.Radial;
             float3x2 startSeg = new float3x2(startEndLineSegs[0], startEndLineSegs[1]);
             float lerpParam = math.unlerp(fillData.LerpRange.x, fillData.LerpRange.y, _globalLerpParam);
 
@@ -152,7 +154,7 @@ namespace Orazum.Meshing
                 Debug.LogWarning("LerpLength is > 1, is this correct behaviour?");
             }
 
-            float lerpOffset = lerpParam + radialData.StartLerpOffset;
+            float lerpOffset = lerpParam;// + radialData.StartLerpOffset;
             if (Between01(in lerpOffset))
             {
                 float3x2 currentSeg = InterpolateRadial(lerpOffset, in fillData, startSeg);
@@ -185,28 +187,28 @@ namespace Orazum.Meshing
             }
         }
 
-        private float3x2 InterpolateRadial(float lerpOffset, in QSTransSegFillData fillData, in float3x2 startSeg)
+        private float3x2 InterpolateRadial(float lerpOffset, in QSTS_FillData fillData, in float3x2 startSeg)
         {
-            Assert.IsTrue(fillData.ConstructType == MeshConstructType.Radial);
-            QSTransSegFillRadialData radialData = fillData.RadialData;
-            if (fillData.RadialType == RadialConstructType.Single)
+            QSTSFD_Radial radialFill = fillData.Radial;
+            if (radialFill.Type == RadialType.SingleRotationLerp)
             {
-                float rotAngle = radialData.AxisAngles[0].w * lerpOffset;
-                quaternion q = quaternion.AxisAngle(radialData.AxisAngles[0].xyz, rotAngle);
+                float rotAngle = radialFill.AxisAngles[0].w * lerpOffset;
+                quaternion q = quaternion.AxisAngle(radialFill.AxisAngles[0].xyz, rotAngle);
 
-                return RotateLineSegmentAround(q, radialData.Centers[0], startSeg);
+                return RotateLineSegmentAround(q, radialFill.Points[0], startSeg);
             }
-            else if (fillData.RadialType == RadialConstructType.Double)
+            else if (radialFill.Type == RadialType.DoubleRotationLerp)
             {
                 float2 rotAngles = new float2(
-                    radialData.AxisAngles[0].w * lerpOffset,
-                    radialData.AxisAngles[1].w * lerpOffset
+                    radialFill.AxisAngles[0].w * lerpOffset,
+                    radialFill.AxisAngles[1].w * lerpOffset
                 );
 
-                quaternion q1 = quaternion.AxisAngle(radialData.AxisAngles[0].xyz, rotAngles[0]);
-                quaternion q2 = quaternion.AxisAngle(radialData.AxisAngles[1].xyz, rotAngles[1]);
+                quaternion q1 = quaternion.AxisAngle(radialFill.AxisAngles[0].xyz, rotAngles[0]);
+                quaternion q2 = quaternion.AxisAngle(radialFill.AxisAngles[1].xyz, rotAngles[1]);
 
-                return RotateLineSegmentAround(q1, q2, radialData.Centers, startSeg);
+                float3x2 doubleCenters = new float3x2(radialFill.Points[0], radialFill.Points[1]);
+                return RotateLineSegmentAround(q1, q2, doubleCenters, startSeg);
             }
             else
             {

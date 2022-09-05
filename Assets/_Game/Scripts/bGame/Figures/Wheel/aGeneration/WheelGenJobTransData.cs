@@ -3,29 +3,60 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Collections;
 
+using Orazum.Math;
+
 // [BurstCompile]
 public struct WheelGenJobTransData : IJobFor
 {
+    public int P_VertOrderTransitionsCount;
+    public int P_SideCount;
+    public int P_RingCount;
+    public int P_SegmentResolution;
+
     [ReadOnly]
     public QuadStripsBuffer InQuadStripsCollection;
 
     [ReadOnly]
     public SegmentedBufferInt2 InOriginsTargetsIndices;
 
-    public QSTransitionsBuffer OutTransitionsCollection;
+    public QS_TransitionsBuffer OutTransitionsCollection;
     
     public void Execute(int i)
     {
-        // int2 originTarget = InOriginTargetIndices[i];
+        NativeArray<int2> originTargets = InOriginsTargetsIndices.GetBufferSegment(i);
+        NativeArray<QST_Segment> writeBuffer = OutTransitionsCollection.GetBufferSegment(i);
 
-        // int2 bufferIndexer = OutTransitionsCollection.GetIndexer(i);
-        // NativeArray<QSTransSegment> writeBuffer = 
-        //     OutTransitionsCollection.GetBufferSegmentAndWriteIndexer(bufferIndexer, i);
-
-        // QuadStrip origin = InQuadStripsCollection.GetQuadStrip(originTarget.x);
-        // QuadStrip target = InQuadStripsCollection.GetQuadStrip(originTarget.y);
-
-        // WheelTransitionsBuilder transDataBuilder = new WheelTransitionsBuilder();
-        // transDataBuilder.BuildTransition(ref writeBuffer);
+        WheelTransitionsBuilder transDataBuilder = new WheelTransitionsBuilder(
+            P_SideCount,
+            P_SegmentResolution
+        );
+        if (i < P_VertOrderTransitionsCount)
+        {
+            VertOrderType vertOrder = VertOrderType.Up;
+            if (i % 2 == 1)
+            {
+                vertOrder = VertOrderType.Down;
+            }
+            transDataBuilder.BuildVertOrderTransition(
+                ref InQuadStripsCollection,
+                ref originTargets,
+                ref writeBuffer,
+                vertOrder
+            );
+        }
+        else
+        { 
+            ClockOrderType clockOrder = ClockOrderType.CW;
+            if (i % 2 == 1)
+            {
+                clockOrder = ClockOrderType.AntiCW;
+            }
+            transDataBuilder.BuildClockOrderTransition(
+                ref InQuadStripsCollection,
+                ref originTargets,
+                ref writeBuffer,
+                clockOrder
+            );
+        }
     }
 }

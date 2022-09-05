@@ -23,14 +23,14 @@ public class ValknutSegmentMover : FigureSegmentMover
 /// </summary>
 public struct ValknutSegmentTransitions
 {
-    private QSTransition CW;
-    private QSTransition antiCW;
+    private QS_Transition CW;
+    private QS_Transition antiCW;
 
-    public static ref QSTransition Clockwise (ref ValknutSegmentTransitions instance)
+    public static ref QS_Transition Clockwise (ref ValknutSegmentTransitions instance)
     {
         return ref instance.CW;
     }
-    public static ref QSTransition AntiClockwise (ref ValknutSegmentTransitions instance)    
+    public static ref QS_Transition AntiClockwise (ref ValknutSegmentTransitions instance)    
     {
         return ref instance.antiCW;
     }

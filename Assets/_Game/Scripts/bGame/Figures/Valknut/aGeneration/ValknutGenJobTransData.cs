@@ -12,7 +12,7 @@ public struct ValknutGenJobTransData : IJobFor
     [ReadOnly]
     public NativeArray<int2> InOriginTargetIndices;
 
-    public QSTransitionsBuffer OutTransitionsCollection;
+    public QS_TransitionsBuffer OutTransitionsCollection;
     
     public void Execute(int i)
     {
@@ -25,7 +25,7 @@ public struct ValknutGenJobTransData : IJobFor
             target
         );
 
-        NativeArray<QSTransSegment> writeBuffer = 
+        NativeArray<QST_Segment> writeBuffer = 
             OutTransitionsCollection.GetBufferSegment(i);
 
         dataBuilder.BuildTransition(ref writeBuffer);

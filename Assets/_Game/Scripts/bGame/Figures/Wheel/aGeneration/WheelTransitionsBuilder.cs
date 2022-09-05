@@ -4,334 +4,77 @@ using Unity.Collections;
 using UnityEngine.Assertions;
 
 using Orazum.Math;
-using static Orazum.Math.RaysUtilities;
-using static Orazum.Math.MathUtils;
-using static QSTransSegment;
+using Orazum.Meshing;
+
+using static Orazum.Constants.Math;
+using static QSTS_FillData;
 
 public struct WheelTransitionsBuilder
 {
-/*
-    private void GenerateTransitions(int2 offsets)
+    private QSTS_RadialBuilder _radialBuilder;
+
+    public WheelTransitionsBuilder(int sideCount, int segmentResolution)
     {
-        for (int side = 0; side < P_SideCount; side++)
-        {
-            for (int ring = 0; ring < P_RingCount; ring++)
-            {
-                int4 originIndexer = int4.zero;
-                int4 targetIndexer = int4.zero;
-                float3x4 originQuad = float3x4.zero;
-                float3x4 targetSegmentQuad = float3x4.zero;
-
-                int startSegmentIndex = side * offsets.x + ring * offsets.y;
-                GetSegmentIndexerGrounded(startSegmentIndex, offsets, out targetIndexer);
-                GetTransQuad(in targetIndexer, ref targetSegmentQuad);
-
-                int nextSide = side + 1 >= P_SideCount ? 0 : side + 1;
-                int nextSideStartSegmentIndex = nextSide * offsets.x + ring * offsets.y;
-                GetSegmentIndexerGrounded(nextSideStartSegmentIndex, offsets, out originIndexer);
-                GetTransQuad(in originIndexer, ref originQuad);
-                GenerateClockOrderTransition(in originQuad, in targetSegmentQuad, isCW: true);
-
-                int prevSide = side - 1 < 0 ? P_SideCount - 1 : side - 1;
-                int prevSideStartSegmentIndex = prevSide * offsets.x + ring * offsets.y;
-                GetSegmentIndexerGrounded(prevSideStartSegmentIndex, offsets, out originIndexer);
-                GetTransQuad(in originIndexer, ref originQuad);
-                GenerateClockOrderTransition(in originQuad, in targetSegmentQuad, isCW: false);
-
-                if (ring == 0)
-                {
-                    GetSegmentIndexerLevitation(startSegmentIndex, offsets, out targetIndexer);
-                    GetTransQuad(in targetIndexer, ref targetSegmentQuad);
-                    GetSegmentIndexerLevitation(startSegmentIndex, offsets, out originIndexer);
-                    GetTransQuad(in originIndexer, ref originQuad);
-                    GenerateLevitationVerticalTransition(in originQuad, in targetSegmentQuad, isDown: true);
-                }
-
-                if (ring == P_RingCount - 1)
-                {
-                    GetSegmentIndexerLevitation(startSegmentIndex, offsets, out targetIndexer);
-                    GetTransQuad(in targetIndexer, ref targetSegmentQuad);
-                    GetSegmentIndexerLevitation(startSegmentIndex, offsets, out originIndexer);
-                    GetTransQuad(in originIndexer, ref originQuad);
-                    GenerateLevitationVerticalTransition(in originQuad, in targetSegmentQuad, isDown: false);
-                }
-
-                int startQuadIndex = startSegmentIndex;
-                float3x4 targetQuad = float3x4.zero;
-                int4 targetQuadIndexer = int4.zero;
-                for (int r = 0; r < P_SegmentResolution; r++)
-                {
-                    GetQuadIndexer(startQuadIndex, offsets, out targetQuadIndexer);
-                    GetTransQuad(in targetQuadIndexer, ref targetQuad);
-                    if (ring < P_RingCount - 1)
-                    {
-                        GetQuadIndexer(targetQuadIndexer.z, offsets, out originIndexer);
-                        GetTransQuad(in originIndexer, ref originQuad);
-                        GenerateGroundedVerticalTransition(in originQuad, in targetSegmentQuad, isDown: true);
-                    }
-
-                    if (ring > 0)
-                    {
-                        GetQuadIndexer(targetQuadIndexer.x - offsets.y, offsets, out originIndexer);
-                        GetTransQuad(in originIndexer, ref originQuad);
-                        GenerateGroundedVerticalTransition(in originQuad, in targetSegmentQuad, isDown: false);
-                    }
-
-                    startQuadIndex++;
-                }
-            }
-        }
-    }
-
-    private void GenerateLevitationVerticalTransition(in float3x4 originQuad, in float3x4 targetQuad, bool isDown)
-    {
-        float4 distances = float4.zero;
-        distances.x = DistanceLineSegment(originQuad[0], originQuad[2]);
-        distances.y = DistanceLineSegment(originQuad[0], originQuad[2]) * TAU / 2;
-        distances.z = DistanceLineSegment(targetQuad[0], targetQuad[2]);
-        distances.w = distances.x + distances.y + distances.z;
-
-        float2x3 lerpRanges = float2x3.zero;
-        lerpRanges[0] = new float2(0, distances.x / distances.w);
-        lerpRanges[1] = new float2(lerpRanges[0].y, (distances.x + distances.y) / distances.w);
-        lerpRanges[2] = new float2(lerpRanges[1].y, 1);
-
-
-
-        int4 indexers = isDown ? new int4(2, 3, 0, 1) : new int4(0, 1, 2, 3);
-        float3x2 startLineSeg, endLineSeg;
-        GetLineSegments(in originQuad, in indexers, out startLineSeg, out endLineSeg);
-        QSTransSegment originLinear = new QSTransSegment(startLineSeg, endLineSeg, 1);
-        QSTransSegFillData linearFillOut = new QSTransSegFillData(lerpRanges[0], MeshConstructType.Quad);
-        linearFillOut.QuadType = QuadConstructType.NewQuadToEnd;
-        originLinear[0] = linearFillOut;
-
-
-
-        float3x4 radialQuad = float3x4.zero;
-        if (isDown)
-        {
-            radialQuad[0] = originQuad[0];
-            radialQuad[1] = originQuad[1];
-            radialQuad[2] = targetQuad[2];
-            radialQuad[3] = targetQuad[3];
-        }
-        else
-        {
-            radialQuad[0] = originQuad[2];
-            radialQuad[1] = originQuad[3];
-            radialQuad[2] = targetQuad[0];
-            radialQuad[3] = targetQuad[1];
-        }
-        GetLineSegments(in radialQuad, new int4(0, 1, 2, 3), out startLineSeg, out endLineSeg);
-        QSTransSegment radial = new QSTransSegment(startLineSeg, endLineSeg, 1);
-        QSTransSegFillData radialFillData = new QSTransSegFillData(lerpRanges[1], MeshConstructType.Radial);
-        radialFillData.RadialType = RadialConstructType.Double;
+        _radialBuilder = new();
+        _radialBuilder.Resolution = segmentResolution;
         
-        QSTransSegFillRadialData radialData = new QSTransSegFillRadialData();
+        float rotationAngle = TAU / sideCount;
+        float4 axisAngleCW = new float4(math.up(), rotationAngle);
+        float4 axisAngleAntiCW = new float4(math.up(), -rotationAngle);
+        _radialBuilder.SRL_AxisAngleCW = axisAngleCW;
+        _radialBuilder.SRL_AxisAngleAntiCW = axisAngleAntiCW;
+    }
 
-        radialData.LerpLength = _radiiData.z / (P_RingCount * _radiiData.z / 2 * TAU / 2);
+    public void BuildClockOrderTransition(
+        ref QuadStripsBuffer quadStrips,
+        ref NativeArray<int2> originsTargets,
+        ref NativeArray<QST_Segment> writeBuffer,
+        ClockOrderType clockOrder
+    )
+    {
+        int QSTS_indexer = 0;
+        _radialBuilder.ClockOrder = clockOrder;
 
-        radialData.Centers = new float3x2(
-            GetLineSegmentCenter(startLineSeg[0], endLineSeg[0]),
-            GetLineSegmentCenter(startLineSeg[1], endLineSeg[1])
-        );
-
-        quaternion perp;
-        if (isDown)
+        for (int i = 0; i < originsTargets.Length; i++)
         {
-            perp = quaternion.AxisAngle(math.up(), 90);
-        }
-        else
-        {
-            perp = quaternion.AxisAngle(math.up(), -90);
-        }
-        float3x2 rotAxises = float3x2.zero;
-        rotAxises[0] = GetPerpDirection(perp, new float3x2(startLineSeg[0], endLineSeg[0]));
-        rotAxises[1] = GetPerpDirection(perp, new float3x2(startLineSeg[1], endLineSeg[1]));
+            int2 originTarget = originsTargets[i];
+            QuadStrip origin = quadStrips.GetQuadStrip(originTarget.x);
+            QuadStrip target = quadStrips.GetQuadStrip(originTarget.y);
 
-        radialData.Resolution = P_SegmentResolution;
-        radialData.AxisAngles = new float4x2(
-            new float4(rotAxises[0], 180),
-            new float4(rotAxises[1], 180)
-        );
-
-        radialFillData.RadialData = radialData;
-        radial[0] = radialFillData;
-
-
-        indexers = isDown ? new int4(0, 1, 2, 3) : new int4(2, 3, 0, 1);
-        GetLineSegments(in targetQuad, in indexers, out startLineSeg, out endLineSeg);
-        QSTransSegment targetLinear = new QSTransSegment(startLineSeg, endLineSeg, 1);
-        QSTransSegFillData linearFillIn = new QSTransSegFillData(lerpRanges[2], MeshConstructType.Quad);
-        linearFillIn.QuadType = QuadConstructType.NewQuadToEnd;
-        targetLinear[0] = linearFillIn;
-
-        if (isDown)
-        {
-            OutputLevDownTransSegments[_levDutsi.x++] = originLinear;
-            OutputLevDownTransSegments[_levDutsi.x++] = radial;
-            OutputLevDownTransSegments[_levDutsi.x++] = targetLinear;
-        }
-        else
-        {
-            OutputLevUpTransSegments[_levDutsi.y++] = originLinear;
-            OutputLevUpTransSegments[_levDutsi.y++] = radial;
-            OutputLevUpTransSegments[_levDutsi.y++] = targetLinear;
+            _radialBuilder.FillOut(in origin, FillType.NewToEnd, out QST_Segment qsts);
+            writeBuffer[QSTS_indexer++] = qsts;
+            _radialBuilder.FillIn(in target, FillType.ContinueFromStart, out qsts);
+            writeBuffer[QSTS_indexer++] = qsts;
         }
     }
 
-    private void GenerateGroundedVerticalTransition(in float3x4 originQuad, in float3x4 targetQuad, bool isDown)
+    public void BuildVertOrderTransition(
+        ref QuadStripsBuffer quadStrips,
+        ref NativeArray<int2> originsTargets,
+        ref NativeArray<QST_Segment> writeBuffer,
+        VertOrderType vertOrder
+    )
     {
-        int4 indexers = isDown ? new int4(2, 3, 0, 1) : new int4(0, 1, 2, 3);
-
-        float3x2 startLineSeg, endLineSeg;
-        GetLineSegments(in originQuad, in indexers, out startLineSeg, out endLineSeg);
-        QSTransSegment origin = new QSTransSegment(startLineSeg, endLineSeg, 1);
-
-        QSTransSegFillData fillOutState = new QSTransSegFillData(new float2(0, 1), MeshConstructType.Quad);
-        fillOutState.QuadType = QuadConstructType.NewQuadToEnd;
-        origin[0] = fillOutState;
-
-        GetLineSegments(in targetQuad, in indexers, out startLineSeg, out endLineSeg);
-        QSTransSegment target = new QSTransSegment(startLineSeg, endLineSeg, 1);
-
-        QSTransSegFillData fillInState = new QSTransSegFillData(new float2(0, 1), MeshConstructType.Quad);
-        fillInState.QuadType = QuadConstructType.ContinueQuadFromStart;
-        target[0] = fillInState;
-
-        if (isDown)
+        int QSTS_indexer = 0;
+        for (int i = 0; i < originsTargets.Length; i++)
         {
-            OutputDownTransSegments[_dutsi.x++] = origin;
-            OutputDownTransSegments[_dutsi.x++] = target;
-        }
-        else
-        {
-            OutputUpTransSegments[_dutsi.y++] = origin;
-            OutputUpTransSegments[_dutsi.y++] = target;
-        }
-    }
+            int2 originTarget = originsTargets[i];
+            QuadStrip origin = quadStrips.GetQuadStrip(originTarget.x);
+            QuadStrip target = quadStrips.GetQuadStrip(originTarget.y);
 
-    private void GenerateClockOrderTransition(in float3x4 originQuad, in float3x4 targetQuad, bool isCW)
-    {
-        int4 indexers = isCW ? new int4(0, 1, 2, 3) : new int4(2, 3, 0, 1);
-        float3x4 radialQuad = new float3x4(
-            originQuad[0], originQuad[1],
-            targetQuad[2], targetQuad[3]
-        );
-
-        float3x2 startLineSeg, endLineSeg;
-        GetLineSegments(in radialQuad, in indexers, out startLineSeg, out endLineSeg);
-        QSTransSegment radial = new QSTransSegment(startLineSeg, endLineSeg, 1);
-
-        QSTransSegFillData radialFillData = new QSTransSegFillData(new float2(0, 1), MeshConstructType.Radial);
-        radialFillData.RadialType = RadialConstructType.Single;
-        QSTransSegFillRadialData radialData = new QSTransSegFillRadialData();
-        radialData.LerpLength = 1;
-        radialData.StartLerpOffset = 0;
-
-        radialData.Centers = float3x2.zero;
-
-        float rotationAngle = TAU / P_SideCount;
-        if (!isCW)
-        {
-            rotationAngle = -rotationAngle;
-        }
-
-        float4x2 axisAngles = new float4x2(
-            new float4(math.up(), rotationAngle),
-            float4.zero
-        );
-        radialData.Resolution = P_SegmentResolution;
-        radialData.AxisAngles = axisAngles;
-
-        radialFillData.RadialData = radialData;
-        radial[0] = radialFillData;
-
-        if (isCW)
-        {
-            OutputCWTransSegments[_actsi.x++] = radial;
-        }
-        else
-        {
-            OutputAntiCWTransSegments[_actsi.y++] = radial;
-        }
-    }
-
-    private void GetQuadIndexer(int bottomLeftIndex, int2 offsets, out int4 quadIndexer)
-    {
-        int ringIndex = bottomLeftIndex / offsets.y;
-        quadIndexer.x = bottomLeftIndex;
-        quadIndexer.y = quadIndexer.x + 1;
-        if (quadIndexer.y / offsets.y != ringIndex)
-        {
-            quadIndexer.y = offsets.y * ringIndex;
-        }
-
-        ringIndex++;
-        quadIndexer.z = quadIndexer.x + offsets.y;
-        quadIndexer.w = quadIndexer.z + 1;
-        if (quadIndexer.w / offsets.y != ringIndex)
-        {
-            quadIndexer.w = offsets.y * ringIndex;
-        }
-    }
-
-    // segment mesh of the wheel, one for each side and ring
-    private void GetSegmentIndexerLevitation(int bottomLeftIndex, int2 offsets, out int4 segmentIndexer)
-    {
-        int ringIndex = bottomLeftIndex / offsets.y;
-        segmentIndexer.x = bottomLeftIndex;
-        segmentIndexer.y = segmentIndexer.x + P_SegmentResolution;
-        if ((segmentIndexer.y / offsets.y) != ringIndex)
-        {
-            segmentIndexer.y = offsets.y * ringIndex;
-        }
-
-        segmentIndexer.z = segmentIndexer.x + offsets.y;
-        segmentIndexer.w = segmentIndexer.y + offsets.y;
-    }
-
-    private void GetSegmentIndexerGrounded(int bottomLeftIndex, int2 offsets, out int4 segmentIndexer)
-    {
-        int ringIndex = bottomLeftIndex / offsets.y;
-        segmentIndexer.x = bottomLeftIndex;
-        segmentIndexer.y = segmentIndexer.x + offsets.y;
-        segmentIndexer.z = segmentIndexer.x + P_SegmentResolution;
-        if ((segmentIndexer.z / offsets.y) != ringIndex)
-        {
-            segmentIndexer.z = offsets.y * ringIndex;
-        }
-        segmentIndexer.w = segmentIndexer.z + offsets.y;
-    }
-
-    private void GetTransQuad(in int4 transIndex, ref float3x4 transQuad)
-    {
-        transQuad[0] = _HelperTransitionGrid[transIndex.x];
-        transQuad[1] = _HelperTransitionGrid[transIndex.y];
-        transQuad[2] = _HelperTransitionGrid[transIndex.z];
-        transQuad[3] = _HelperTransitionGrid[transIndex.w];
-    }
-
-    private void GetLineSegments(in float3x4 quad, in int4 indexers, out float3x2 startLineSeg, out float3x2 endLineSeg)
-    {
-        startLineSeg = new float3x2(quad[indexers.x], quad[indexers.y]);
-        endLineSeg = new float3x2(quad[indexers.z], quad[indexers.w]);
-    }
-
-    private void DebugHelperGrid(int2 offsets)
-    {
-        for (int ring = 0; ring < P_RingCount + 1; ring++)
-        {
-            for (int i = 0; i < offsets.y; i++)
+            if (i == 0 && vertOrder == VertOrderType.Down)
             {
-                int index = i + ring * offsets.y;
-                if (index + 1 < _HelperTransitionGrid.Length)
-                {
-                    Debug.DrawLine(_HelperTransitionGrid[index], _HelperTransitionGrid[index + 1], Color.red, 100);
-                }
+
+            }
+            else if (i == originsTargets.Length - 1 && vertOrder == VertOrderType.Up)
+            {
+            }
+            else
+            {
+                _radialBuilder.GenerateMoveLerp(in origin, in target, out QST_Segment qsts);
+                writeBuffer[QSTS_indexer++] = qsts;
             }
         }
     }
-*/
+
 }
