@@ -8,7 +8,9 @@ public struct QSTSFD_Radial
     { 
         SingleRotationLerp,
         DoubleRotationLerp,
-        MoveLerp
+        MoveLerpWithMiddle,
+        MoveLerpDown,
+        MoveLerpUp
     }
     public RadialType Type { get; private set; }
 

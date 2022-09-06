@@ -19,6 +19,7 @@ public class WheelGeneratorGameObject : FigureGeneratorGameObject
 
     private MeshBuffersIndexers _segmentBuffersData;
     private MeshBuffersIndexers _segmentPointBuffersData;
+    private int2 _quadStripCollectionData;
 
     private Wheel _wheel;
 
@@ -47,6 +48,9 @@ public class WheelGeneratorGameObject : FigureGeneratorGameObject
             _segmentBuffersData.Count.y * 4 + 12
         );
 
+        _quadStripCollectionData.x = (_segmentResolution + 1) * _segmentCount;
+        _quadStripCollectionData.y = _segmentCount;
+
         _innerOuterRadii = new float2(generationParams.InnerRadius, generationParams.OuterRadius);
     }
 
@@ -54,6 +58,10 @@ public class WheelGeneratorGameObject : FigureGeneratorGameObject
     {
         _figureVertices = new NativeArray<VertexData>(_segmentBuffersData.Count.x * _segmentCount, Allocator.TempJob);
         _figureIndices = new NativeArray<short>(_segmentBuffersData.Count.y * _segmentCount, Allocator.TempJob);
+
+        NativeArray<float3x2> lineSegments = new NativeArray<float3x2>(_quadStripCollectionData.x, Allocator.Persistent);
+        NativeArray<int2> quadStripsIndexers = new NativeArray<int2>(_quadStripCollectionData.y, Allocator.Persistent);
+        _quadStripsCollection = new QuadStripsBuffer(lineSegments, quadStripsIndexers);
 
         WheelGenJob wheelMeshGenJob = new WheelGenJob()
         {
@@ -91,7 +99,7 @@ public class WheelGeneratorGameObject : FigureGeneratorGameObject
 
     protected override Figure GenerateFigureGameObject()
     {
-        GameObject wheelGb = new GameObject("Wheel", typeof(Wheel), typeof(WheelStatesController));
+        GameObject wheelGb = new GameObject("Wheel", typeof(WheelStatesController), typeof(Wheel));
         wheelGb.layer = Layers.FigureLayer;
         Transform parentWheel = wheelGb.transform;
 

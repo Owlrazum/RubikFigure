@@ -12,28 +12,26 @@ public struct FigureGenJobShuffleTrans : IJobFor
     public QuadStripsBuffer InputQuadStripsCollection;
 
     [WriteOnly]
-    public NativeArray<QST_Segment> InputQSTransSegmentBuffer;
-
-    [WriteOnly]
-    public QS_TransitionsBuffer OutputFadeOutTransitions;
-
-    [WriteOnly]
-    public QS_TransitionsBuffer OutputFadeInTransitions;
+    public QS_TransitionsBuffer OutputQSTransSegmentBuffer;
 
     public void Execute(int i)
     {
-        QuadStrip qs = InputQuadStripsCollection.GetQuadStrip(i);
-        int2 indexer = InputQuadStripsCollection.GetQuadIndexer(i);
-
-        NativeArray<QST_Segment> fadeOutWriteBuffer = 
-            OutputFadeOutTransitions.GetBufferSegmentAndWriteIndexer(indexer, i);
-
-        NativeArray<QST_Segment> fadeInWriteBuffer =
-            OutputFadeInTransitions.GetBufferSegmentAndWriteIndexer(indexer, i);
+        QuadStrip qs = InputQuadStripsCollection.GetQuadStrip(i / 2);
+        int2 indexer = InputQuadStripsCollection.GetQuadIndexer(i / 2);
 
         QSTS_QuadBuilder shuffleTransBuilder = new QSTS_QuadBuilder();
-        
-        shuffleTransBuilder.BuildFadeOutTransition(qs, ref fadeOutWriteBuffer);
-        shuffleTransBuilder.BuildFadeInTransition(qs, ref fadeInWriteBuffer);
+
+        if (i % 2 == 0)
+        { 
+            NativeArray<QST_Segment> fadeOutWriteBuffer = 
+                OutputQSTransSegmentBuffer.GetBufferSegmentAndWriteIndexer(indexer, i);
+            shuffleTransBuilder.BuildFadeOutTransition(qs, ref fadeOutWriteBuffer);
+        }
+        else
+        { 
+            NativeArray<QST_Segment> fadeInWriteBuffer =
+                OutputQSTransSegmentBuffer.GetBufferSegmentAndWriteIndexer(indexer, i);
+            shuffleTransBuilder.BuildFadeInTransition(qs, ref fadeInWriteBuffer);
+        }
     }
 }

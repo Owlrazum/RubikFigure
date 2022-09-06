@@ -20,4 +20,5 @@ public class FigureVerticesMove : FigureSegmentMove
     public ref QS_Transition Transition { get { return ref _transition; } }
 
     public bool ShouldReorientVertices { get; set; }
+    public bool ShouldDisposeTransition { get; set; }
 }

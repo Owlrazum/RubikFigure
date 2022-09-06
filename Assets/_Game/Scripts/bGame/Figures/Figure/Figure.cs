@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 
+using Unity.Collections;
 using Unity.Mathematics;
 
 using UnityEngine;
@@ -12,7 +13,12 @@ using Orazum.Math;
 [RequireComponent(typeof(FigureStatesController))]
 public abstract class Figure : MonoBehaviour
 {
+    private FigureStatesController _statesController;
+    public FigureStatesController StatesController { get { return _statesController; } }
+
     protected Array2D<FigureSegmentPoint> _segmentPoints;
+    private Array2D<FigureShuffleTransition> _shuffleTransitions;
+
     protected int2 _dims;
     public int2 Dimensions { get { return _dims; } }
     public int ColCount { get { return _dims.x; } }
@@ -25,11 +31,9 @@ public abstract class Figure : MonoBehaviour
     private Action _movesCompleteAction;
 
     private FigureSegment[] _movedSegmentsBuffer;
-    private FigureStatesController _statesController;
-    public FigureStatesController StatesController { get { return _statesController; } }
 
     protected abstract void MakeSegmentMove(FigureSegment segment, FigureSegmentMove move, Action moveCompleteAction);
-
+    
     public virtual void Initialize(
         Array2D<FigureSegmentPoint> segmentPoints, 
         FigureParamsSO figureParams
@@ -47,6 +51,61 @@ public abstract class Figure : MonoBehaviour
         _movedSegmentsBuffer = new FigureSegment[_dims.x * _dims.y];
 
         _statesController.Initialize(this, figureParams);
+    }
+
+    public void AssignShuffleTransitions(Array2D<FigureShuffleTransition> transitions)
+    {
+        _shuffleTransitions = transitions;
+    }
+
+    public void Shuffle(IList<FigureVerticesMove> moves, Action movesCompleteAction)
+    {
+        _movesCompleteAction = movesCompleteAction;
+        _movesCount = new int2(0, moves.Count);
+
+        for (int i = 0; i < moves.Count; i++)
+        {
+            FigureVerticesMove move = moves[i];
+            FigureSegment movedSegment = _segmentPoints[move.FromIndex].Segment;
+            if (movedSegment == null)
+            {
+                _movedSegmentsBuffer[i] = null;
+                continue;
+            }
+
+            MakeShuffleMove(movedSegment, move, MoveCompleteAction);
+
+            _movedSegmentsBuffer[i] = movedSegment;
+            _segmentPoints[move.FromIndex].Segment = null;
+        }
+
+        for (int i = 0; i < moves.Count; i++)
+        {
+            if (_movedSegmentsBuffer[i] == null)
+            {
+                continue;
+            }
+            _segmentPoints[moves[i].ToIndex].Segment = _movedSegmentsBuffer[i];
+        }
+    }
+
+    private void MakeShuffleMove(FigureSegment segment, FigureVerticesMove move, Action moveCompleteAction)
+    { 
+         Assert.IsTrue(IsValidIndex(move.FromIndex) && IsValidIndex(move.ToIndex));
+        AssignShuffleTransitionData(move);
+
+        segment.StartMove(move, moveCompleteAction);
+    }
+
+    private void AssignShuffleTransitionData(FigureVerticesMove move)
+    {
+        FigureShuffleTransition fromTransData = _shuffleTransitions[move.FromIndex];
+        FigureShuffleTransition toTransData = _shuffleTransitions[move.ToIndex];
+        QS_Transition fadeOut = FigureShuffleTransition.FadeOut(ref fromTransData);
+        QS_Transition fadeIn = FigureShuffleTransition.FadeIn(ref toTransData);
+        var buffer = QS_Transition.PrepareConcatenationBuffer(fadeOut, fadeIn, Allocator.Persistent);
+        QS_Transition shuffle = QS_Transition.Concatenate(fadeOut, fadeIn, buffer);
+        move.Transition = shuffle;
     }
 
     public void MakeMoves(IList<FigureSegmentMove> moves, Action movesCompleteAction)

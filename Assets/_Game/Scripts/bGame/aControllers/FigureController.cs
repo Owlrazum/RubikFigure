@@ -12,8 +12,6 @@ public class FigureController : MonoBehaviour
     {
         FigureDelegatesContainer.FinishMeshGeneration();
         yield return null;
-        FigureDelegatesContainer.StartShuffleTransitionsGeneration();
-        yield return null;
         FigureDelegatesContainer.FinishShuffleTransitionsGeneration();
         Figure figure = FigureDelegatesContainer.GetFigure();
         figure.StatesController.StartUpdating();

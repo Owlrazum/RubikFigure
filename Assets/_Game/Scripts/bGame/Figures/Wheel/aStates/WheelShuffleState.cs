@@ -11,15 +11,6 @@ public class WheelShuffleState : FigureShuffleState
     {
     }
 
-    protected override FigureSegmentMove[] Shuffle(float lerpSpeed)
-    {
-        FigureSegmentMove[] moves = base.Shuffle(lerpSpeed);
-        ConvertToVerticesMove(moves);
-        Debug.Log(moves);
-        _figure.MakeMoves(moves, null);
-        return null;
-    }
-
     protected override void ShuffleIndices()
     {
         for (int ring = 0; ring < _figure.RowCount; ring++)
@@ -33,15 +24,6 @@ public class WheelShuffleState : FigureShuffleState
         for (int ring = 0; ring < _figure.RowCount; ring++)
         {
             _shuffleIndices[ring] = Algorithms.RandomDerangement(in _shuffleIndices[ring]);
-        }
-    }
-
-    private void ConvertToVerticesMove(FigureSegmentMove[] moves)
-    {
-        for (int i = 0; i < moves.Length; i++)
-        {
-            moves[i] = new FigureVerticesMove(moves[i]);
-            Assert.IsNotNull(moves[i]);
         }
     }
 }

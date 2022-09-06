@@ -18,42 +18,46 @@ namespace Orazum.Meshing
         public float4 SRL_AxisAngleAntiCW { get; set; }
 
         public ClockOrderType ClockOrder { get; set; }
+        public VertOrderType VertOrder { get; set; }
         public int Resolution { get; set; }
 
-        #region SingleRotationLerp
         public void Filled(
             in QuadStrip qs,
             FillType fillType,
+            float2 lerpRange,
             out QST_Segment qsts
         )
         {
             Assert.IsTrue(fillType == FillType.NewStartToEnd || fillType == FillType.ContinueStartToEnd);
-            GenerateSingleRotationLerp(in qs, fillType, out qsts);
+            GenerateSingleRotationLerp(in qs, fillType, lerpRange, out qsts);
         }
-
-        public void FillOut(
+        #region SingleRotationLerp
+        public void FillOut_SRL(
             in QuadStrip qs,
+            float2 lerpRange,
             FillType fillType,
             out QST_Segment qsts
         )
         {
-            Assert.IsTrue(fillType == FillType.NewToEnd || fillType == FillType.ContinueToEnd);
-            GenerateSingleRotationLerp(in qs, fillType, out qsts);
+            Assert.IsTrue(fillType == FillType.NewToEnd);
+            GenerateSingleRotationLerp(in qs, fillType, lerpRange, out qsts);
         }
 
-        public void FillIn(
+        public void FillIn_SRL(
             in QuadStrip qs,
+            float2 lerpRange,
             FillType fillType,
             out QST_Segment qsts
         )
         {
             Assert.IsTrue(fillType == FillType.NewFromStart || fillType == FillType.ContinueFromStart);
-            GenerateSingleRotationLerp(in qs, fillType, out qsts);
+            GenerateSingleRotationLerp(in qs, fillType, lerpRange, out qsts);
         }
 
         private void GenerateSingleRotationLerp(
             in QuadStrip qs,
             FillType fillType,
+            float2 lerpRange,
             out QST_Segment qsts)
         {
             float3x2 startLineSeg = float3x2.zero;
@@ -64,6 +68,10 @@ namespace Orazum.Meshing
                     break;
                 case ClockOrderType.AntiCW:
                     startLineSeg = qs[qs.LineSegmentsCount - 1];
+                    startLineSeg = new float3x2(
+                        startLineSeg[1],
+                        startLineSeg[0]
+                    );
                     break;
             }
 
@@ -81,7 +89,7 @@ namespace Orazum.Meshing
                 lerpLength: 1,
                 Resolution
             );
-            QSTS_FillData fillData = new QSTS_FillData(fillType, new float2(0, 1), in radial);
+            QSTS_FillData fillData = new QSTS_FillData(fillType, lerpRange, in radial);
             qsts[0] = fillData;
         }
         #endregion
@@ -90,16 +98,14 @@ namespace Orazum.Meshing
         public void GenerateDoubleRotationLerp(
             in QuadStrip origin,
             in QuadStrip target,
-            VertOrderType vertOrder,
             out QST_Segment qsts
         )
         {
             quaternion perp;
             float3x2 startLineSeg = float3x2.zero;
             float3x2 endLineSeg = float3x2.zero;
-            if (vertOrder == VertOrderType.Up)
+            if (VertOrder == VertOrderType.Up)
             {
-                perp = quaternion.AxisAngle(math.up(), -90);
                 startLineSeg = new float3x2(
                     origin[0][1],
                     origin[origin.LineSegmentsCount - 1][1]
@@ -108,6 +114,8 @@ namespace Orazum.Meshing
                     target[0][0],
                     target[target.LineSegmentsCount - 1][0]
                 );
+
+                perp = quaternion.AxisAngle(math.up(), -90);
             }
             else
             {
@@ -119,6 +127,7 @@ namespace Orazum.Meshing
                     target[0][1],
                     target[target.LineSegmentsCount - 1][1]
                 );
+
                 perp = quaternion.AxisAngle(math.up(), 90);
             }
 
@@ -129,8 +138,8 @@ namespace Orazum.Meshing
             float3x2 endLS = origin[origin.LineSegmentsCount - 1];
 
             float4x2 axisAngles = new float4x2(
-                new float4(GetPerpDirection(perp, startLS), 180),
-                new float4(GetPerpDirection(perp, endLS), 180)
+                new float4(GetDirection(perp, startLS), 180),
+                new float4(GetDirection(perp, endLS), 180)
             );
 
             float3x2 points = new float3x2(
@@ -139,7 +148,7 @@ namespace Orazum.Meshing
             );
 
             QSTSFD_Radial radial = new QSTSFD_Radial(
-                RadialType.MoveLerp,
+                RadialType.DoubleRotationLerp,
                 in axisAngles,
                 in points,
                 1,
@@ -152,14 +161,49 @@ namespace Orazum.Meshing
 
         #region MoveLerp
         public void GenerateMoveLerp(
+            in QuadStrip qs,
+            float2 lerpRange,
+            out QST_Segment qsts
+        )
+        {
+            float3x2 startLineSeg = new float3x2(
+                qs[0][0],
+                qs[0][1]
+            );
+            float4x2 axisAngle = new float4x2(
+                SRL_AxisAngleCW,
+                float4.zero
+            );
+
+            float3x2 points = float3x2.zero;
+
+            qsts = new QST_Segment(startLineSeg, float3x2.zero, 1);
+            qsts.Type = QSTS_Type.Radial;
+
+            RadialType radialType = VertOrder == VertOrderType.Up ? RadialType.MoveLerpUp : RadialType.MoveLerpDown;
+
+            QSTSFD_Radial radial = new QSTSFD_Radial(
+                radialType,
+                in axisAngle,
+                in points,
+                1,
+                Resolution
+            );
+
+            QSTS_FillData fillData = new QSTS_FillData(FillType.NewStartToEnd, lerpRange, in radial);
+            qsts[0] = fillData;
+        }
+
+        public void GenerateMoveLerpWithMiddle(
             in QuadStrip origin,
             in QuadStrip target,
+            float2 lerpRange,
             out QST_Segment qsts
         )
         {
             float3x2 startLineSeg = new float3x2(
                 origin[0][0],
-                origin[origin.LineSegmentsCount - 1][0]
+                target[0][0]
             );
             float3x2 points = new float3x2(
                 float3.zero,
@@ -175,14 +219,14 @@ namespace Orazum.Meshing
             );
 
             QSTSFD_Radial radial = new QSTSFD_Radial(
-                RadialType.MoveLerp,
+                RadialType.MoveLerpWithMiddle,
                 in axisAngle,
                 in points,
                 1,
                 Resolution
             );
 
-            QSTS_FillData fillData = new QSTS_FillData(FillType.NewStartToEnd, new float2(0, 1), in radial);
+            QSTS_FillData fillData = new QSTS_FillData(FillType.NewStartToEnd, lerpRange, in radial);
             qsts[0] = fillData;
         }
         #endregion

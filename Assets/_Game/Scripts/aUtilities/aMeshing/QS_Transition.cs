@@ -1,13 +1,16 @@
+using Unity.Mathematics;
 using Unity.Collections;
 using UnityEngine.Assertions;
+
+using Orazum.Collections;
 
 // QS - quad strip
 public struct QS_Transition
 {
-    private NativeArray<QST_Segment>.ReadOnly _transSegs;
+    private NativeArray<QST_Segment> _transSegs;
     public QS_Transition(NativeArray<QST_Segment> persistentAllocation)
     {
-        _transSegs = persistentAllocation.AsReadOnly();
+        _transSegs = persistentAllocation;
     }
 
     public int Length { get { return _transSegs.Length; } }
@@ -19,6 +22,22 @@ public struct QS_Transition
         }
     }
     public bool IsCreated { get { return _transSegs.IsCreated; } }
+
+    public void GetSubTransition(int2 indexer, out QS_Transition subTransition)
+    {
+        subTransition = new QS_Transition(_transSegs.GetSubArray(indexer.x, indexer.y));
+    }
+
+    // In current setup transitions are disposed only if they are concatenated
+    public void DisposeConcatenation()
+    {
+        _transSegs.Dispose();
+    }
+
+    public void DisposeIfNeededConcatenation()
+    {
+        CollectionUtilities.DisposeIfNeeded(_transSegs);
+    }
 
     public static QS_Transition Concatenate(
         QS_Transition t1, 

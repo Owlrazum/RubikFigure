@@ -1,6 +1,7 @@
 using System;
 using Unity.Mathematics;
 using Unity.Collections;
+using Unity.Jobs;
 
 using UnityEngine.Assertions;
 
@@ -45,6 +46,12 @@ public struct SegmentedBufferInt2
     { 
         _int2Buffer.Dispose();
         _int2IndexersBuffer.Dispose();
+    }
+
+    public void Dispose(JobHandle handle)
+    {
+        _int2Buffer.Dispose(handle);
+        _int2IndexersBuffer.Dispose(handle);
     }
 
     public void DisposeIfNeeded()

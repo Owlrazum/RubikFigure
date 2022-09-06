@@ -17,7 +17,7 @@ public class ValknutGeneratorTransitions : FigureGeneratorTransitions
 
     private NativeArray<int2> _originTargetIndices;
 
-    public override void StartGeneration(in QuadStripsBuffer quadStripsCollection, JobHandle dependency)
+    protected override void StartTransitionsGeneration(in QuadStripsBuffer quadStripsCollection, JobHandle dependency)
     { 
         _originTargetIndices = new NativeArray<int2>(TotalTransitionsCount, Allocator.Persistent);
         NativeArray<int2> bufferIndexers = new NativeArray<int2>(TotalTransitionsCount, Allocator.Persistent);
@@ -79,7 +79,7 @@ public class ValknutGeneratorTransitions : FigureGeneratorTransitions
         }
     }
 
-    public override void FinishGeneration(Figure figure)
+    protected override void FinishTransitionsGeneration(Figure figure)
     {
         _dataJobHandle.Complete();
 
@@ -88,7 +88,7 @@ public class ValknutGeneratorTransitions : FigureGeneratorTransitions
 
         Array2D<ValknutSegmentTransitions> transitionDatas =
             new Array2D<ValknutSegmentTransitions>(new int2(Valknut.TrianglesCount, Valknut.PartsCount));
-        for (int i = 0; i < _transitionsCollection.QSTransSegsCount; i += 2)
+        for (int i = 0; i < _transitionsCollection.TransitionsCount; i += 2)
         {
             QS_Transition clockWiseTransition = _transitionsCollection.GetQSTransition(i);
             QS_Transition antiClockWiseTransition = _transitionsCollection.GetQSTransition(i + 1);

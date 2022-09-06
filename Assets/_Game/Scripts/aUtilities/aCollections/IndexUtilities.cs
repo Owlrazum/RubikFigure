@@ -1,7 +1,7 @@
 using Unity.Mathematics;
 
 namespace Orazum.Collections
-{ 
+{
     /// <summary>
     /// Blender style coordinate system. Construct row x axis, construct column z axis, construct heith
     /// </summary>
@@ -50,7 +50,7 @@ namespace Orazum.Collections
             int3 position = new int3(
                 index % columnCount,
                 index / (columnCount * rowCount),
-                index /  columnCount % rowCount
+                index / columnCount % rowCount
             );
             return position;
         }
@@ -78,6 +78,30 @@ namespace Orazum.Collections
         public static int XyzToZ(int xyz, int columnCount, int rowCount)
         {
             return xyz / columnCount % rowCount;
+        }
+
+        public static void IncreaseIndex(ref int index, int count)
+        {
+            if (index + 1 >= count)
+            {
+                index = 0;
+            }
+            else
+            {
+                index++;
+            }
+        }
+
+        public static void DecreaseIndex(ref int index, int count)
+        {
+            if (index - 1 < 0)
+            {
+                index = count - 1;
+            }
+            else
+            {
+                index--;
+            }
         }
     }
 }

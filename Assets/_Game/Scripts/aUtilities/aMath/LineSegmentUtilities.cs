@@ -21,14 +21,14 @@ namespace Orazum.Math
             );
         }
 
-        public static float3 GetPerpDirection(quaternion q, float3 p1, float3 p2)
+        public static float3 GetDirection(quaternion q, float3 p1, float3 p2)
         { 
             float3 direction = math.normalize(p2 - p1);
             return math.rotate(q, direction);
         }
-        public static float3 GetPerpDirection(quaternion q, in float3x2 lineSegment)
+        public static float3 GetDirection(quaternion q, in float3x2 lineSegment)
         {
-            return GetPerpDirection(q, lineSegment[0], lineSegment[1]);
+            return GetDirection(q, lineSegment[0], lineSegment[1]);
         }
 
         public static float3 GetLineSegmentCenter(float3 p1, float3 p2)

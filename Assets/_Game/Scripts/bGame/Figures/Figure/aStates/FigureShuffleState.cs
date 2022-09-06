@@ -1,5 +1,6 @@
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 using rnd = Unity.Mathematics.Random;
 
@@ -17,6 +18,10 @@ public abstract class FigureShuffleState : FigureState
     private int2 _dims;
 
     protected int2[][] _shuffleIndices;
+
+    private bool _isShuffleCompleted;
+
+    protected abstract void ShuffleIndices();
 
     public FigureShuffleState(FigureStatesController statesController, Figure figure, FigureParamsSO figureParams)
     : base (statesController, figure)
@@ -36,7 +41,7 @@ public abstract class FigureShuffleState : FigureState
 
     public override FigureState HandleTransitions()
     {
-        if (_shuffleStep.x >= _shuffleStep.y)
+        if (_shuffleStep.x >= _shuffleStep.y && _isShuffleCompleted)
         {
             return _statesController.IdleState;
         }
@@ -58,15 +63,17 @@ public abstract class FigureShuffleState : FigureState
         {
             if (_shuffleTimer.x >= FastShuffleTime)
             {
+                _isShuffleCompleted = false;
                 Shuffle(FastSpeed);
                 _shuffleTimer.x = 0;
                 _shuffleStep.x++;
             }
         }
-        else
+        else if (_shuffleStep.x < _shuffleStep.y)
         {
             if (_shuffleTimer.x >= _shuffleTimer.y)
             {
+                _isShuffleCompleted = false;
                 Shuffle(_shuffleLerpSpeed);
                 _shuffleTimer.x = 0;
                _shuffleStep.x++;
@@ -74,11 +81,11 @@ public abstract class FigureShuffleState : FigureState
         }
     }
 
-    protected virtual FigureSegmentMove[] Shuffle(float lerpSpeed)
+    protected virtual void Shuffle(float lerpSpeed)
     {
         ShuffleIndices();
 
-        FigureSegmentMove[] moves = new FigureSegmentMove[_dims.y * _dims.x];
+        FigureVerticesMove[] moves = new FigureVerticesMove[_dims.y * _dims.x];
         int moveIndex = 0;
         for (int ring = 0; ring < _shuffleIndices.Length; ring++)
         {
@@ -86,17 +93,21 @@ public abstract class FigureShuffleState : FigureState
             {
                 int2 fromIndex = new int2(side, ring);
                 int2 toIndex = _shuffleIndices[ring][side];
-                Debug.Log($"shuffle move: {fromIndex} {toIndex}");
-                FigureSegmentMove rotationMove = new FigureSegmentMove();
-                rotationMove.AssignFromIndex(fromIndex);
-                rotationMove.AssignToIndex(toIndex);
-                rotationMove.AssignLerpSpeed(lerpSpeed);
+                FigureVerticesMove shuffleMove = new FigureVerticesMove();
+                shuffleMove.AssignFromIndex(fromIndex);
+                shuffleMove.AssignToIndex(toIndex);
+                shuffleMove.AssignLerpSpeed(lerpSpeed);
+                shuffleMove.ShouldDisposeTransition = true;
 
-                moves[moveIndex++] = rotationMove;
+                moves[moveIndex++] = shuffleMove;
             }
         }
-        return moves;
+
+        _figure.Shuffle(moves, ShuffleCompleteAction);
     }
 
-    protected abstract void ShuffleIndices();
+    protected void ShuffleCompleteAction()
+    {
+        _isShuffleCompleted = true;
+    }
 }

@@ -22,18 +22,21 @@ public class WheelGeneratorTransitions : FigureGeneratorTransitions
     private int PerSideTransSegCount;
     private int PerRingTransSegCount;
 
+    private int PerSideTransitionsCount;
+    private int TotalTransitionsCount;
+
     private int2 _sidesRingsCount;
     private int _segmentResolution;
     private int4 _transSegsCount;
 
-    public override void StartGeneration(in QuadStripsBuffer quadStripsCollection, JobHandle dependency)
+    protected override void StartTransitionsGeneration(in QuadStripsBuffer quadStripsCollection, JobHandle dependency)
     {
         _sidesRingsCount = quadStripsCollection.Dims;
         _segmentResolution = quadStripsCollection.GetQuadIndexer(0).y;
 
-        int PerSideTransitionsCount = _sidesRingsCount.x * 2;
-        int PerRingTranstionsCount = _sidesRingsCount.y * 2;
-        int totalTransitionsCount = PerSideTransitionsCount + PerRingTranstionsCount;
+        PerSideTransitionsCount = _sidesRingsCount.x * 2;
+        int PerRingTransitionsCount = _sidesRingsCount.y * 2;
+        TotalTransitionsCount = PerSideTransitionsCount + PerRingTransitionsCount;
 
         PerSideTransSegCount = VerticalTransSegCount * (_sidesRingsCount.y - 1) + LevitationTransSegCount;
         PerRingTransSegCount = ClockOrderTransSegCount * _sidesRingsCount.x;
@@ -46,13 +49,13 @@ public class WheelGeneratorTransitions : FigureGeneratorTransitions
 
 
         int OT_sideTransitions = PerSideTransitionsCount * _sidesRingsCount.y;
-        int OT_ringTransitions = PerRingTranstionsCount * _sidesRingsCount.x;
+        int OT_ringTransitions = PerRingTransitionsCount * _sidesRingsCount.x;
 
         NativeArray<int2> OT_buffer =new NativeArray<int2>(OT_sideTransitions + OT_ringTransitions, Allocator.TempJob);
-        NativeArray<int2> OT_bufferIndexers = new NativeArray<int2>(totalTransitionsCount, Allocator.TempJob);
+        NativeArray<int2> OT_bufferIndexers = new NativeArray<int2>(TotalTransitionsCount, Allocator.TempJob);
         SegmentedBufferInt2 OT = new SegmentedBufferInt2(OT_buffer, OT_bufferIndexers);
 
-        NativeArray<int2> QS_TransitionsBufferIndexers = new NativeArray<int2>(totalTransitionsCount, Allocator.Persistent);
+        NativeArray<int2> QS_TransitionsBufferIndexers = new NativeArray<int2>(TotalTransitionsCount, Allocator.Persistent);
         GenerateDataJobIndexData(ref OT, ref QS_TransitionsBufferIndexers);
 
         NativeArray<QST_Segment> QS_TransitionsBuffer = new NativeArray<QST_Segment>(_transSegsCount.w, Allocator.Persistent);
@@ -65,7 +68,8 @@ public class WheelGeneratorTransitions : FigureGeneratorTransitions
             InOriginsTargetsIndices = OT,
             OutTransitionsCollection = _transitionsCollection
         };
-        _dataJobHandle = transitionDataJob.ScheduleParallel(totalTransitionsCount, 32, dependency);
+        _dataJobHandle = transitionDataJob.ScheduleParallel(TotalTransitionsCount, 32, dependency);
+        OT.Dispose(_dataJobHandle);
     }
 
     private void GenerateDataJobIndexData(
@@ -138,36 +142,7 @@ public class WheelGeneratorTransitions : FigureGeneratorTransitions
         }
     }
 
-    private int GetIndex(int side, int ring)
-    {
-        return XyToIndex(side, ring, _sidesRingsCount.y);
-    }
-
-    private void IncreaseRing(ref int ring)
-    {
-        if (ring + 1 >= _sidesRingsCount.y)
-        {
-            ring = 0;
-        }
-        else
-        {
-            ring++;
-        }
-    }
-
-    private void IncreaseSide(ref int side)
-    {
-        if (side + 1 >= _sidesRingsCount.x)
-        {
-            side = 0;
-        }
-        else
-        {
-            side++;
-        }
-    }
-
-    public override void FinishGeneration(Figure figure)
+    protected override void FinishTransitionsGeneration(Figure figure)
     {
         _dataJobHandle.Complete();
 
@@ -176,85 +151,74 @@ public class WheelGeneratorTransitions : FigureGeneratorTransitions
 
         Array2D<WheelSegmentTransitions> transitionDatas =
             new Array2D<WheelSegmentTransitions>(new int2(_sidesRingsCount.x, _sidesRingsCount.y));
-        for (int i = 0; i < _transitionsCollection.QSTransSegsCount; i += 2)
+
+        int sideIndexer = 0;
+        for (int i = 0; i < PerSideTransitionsCount; i += 2)
         {
-            QS_Transition clockWiseTransition = _transitionsCollection.GetQSTransition(i);
-            QS_Transition antiClockWiseTransition = _transitionsCollection.GetQSTransition(i + 1);
+            QS_Transition upTransition = _transitionsCollection.GetQSTransition(i);
+            QS_Transition downTransition = _transitionsCollection.GetQSTransition(i + 1);
 
-            // ValknutSegmentTransitions transData = new ValknutSegmentTransitions();
-            // ValknutSegmentTransitions.Clockwise(ref transData) = clockWiseTransition;
-            // ValknutSegmentTransitions.AntiClockwise(ref transData) = antiClockWiseTransition;
+            int2 upIndexer = new int2(0, 3);
+            int2 downIndexer = new int2(0, 1);
+            for (int ring = 0; ring < _sidesRingsCount.y; ring++)
+            { 
+                WheelSegmentTransitions transData = new WheelSegmentTransitions();
+                var up = WheelSegmentTransitions.Up(ref transData);
+                upTransition.GetSubTransition(upIndexer, out up);
+                var down = WheelSegmentTransitions.Down(ref transData);
+                downTransition.GetSubTransition(downIndexer, out down);
+                
+                MoveBufferIndexer(ref upIndexer, 1);
+                MoveBufferIndexer(ref downIndexer, i == ring - 1 ? 3 : 1);
+                transitionDatas[sideIndexer, ring] = transData;
+            }
 
-            // int2 originTargetIndex = _originTargetIndices[i];
-            // int2 segmentIndex = new int2(originTargetIndex.y / Valknut.PartsCount, originTargetIndex.y % Valknut.PartsCount);
-            // transitionDatas[segmentIndex] = transData;
+            sideIndexer++;
+        }
+
+        int ringIndexer = 0;
+        for (int i = PerSideTransitionsCount; i < TotalTransitionsCount; i += 2)
+        {
+            QS_Transition cwTransition = _transitionsCollection.GetQSTransition(i);
+            QS_Transition antiCWTransition = _transitionsCollection.GetQSTransition(i + 1);
+
+            int2 cwIndexer = new int2(0, 2);
+            int2 antiCWIndexer = new int2(0, 2);
+            for (int side = 0; side < _sidesRingsCount.x; side++)
+            {
+                WheelSegmentTransitions transData = transitionDatas[side, ringIndexer];
+                var cw = WheelSegmentTransitions.CW(ref transData);
+                cwTransition.GetSubTransition(cwIndexer, out cw);
+                var antiCW = WheelSegmentTransitions.AntiCW(ref transData);
+                antiCWTransition.GetSubTransition(antiCWIndexer, out antiCW);
+
+                MoveBufferIndexer(ref cwIndexer, 2);
+                MoveBufferIndexer(ref antiCWIndexer, 2);
+            }
+
+            ringIndexer++;
         }
 
         wheel.AssignTransitionDatas(transitionDatas);
-        // Array2D<WheelSegmentTransitions> transitionDatas = new Array2D<WheelSegmentTransitions>(_sidesRingsCount);
-        // int2x3 index = int2x3.zero;
-        // for (int side = 0; side < _sidesRingsCount.x; side++)
-        // {
-        //     for (int ring = 0; ring < _sidesRingsCount.y; ring++)
-        //     {
-        //         NativeArray<QSTransSegment> atsi = _atsi.GetSubArray(index[0].x, ClockOrderTransSegCount);
-        //         NativeArray<QSTransSegment> ctsi = _ctsi.GetSubArray(index[0].x, ClockOrderTransSegCount);
-        //         index[0].x += ClockOrderTransSegCount;
+    }
 
-        //         NativeArray<QSTransSegment> dtsi;
-        //         if (ring == 0)
-        //         {
-        //             dtsi = _levDtsi.GetSubArray(index[1].x, LevitationTransSegCount);
-        //             index[1].x += LevitationTransSegCount;
-        //         }
-        //         else
-        //         {
-        //             dtsi = _dtsi.GetSubArray(index[2].x, VerticalTransSegCountPerQuad * _segmentResolution);
-        //             index[2].x += VerticalTransSegCountPerQuad * _segmentResolution;
-        //         }
+    private int GetIndex(int side, int ring)
+    {
+        return XyToIndex(side, ring, _sidesRingsCount.y);
+    }
 
-        //         NativeArray<QSTransSegment> utsi;
-        //         if (ring == _sidesRingsCount.y - 1)
-        //         {
-        //             utsi = _levUtsi.GetSubArray(index[1].y, LevitationTransSegCount);
-        //             index[1].y += LevitationTransSegCount;
-        //         }
-        //         else
-        //         {
-        //             utsi = _utsi.GetSubArray(index[2].y, VerticalTransSegCountPerQuad * _segmentResolution);
-        //             index[2].y += VerticalTransSegCountPerQuad * _segmentResolution;
-        //         }
+    private void IncreaseRing(ref int ring)
+    {
+        IncreaseIndex(ref ring, _sidesRingsCount.y);
+    }
 
-        //         WheelSegmentTransitions transData = new WheelSegmentTransitions();
-        //         WheelSegmentTransitions.Atsi(ref transData) = new QSTransition(atsi);
-        //         WheelSegmentTransitions.Ctsi(ref transData) = new QSTransition(ctsi);
-        //         WheelSegmentTransitions.Dtsi(ref transData) = new QSTransition(dtsi);
-        //         WheelSegmentTransitions.Utsi(ref transData) = new QSTransition(utsi);
-
-        //         transitionDatas[side, ring] = transData;
-        //     }
-        // }
-        // _wheel.AssignTransitionDatas(transitionDatas);
-        // throw new System.NotImplementedException();
+    private void IncreaseSide(ref int side)
+    {
+        IncreaseIndex(ref side, _sidesRingsCount.x);
     }
 
     protected override void OnDestroy()
     {
         base.OnDestroy();
-
-        // _originsTargetsIndices.DisposeIfNeeded();
     }
 }
-/*
-_transitionGrid = new NativeArray<float3>(
-        _sidesRingsCount.x * (_sidesRingsCount.y + 1) * _segmentResolution, Allocator.TempJob);
-
-    _dtsi = new NativeArray<QSTransSegment>(_transSegsCount.x, Allocator.Persistent);
-    _utsi = new NativeArray<QSTransSegment>(_transSegsCount.x, Allocator.Persistent);
-
-    _levDtsi = new NativeArray<QSTransSegment>(_transSegsCount.y, Allocator.Persistent);
-    _levUtsi = new NativeArray<QSTransSegment>(_transSegsCount.y, Allocator.Persistent);
-
-    _ctsi = new NativeArray<QSTransSegment>(_transSegsCount.z, Allocator.Persistent);
-    _atsi = new NativeArray<QSTransSegment>(_transSegsCount.z, Allocator.Persistent);
-*/

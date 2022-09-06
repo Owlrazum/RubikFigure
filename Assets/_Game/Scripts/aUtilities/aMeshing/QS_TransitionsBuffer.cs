@@ -14,7 +14,7 @@ public struct QS_TransitionsBuffer
 { 
     private NativeArray<QST_Segment> _qsTransSegmentsBuffer;
     private NativeArray<int2> _qsTransSegsIndexersBuffer;
-    public int QSTransSegsCount { get { return _qsTransSegsIndexersBuffer.Length; } }
+    public int TransitionsCount { get { return _qsTransSegsIndexersBuffer.Length; } }
 
     public QS_TransitionsBuffer(NativeArray<QST_Segment> qsTransSegmentsBuffer, NativeArray<int2> qsTransSegsIndexersBuffer)
     {
@@ -24,21 +24,21 @@ public struct QS_TransitionsBuffer
 
     public NativeArray<QST_Segment> GetBufferSegmentAndWriteIndexer(int2 indexer, int indexerIndex)
     {
-        Assert.IsTrue(indexerIndex < QSTransSegsCount);
+        Assert.IsTrue(indexerIndex < TransitionsCount);
         _qsTransSegsIndexersBuffer[indexerIndex] = indexer;
         return _qsTransSegmentsBuffer.GetSubArray(indexer.x, indexer.y);
     }
 
     public NativeArray<QST_Segment> GetBufferSegment(int indexerIndex)
     {
-        Assert.IsTrue(indexerIndex < QSTransSegsCount);
+        Assert.IsTrue(indexerIndex < TransitionsCount);
         int2 indexer = _qsTransSegsIndexersBuffer[indexerIndex];
         return _qsTransSegmentsBuffer.GetSubArray(indexer.x, indexer.y);
     }
 
     public QS_Transition GetQSTransition(int index)
     {
-        Assert.IsTrue(index < QSTransSegsCount);
+        Assert.IsTrue(index < TransitionsCount);
         int2 indexer = _qsTransSegsIndexersBuffer[index];
         NativeArray<QST_Segment> localLineSegments = _qsTransSegmentsBuffer.GetSubArray(indexer.x, indexer.y);
         return new QS_Transition(localLineSegments);
@@ -46,7 +46,7 @@ public struct QS_TransitionsBuffer
 
     public int2 GetIndexer(int index)
     {
-        Assert.IsTrue(index < QSTransSegsCount);
+        Assert.IsTrue(index < TransitionsCount);
         return _qsTransSegsIndexersBuffer[index];
     }
 

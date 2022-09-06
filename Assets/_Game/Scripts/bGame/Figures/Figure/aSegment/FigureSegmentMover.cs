@@ -42,6 +42,9 @@ public abstract class FigureSegmentMover : MonoBehaviour
     private bool _wasJobScheduled;
     private bool _wasMoveCompleted;
 
+    private bool _shouldDispose;
+    private QS_Transition toDispose; 
+
     public void Initialize(float2 uv, int meshResolution)
     {
         MeshResolution = meshResolution;
@@ -65,6 +68,11 @@ public abstract class FigureSegmentMover : MonoBehaviour
             _segmentMoveJobHandle.Complete();
         }
 
+        if (_shouldDispose)
+        {
+            toDispose.DisposeIfNeededConcatenation();
+        }
+
         CollectionUtilities.DisposeIfNeeded(_vertices);
         CollectionUtilities.DisposeIfNeeded(_indices);
         _indexersForJob.DisposeIfNeeded();
@@ -80,6 +88,11 @@ public abstract class FigureSegmentMover : MonoBehaviour
 
         if (move is FigureVerticesMove verticesMove)
         {
+            if (verticesMove.ShouldDisposeTransition)
+            {
+                _shouldDispose = true;
+                toDispose = verticesMove.Transition;
+            }
             Debug.Log("Starting vertices move");
             StartCoroutine(MoveSequence(verticesMove));
         }
@@ -112,6 +125,11 @@ public abstract class FigureSegmentMover : MonoBehaviour
         }
 
         _wasMoveCompleted = true;
+        
+        if (_shouldDispose)
+        {
+            toDispose.DisposeConcatenation();
+        }
     }
 
     private void LateUpdate()

@@ -26,12 +26,14 @@ public abstract class FigureGeneratorGameObject : MonoBehaviour
         StartFigureGeneration();
         FigureDelegatesContainer.GetFigure += GetFigure;
         FigureDelegatesContainer.FinishMeshGeneration += FinishFigureGeneration;
+        FigureDelegatesContainer.FinishShuffleTransitionsGeneration += FinishShuffleTransitionsGeneration;
     }
 
     private void Unsubscribe()
     {
         FigureDelegatesContainer.GetFigure -= GetFigure;
         FigureDelegatesContainer.FinishMeshGeneration -= FinishFigureGeneration;
+        FigureDelegatesContainer.FinishShuffleTransitionsGeneration -= FinishShuffleTransitionsGeneration;
     }
 
     private void StartFigureGeneration()
@@ -39,7 +41,6 @@ public abstract class FigureGeneratorGameObject : MonoBehaviour
         InitializeParameters(_figureParams.FigureGenParamsSO);
         StartMeshGeneration();
         _figure = GenerateFigureGameObject();
-        _transitionsGenerator.StartGeneration(_quadStripsCollection, _figureMeshGenJobHandle);
     }
 
     protected abstract void StartMeshGeneration();
@@ -48,17 +49,14 @@ public abstract class FigureGeneratorGameObject : MonoBehaviour
     private void FinishFigureGeneration()
     {
         CompleteGeneration(_figureParams);
+        _transitionsGenerator.StartGeneration(_quadStripsCollection, _figureMeshGenJobHandle);
     }
 
     protected abstract void CompleteGeneration(FigureParamsSO figureParams);
 
-    private void StartShuffleTransitionsGeneration()
-    {
-    }
-
     private void FinishShuffleTransitionsGeneration()
     {
-
+        _transitionsGenerator.FinishGeneration(_figure);
     }
 
     private Figure GetFigure()
