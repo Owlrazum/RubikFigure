@@ -4,6 +4,8 @@ using Unity.Collections;
 using UnityEngine;
 using UnityEngine.Assertions;
 
+using Orazum.Math;
+
 using static Orazum.Math.LineSegmentUtilities;
 using static Orazum.Math.MathUtils;
 using static QST_Segment;
@@ -78,9 +80,10 @@ namespace Orazum.Meshing
                 }
                 else if (segment.Type == QSTS_Type.Radial)
                 {
+                    float3x2 startSeg = new float3x2(startEndLineSegs[0], startEndLineSegs[1]);
                     ConstructWithRadialType(
                         in fillData,
-                        in startEndLineSegs,
+                        in startSeg,
                         ref buffersIndexers
                     );
                 }
@@ -140,80 +143,156 @@ namespace Orazum.Meshing
 
         private void ConstructWithRadialType(
             in QSTS_FillData fillData,
-            in float3x4 startEndLineSegs,
+            in float3x2 startSeg,
             ref MeshBuffersIndexers buffersIndexers
         )
         {
             RadialType radialType = fillData.Radial.Type;
-            QSTSFD_Radial radialData = fillData.Radial;
-            float3x2 startSeg = new float3x2(startEndLineSegs[0], startEndLineSegs[1]);
+            QSTSFD_Radial radial = fillData.Radial;
             float lerpParam = math.unlerp(fillData.LerpRange.x, fillData.LerpRange.y, _globalLerpParam);
 
-            if (radialData.LerpLength > 1)
+            if (radial.LerpLength > 1)
             {
                 Debug.LogWarning("LerpLength is > 1, is this correct behaviour?");
             }
 
-            float lerpOffset = lerpParam;// + radialData.StartLerpOffset;
-            if (Between01(in lerpOffset))
+            if (radial.IsRotationLerp)
             {
-                float3x2 currentSeg = InterpolateRadial(lerpOffset, in fillData, startSeg);
-                _quadStripBuilder.Start(currentSeg, ref buffersIndexers);
+                ConstructRotationLerp(in radial, in startSeg, ref buffersIndexers, lerpParam);
             }
-            else
+            else if (radial.IsMoveLerp)
             {
-                _quadStripBuilder.Start(startSeg, ref buffersIndexers);
+                ConstructMoveLerp(lerpParam, in radial, in startSeg, ref buffersIndexers);
             }
+        }
 
-            float lerpDelta = radialData.LerpLength / radialData.Resolution;
-            float lerpBound = lerpOffset + radialData.LerpLength;
-            ClampToOne(ref lerpBound);
-            for (int i = 0; i < radialData.Resolution; i++)
+        private void ConstructRotationLerp(
+            in QSTSFD_Radial radial,
+            in float3x2 startSeg,
+            ref MeshBuffersIndexers buffersIndexers,
+            float lerpParam
+        )
+        {
+            float lerpOffset = lerpParam - radial.LerpLength;
+            float lerpDelta = radial.LerpLength / radial.Resolution;
+            bool isStripStarted = false;
+            for (int i = 0; i < radial.Resolution; i++)
             {
                 lerpOffset += lerpDelta;
-                if (lerpOffset > lerpBound && lerpBound != 1)
+                if (lerpOffset > lerpParam)
                 {
-                    float3x2 currentSeg = InterpolateRadial(lerpBound, in fillData, startSeg);
-                    DrawLineSegmentWithRaysUp(currentSeg, 1, 0.1f);
-                    _quadStripBuilder.Continue(currentSeg, ref buffersIndexers);
+                    float3x2 currentSeg = InterpolateRotationLerp(lerpParam, in radial, startSeg);
+                    _quadStripBuilder.Add(currentSeg, ref buffersIndexers, ref isStripStarted);
+                    // DrawLineSegmentWithRaysUp(currentSeg, 1, 0.1f);
                     return;
                 }
                 if (lerpOffset > 0)
                 {
-                    float3x2 currentSeg = InterpolateRadial(lerpOffset, in fillData, startSeg);
-                    DrawLineSegmentWithRaysUp(currentSeg, 1, 0.1f);
-                    _quadStripBuilder.Continue(currentSeg, ref buffersIndexers);
+                    float3x2 currentSeg = InterpolateRotationLerp(lerpParam, in radial, startSeg);
+                    _quadStripBuilder.Add(currentSeg, ref buffersIndexers, ref isStripStarted);
+                    // DrawLineSegmentWithRaysUp(currentSeg, 1, 0.1f);
                 }
             }
         }
 
-        private float3x2 InterpolateRadial(float lerpOffset, in QSTS_FillData fillData, in float3x2 startSeg)
+        private float3x2 InterpolateRotationLerp(float lerpParam, in QSTSFD_Radial radial, in float3x2 startSeg)
         {
-            QSTSFD_Radial radialFill = fillData.Radial;
-            if (radialFill.Type == RadialType.SingleRotationLerp)
+            Assert.IsTrue(radial.Type == RadialType.SingleRotationLerp || radial.Type == RadialType.DoubleRotationLerp);
+            switch (radial.Type)
             {
-                float rotAngle = radialFill.AxisAngles[0].w * lerpOffset;
-                quaternion q = quaternion.AxisAngle(radialFill.AxisAngles[0].xyz, rotAngle);
+                case RadialType.SingleRotationLerp:
+                    return RotateWithLerp(lerpParam, radial.AxisAngles[0], radial.Points[0], startSeg);
+                case RadialType.DoubleRotationLerp:
+                    float2 rotAngles = new float2(
+                        radial.AxisAngles[0].w * lerpParam,
+                        radial.AxisAngles[1].w * lerpParam
+                    );
 
-                return RotateLineSegmentAround(q, radialFill.Points[0], startSeg);
+                    quaternion q1 = quaternion.AxisAngle(radial.AxisAngles[0].xyz, rotAngles[0]);
+                    quaternion q2 = quaternion.AxisAngle(radial.AxisAngles[1].xyz, rotAngles[1]);
+
+                    float3x2 doubleCenters = new float3x2(radial.Points[0], radial.Points[1]);
+                    return RotateLineSegmentAround(q1, q2, doubleCenters, startSeg);
             }
-            else if (radialFill.Type == RadialType.DoubleRotationLerp)
+
+            throw new System.ArgumentOutOfRangeException("Unknown RadialConstructType");
+        }
+
+        private void ConstructMoveLerp(
+            float lerpParam,
+            in QSTSFD_Radial radial,
+            in float3x2 startSeg,
+            ref MeshBuffersIndexers buffersIndexers
+        )
+        {
+            float3x2 lerpedStartSeg = InterpolateStartSegMoveLerp(lerpParam, in radial, in startSeg);
+            float lerpOffset = 0;
+            float lerpDelta = 1 / radial.Resolution;
+            bool isStripStarted = false;
+            for (int i = 0; i < radial.Resolution; i++)
             {
-                float2 rotAngles = new float2(
-                    radialFill.AxisAngles[0].w * lerpOffset,
-                    radialFill.AxisAngles[1].w * lerpOffset
-                );
-
-                quaternion q1 = quaternion.AxisAngle(radialFill.AxisAngles[0].xyz, rotAngles[0]);
-                quaternion q2 = quaternion.AxisAngle(radialFill.AxisAngles[1].xyz, rotAngles[1]);
-
-                float3x2 doubleCenters = new float3x2(radialFill.Points[0], radialFill.Points[1]);
-                return RotateLineSegmentAround(q1, q2, doubleCenters, startSeg);
+                float3x2 currentSeg = RotateWithLerp(lerpParam, radial.AxisAngles[0], radial.Points[0], startSeg);
+                _quadStripBuilder.Add(currentSeg, ref buffersIndexers, ref isStripStarted);
+                lerpOffset += lerpDelta;
+                ClampToOne(ref lerpOffset);
             }
-            else
+        }
+
+        private float3x2 InterpolateStartSegMoveLerp(float lerpParam, in QSTSFD_Radial radial, in float3x2 startSeg)
+        {
+            // clockOrder is assumed as clockwise
+            float3x2 toReturn;
+            switch (radial.Type)
             {
-                throw new System.ArgumentOutOfRangeException("Unknown RadialConstructType");
+                case RadialType.MoveLerp:
+                    float3 lerped = math.lerp(startSeg[0], startSeg[1], lerpParam);
+                    switch (radial.VertOrder)
+                    {
+                        case VertOrderType.Up:
+                            toReturn = new float3x2(
+                                lerped,
+                                startSeg[1]
+                            );
+                            return toReturn;
+                        case VertOrderType.Down:
+                            toReturn = new float3x2(
+                                startSeg[0],
+                                lerped
+                            );
+                            return toReturn;
+                    }
+                    break;
+                case RadialType.MoveLerpWithMiddle:
+                    float3 middle = radial.Points[1];
+                    float3 start, end;
+                    switch (radial.VertOrder)
+                    {
+                        case VertOrderType.Up:
+                            start = math.lerp(startSeg[0], middle, lerpParam);
+                            end = math.lerp(middle, startSeg[1], lerpParam);
+                            break;
+                        case VertOrderType.Down:
+                            start = math.lerp(middle, startSeg[0], lerpParam);
+                            end = math.lerp(startSeg[1], middle, lerpParam);
+                            break;
+                        default:
+                            throw new System.ArgumentOutOfRangeException("Unknown VertOrderType");
+                    }
+                    toReturn = new float3x2(
+                        start,
+                        end
+                    );
+                    break;
             }
+
+            throw new System.ArgumentOutOfRangeException("Unknown RadialType of VertOrderType");
+        }
+
+        private float3x2 RotateWithLerp(in float lerpParam, in float4 axisAngle, in float3 center, in float3x2 startSeg)
+        {
+            float rotAngle = axisAngle.w * lerpParam;
+            quaternion q = quaternion.AxisAngle(axisAngle.xyz, rotAngle);
+            return RotateLineSegmentAround(q, center, startSeg);
         }
     }
 }

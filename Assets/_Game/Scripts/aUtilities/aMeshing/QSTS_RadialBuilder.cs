@@ -68,10 +68,6 @@ namespace Orazum.Meshing
                     break;
                 case ClockOrderType.AntiCW:
                     startLineSeg = qs[qs.LineSegmentsCount - 1];
-                    startLineSeg = new float3x2(
-                        startLineSeg[1],
-                        startLineSeg[0]
-                    );
                     break;
             }
 
@@ -89,6 +85,9 @@ namespace Orazum.Meshing
                 lerpLength: 1,
                 Resolution
             );
+            radial.VertOrder = VertOrder;
+            radial.ClockOrder = ClockOrder;
+
             QSTS_FillData fillData = new QSTS_FillData(fillType, lerpRange, in radial);
             qsts[0] = fillData;
         }
@@ -98,6 +97,7 @@ namespace Orazum.Meshing
         public void GenerateDoubleRotationLerp(
             in QuadStrip origin,
             in QuadStrip target,
+            float3 lerpRangeLerpLength,
             out QST_Segment qsts
         )
         {
@@ -151,10 +151,14 @@ namespace Orazum.Meshing
                 RadialType.DoubleRotationLerp,
                 in axisAngles,
                 in points,
-                1,
+                lerpLength: lerpRangeLerpLength.z,
                 Resolution
             );
-            QSTS_FillData fillData = new QSTS_FillData(FillType.NewStartToEnd, new float2(0, 1), in radial);
+
+            radial.VertOrder = VertOrderType.Up;
+            radial.ClockOrder = ClockOrderType.CW;
+
+            QSTS_FillData fillData = new QSTS_FillData(FillType.NewStartToEnd, lerpRangeLerpLength.xy, in radial);
             qsts[0] = fillData;
         }
         #endregion
@@ -180,15 +184,15 @@ namespace Orazum.Meshing
             qsts = new QST_Segment(startLineSeg, float3x2.zero, 1);
             qsts.Type = QSTS_Type.Radial;
 
-            RadialType radialType = VertOrder == VertOrderType.Up ? RadialType.MoveLerpUp : RadialType.MoveLerpDown;
-
             QSTSFD_Radial radial = new QSTSFD_Radial(
-                radialType,
+                RadialType.MoveLerp,
                 in axisAngle,
                 in points,
                 1,
                 Resolution
             );
+            radial.VertOrder = VertOrder;
+            radial.ClockOrder = ClockOrderType.CW;
 
             QSTS_FillData fillData = new QSTS_FillData(FillType.NewStartToEnd, lerpRange, in radial);
             qsts[0] = fillData;
@@ -203,7 +207,7 @@ namespace Orazum.Meshing
         {
             float3x2 startLineSeg = new float3x2(
                 origin[0][0],
-                target[0][0]
+                target[0][1]
             );
             float3x2 points = new float3x2(
                 float3.zero,
@@ -222,9 +226,11 @@ namespace Orazum.Meshing
                 RadialType.MoveLerpWithMiddle,
                 in axisAngle,
                 in points,
-                1,
+                lerpLength: 1,
                 Resolution
             );
+            radial.VertOrder = VertOrder;
+            radial.ClockOrder = ClockOrderType.CW;
 
             QSTS_FillData fillData = new QSTS_FillData(FillType.NewStartToEnd, lerpRange, in radial);
             qsts[0] = fillData;

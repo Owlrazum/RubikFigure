@@ -29,67 +29,80 @@ namespace Orazum.Meshing
             }   
         }
 
-        public void Build(QuadStrip quadStrip, ref MeshBuffersIndexers buffersData)
+        public void Build(QuadStrip quadStrip, ref MeshBuffersIndexers buffersIndexers)
         {
-            Start(quadStrip[0], ref buffersData);
+            Start(quadStrip[0], ref buffersIndexers);
             for (int i = 0; i < quadStrip.QuadsCount; i++)
             {
-                Continue(quadStrip[1], ref buffersData);
+                Continue(quadStrip[1], ref buffersIndexers);
             }
         }
 
-        public void Start(float3x2 lineSegment, ref MeshBuffersIndexers buffersData)
+        public void Start(in float3x2 lineSegment, ref MeshBuffersIndexers buffersIndexers)
         {
-            _prevIndices.x = AddVertex(lineSegment[0], ref buffersData);
-            _prevIndices.y = AddVertex(lineSegment[1], ref buffersData);
+            _prevIndices.x = AddVertex(lineSegment[0], ref buffersIndexers);
+            _prevIndices.y = AddVertex(lineSegment[1], ref buffersIndexers);
 
         }
 
-        private void DrawSegment(float3x2 p)
-        {
-            Debug.DrawRay(p[0], Vector3.up, Color.red, 5);
-            Debug.DrawRay(p[1], Vector3.up, Color.red, 5);
-        }
-
-        public void Continue(float3x2 lineSegment, ref MeshBuffersIndexers buffersData)
+        public void Continue(in float3x2 lineSegment, ref MeshBuffersIndexers buffersIndexers)
         {
             int2 newIndices = int2.zero;
-            newIndices.x = AddVertex(lineSegment[0], ref buffersData);
-            newIndices.y = AddVertex(lineSegment[1], ref buffersData);
+            newIndices.x = AddVertex(lineSegment[0], ref buffersIndexers);
+            newIndices.y = AddVertex(lineSegment[1], ref buffersIndexers);
 
             int4 quadIndices = new int4(_prevIndices, newIndices.yx);
-            AddQuadIndices(quadIndices, ref buffersData);
+            AddQuadIndices(quadIndices, ref buffersIndexers);
 
             _prevIndices = newIndices;
         }
 
-        private void AddQuadIndices(int4 quadIndices, ref MeshBuffersIndexers buffersData)
-        {
-            AddIndex(quadIndices.x, ref buffersData);
-            AddIndex(quadIndices.y, ref buffersData);
-            AddIndex(quadIndices.z, ref buffersData);
-            AddIndex(quadIndices.x, ref buffersData);
-            AddIndex(quadIndices.z, ref buffersData);
-            AddIndex(quadIndices.w, ref buffersData);
+        public void Add(in float3x2 lineSegment, ref MeshBuffersIndexers buffersIndexers, ref bool isStripStarted)
+        { 
+            if (!isStripStarted)
+            {
+                isStripStarted = true;
+                Start(lineSegment, ref buffersIndexers);
+            }
+            else
+            { 
+                Continue(lineSegment, ref buffersIndexers);
+            }
         }
 
-        private short AddVertex(float3 pos, ref MeshBuffersIndexers buffersData)
+        private void AddQuadIndices(int4 quadIndices, ref MeshBuffersIndexers buffersIndexers)
+        {
+            AddIndex(quadIndices.x, ref buffersIndexers);
+            AddIndex(quadIndices.y, ref buffersIndexers);
+            AddIndex(quadIndices.z, ref buffersIndexers);
+            AddIndex(quadIndices.x, ref buffersIndexers);
+            AddIndex(quadIndices.z, ref buffersIndexers);
+            AddIndex(quadIndices.w, ref buffersIndexers);
+        }
+
+        private short AddVertex(float3 pos, ref MeshBuffersIndexers buffersIndexers)
         { 
             VertexData vertex = new VertexData();
             vertex.position = pos;
             vertex.normal = _normalAndUV[0];
             vertex.uv = _normalAndUV[1].xy;
             
-            _vertices[buffersData.Count.x++] = vertex;
-            short addedVertexIndex = (short)buffersData.LocalCount.x;
-            buffersData.LocalCount.x++;
+            _vertices[buffersIndexers.Count.x++] = vertex;
+            short addedVertexIndex = (short)buffersIndexers.LocalCount.x;
+            buffersIndexers.LocalCount.x++;
 
             return addedVertexIndex;
         }
 
-        private void AddIndex(int vertexIndex, ref MeshBuffersIndexers buffersData)
+        private void AddIndex(int vertexIndex, ref MeshBuffersIndexers buffersIndexers)
         {
-            _indices[buffersData.Count.y++] = (short)vertexIndex;
+            _indices[buffersIndexers.Count.y++] = (short)vertexIndex;
+        }
+
+        private void DrawSegment(float3x2 p)
+        {
+            Debug.DrawRay(p[0], Vector3.up, Color.red, 5);
+            Debug.DrawRay(p[1], Vector3.up, Color.red, 5);
         }
     }
 }

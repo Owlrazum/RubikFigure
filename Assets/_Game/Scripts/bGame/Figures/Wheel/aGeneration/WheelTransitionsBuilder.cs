@@ -71,9 +71,9 @@ public struct WheelTransitionsBuilder
 
             if (i == 0 && vertOrder == VertOrderType.Down)
             {
-                float2 lerpPoints = GetLerpPointsForLevitation(origin, target, vertOrder);
+                float3 lerpPoints = GetLerpPointsForLevitation(origin, target, vertOrder);
                 _radialBuilder.GenerateMoveLerp(origin, new float2(0, lerpPoints.x), out QST_Segment s1);
-                _radialBuilder.GenerateDoubleRotationLerp(in origin, in target, out QST_Segment s2);
+                _radialBuilder.GenerateDoubleRotationLerp(in origin, in target, lerpPoints, out QST_Segment s2);
                 _radialBuilder.GenerateMoveLerp(target, new float2(lerpPoints.y, 1), out QST_Segment s3);
                 writeBuffer[QSTS_indexer++] = s1;
                 writeBuffer[QSTS_indexer++] = s2;
@@ -81,9 +81,9 @@ public struct WheelTransitionsBuilder
             }
             else if (i == originsTargets.Length - 1 && vertOrder == VertOrderType.Up)
             {
-                float2 lerpPoints = GetLerpPointsForLevitation(origin, target, vertOrder);
+                float3 lerpPoints = GetLerpPointsForLevitation(origin, target, vertOrder);
                 _radialBuilder.GenerateMoveLerp(origin, new float2(0, lerpPoints.x), out QST_Segment s1);
-                _radialBuilder.GenerateDoubleRotationLerp(in origin, in target, out QST_Segment s2);
+                _radialBuilder.GenerateDoubleRotationLerp(in origin, in target, lerpPoints, out QST_Segment s2);
                 _radialBuilder.GenerateMoveLerp(target, new float2(lerpPoints.y, 1), out QST_Segment s3);
                 writeBuffer[QSTS_indexer++] = s1;
                 writeBuffer[QSTS_indexer++] = s2;
@@ -97,7 +97,7 @@ public struct WheelTransitionsBuilder
         }
     }
 
-    private float2 GetLerpPointsForLevitation(
+    private float3 GetLerpPointsForLevitation(
         in QuadStrip origin,
         in QuadStrip target,
         VertOrderType vertOrder
@@ -115,9 +115,12 @@ public struct WheelTransitionsBuilder
             d2 = DistanceLineSegment(origin[0][1], target[0][0]);
         }
 
+        d2 /= 2;
+        d2 *= TAU / 2;
+
         float total = d1 + d2 + d1;
-        float2 lerpPoints = new float2(d1 / total, 0);
-        lerpPoints.y = lerpPoints.y + d2 / total;
+        float3 lerpPoints = new float3(d1 / total, 0, d1 / total);
+        lerpPoints.y = lerpPoints.x + d2 / total;
         return lerpPoints;
     }
 
