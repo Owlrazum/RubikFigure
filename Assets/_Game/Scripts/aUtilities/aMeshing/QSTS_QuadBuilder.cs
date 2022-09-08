@@ -98,7 +98,7 @@ namespace Orazum.Meshing
 
             float lengthRatio = DistanceLineSegment(qs[index][0], qs[index + 1][0]) / stripLength;
             MoveLerpOffsets(ref lerpOffsets, lengthRatio);
-            
+
             lastFadeIn[0] = FillIn(lerpOffsets, isNewQuad: false);
 
             return lastFadeIn;
