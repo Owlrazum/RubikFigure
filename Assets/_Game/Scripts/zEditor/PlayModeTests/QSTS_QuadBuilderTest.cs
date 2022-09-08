@@ -98,6 +98,7 @@ public class QuadBulderTest
         yield return new WaitForSeconds(0.5f);
 
         yield return new WaitUntil(() => Input.GetKeyDown(KeyCode.F));
+        GameObject.Destroy(meshContainer.gameObject);
     }
 
     [UnityTest]
@@ -165,6 +166,8 @@ public class QuadBulderTest
         yield return new WaitForSeconds(0.5f);
 
         yield return new WaitUntil(() => Input.GetKeyDown(KeyCode.F));
+        GameObject.Destroy(meshLeft_.gameObject);
+        GameObject.Destroy(meshRight.gameObject);
     }
 
     [UnityTest]
@@ -209,7 +212,7 @@ public class QuadBulderTest
         NativeData dataConc = new NativeData(lineSegmentsCount * 2);
 
         yield return new WaitForSeconds(1);
-        meshRight.gameObject.SetActive(false);
+        GameObject.Destroy(meshRight.gameObject);
         QST_Animator animConc = new QST_Animator(dataConc.Vertices, dataConc.Indices, normalUV);
 
         animConc.AssignTransition(transConc);
@@ -233,6 +236,7 @@ public class QuadBulderTest
         yield return new WaitForSeconds(0.5f);
 
         yield return new WaitUntil(() => Input.GetKeyDown(KeyCode.F));
+        GameObject.Destroy(meshLeft_.gameObject);
     }
 
     private QuadStrip GenerateSimpleQuadStrip(ref NativeData data, in float3x2 start, in float3x2 delta)
