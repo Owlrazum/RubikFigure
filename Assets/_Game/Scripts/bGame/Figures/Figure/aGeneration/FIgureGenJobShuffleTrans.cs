@@ -3,9 +3,11 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Collections;
 
+using UnityEngine;
+
 using Orazum.Meshing;
 
-[BurstCompile]
+// [BurstCompile]
 public struct FigureGenJobShuffleTrans : IJobFor
 {
     [ReadOnly]

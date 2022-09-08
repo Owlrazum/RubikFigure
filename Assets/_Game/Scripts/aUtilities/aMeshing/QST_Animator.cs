@@ -21,8 +21,8 @@ namespace Orazum.Meshing
         private float _globalLerpParam;
 
         public QST_Animator(
-            ref NativeArray<VertexData> vertices,
-            ref NativeArray<short> indices,
+            in NativeArray<VertexData> vertices,
+            in NativeArray<short> indices,
             in float3x2 normalUV
         )
         {
@@ -31,7 +31,7 @@ namespace Orazum.Meshing
             _globalLerpParam = -1;
         }
 
-        public void AssignTransition(QS_Transition transition)
+        public void AssignTransition(in QS_Transition transition)
         {
             _transition = transition;
         }

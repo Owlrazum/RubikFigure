@@ -91,9 +91,10 @@ public abstract class Figure : MonoBehaviour
 
     private void MakeShuffleMove(FigureSegment segment, FigureVerticesMove move, Action moveCompleteAction)
     { 
-         Assert.IsTrue(IsValidIndex(move.FromIndex) && IsValidIndex(move.ToIndex));
+        Assert.IsTrue(IsValidIndex(move.FromIndex) && IsValidIndex(move.ToIndex));
         AssignShuffleTransitionData(move);
 
+        print("Starting shuffle move");
         segment.StartMove(move, moveCompleteAction);
     }
 
@@ -101,8 +102,9 @@ public abstract class Figure : MonoBehaviour
     {
         FigureShuffleTransition fromTransData = _shuffleTransitions[move.FromIndex];
         FigureShuffleTransition toTransData = _shuffleTransitions[move.ToIndex];
-        QS_Transition fadeOut = FigureShuffleTransition.FadeOut(ref fromTransData);
-        QS_Transition fadeIn = FigureShuffleTransition.FadeIn(ref toTransData);
+        print($"FigureShuffleTranstition {fromTransData}\n{toTransData}");
+        QS_Transition fadeOut = fromTransData.FadeOut;
+        QS_Transition fadeIn = fromTransData.FadeIn;
         var buffer = QS_Transition.PrepareConcatenationBuffer(fadeOut, fadeIn, Allocator.Persistent);
         QS_Transition shuffle = QS_Transition.Concatenate(fadeOut, fadeIn, buffer);
         move.Transition = shuffle;

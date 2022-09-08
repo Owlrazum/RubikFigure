@@ -3,6 +3,7 @@ using Unity.Collections;
 using UnityEngine.Assertions;
 
 using Orazum.Collections;
+using static Orazum.Math.LineSegmentUtilities;
 
 // QS - quad strip
 public struct QS_Transition
@@ -39,6 +40,16 @@ public struct QS_Transition
         CollectionUtilities.DisposeIfNeeded(_transSegs);
     }
 
+    public void DrawDebugRays(float duration)
+    {
+        for (int i = 0; i < _transSegs.Length; i++)
+        {
+            QST_Segment seg = _transSegs[i];
+            DrawLineSegmentWithRaysUp(seg.StartLineSegment, 1, duration);
+            DrawLineSegmentWithRaysUp(seg.EndLineSegment, 1, duration);
+        }
+    }
+
     public static QS_Transition Concatenate(
         QS_Transition t1, 
         QS_Transition t2, 
@@ -67,5 +78,10 @@ public struct QS_Transition
     {
         NativeArray<QST_Segment> buffer = new NativeArray<QST_Segment>(t1.Length + t2.Length, allocator);
         return buffer;
+    }
+
+    public override string ToString()
+    {
+        return $"{Length} transition segments\n";
     }
 }

@@ -94,4 +94,25 @@ public struct QST_Segment
         }
         return s;
     }
+
+    public string FillTypes()
+    {
+        string s = "fillTypes:\n";
+        for (int i = 0; i < FillDataLength; i++)
+        { 
+            switch (i)
+            { 
+                case 0:
+                    s += _f1.Fill + "\n";
+                    break;
+                case 1:
+                    s += _f2.Fill + "\n";
+                    break;
+                case 2:
+                    s += _f3.Fill + "\n";
+                    break;
+            }
+        }
+        return s;
+    }
 }

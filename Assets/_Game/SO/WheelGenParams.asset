@@ -17,6 +17,6 @@ MonoBehaviour:
   _segmentPointPrefab: {fileID: 1553978324677776507, guid: dfd0e0cf5893b4c2fb5997fd8f7972bf, type: 3}
   _outerRadius: 5
   _innerRadius: 0.6
-  _sideCount: 4
-  _ringCount: 3
-  _segmentResolution: 10
+  _sideCount: 3
+  _ringCount: 2
+  _segmentResolution: 2

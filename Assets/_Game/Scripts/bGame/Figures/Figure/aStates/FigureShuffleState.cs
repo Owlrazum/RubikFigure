@@ -22,6 +22,11 @@ public abstract class FigureShuffleState : FigureState
     private bool _isShuffleCompleted;
 
     protected abstract void ShuffleIndices();
+    protected virtual bool CustomShuffle(float lerpSpeed, out FigureVerticesMove[] moves)
+    {
+        moves = null;
+        return false;
+    }
 
     public FigureShuffleState(FigureStatesController statesController, Figure figure, FigureParamsSO figureParams)
     : base (statesController, figure)
@@ -83,6 +88,11 @@ public abstract class FigureShuffleState : FigureState
 
     protected virtual void Shuffle(float lerpSpeed)
     {
+        if (CustomShuffle(lerpSpeed, out var customMoves))
+        {
+            _figure.Shuffle(customMoves, ShuffleCompleteAction);
+            return;
+        }
         ShuffleIndices();
 
         FigureVerticesMove[] moves = new FigureVerticesMove[_dims.y * _dims.x];

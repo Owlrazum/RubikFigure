@@ -37,7 +37,7 @@ public abstract class FigureSegmentMover : MonoBehaviour
     private NativeArray<short> _indices;
     private MeshBuffersIndexersForJob _indexersForJob;
 
-    private QST_Animator _quadStripTransition;
+    private QST_Animator _animator_QST;
 
     private bool _wasJobScheduled;
     private bool _wasMoveCompleted;
@@ -53,7 +53,7 @@ public abstract class FigureSegmentMover : MonoBehaviour
         _indexersForJob = new MeshBuffersIndexersForJob(new MeshBuffersIndexers());
         
         float3x2 normalUV = new float3x2(math.up(), new float3(uv, 0));
-        _quadStripTransition = new QST_Animator(ref _vertices, ref _indices, normalUV);
+        _animator_QST = new QST_Animator( _vertices, _indices, normalUV);
     }
 
     protected virtual void Awake()
@@ -96,17 +96,22 @@ public abstract class FigureSegmentMover : MonoBehaviour
             Debug.Log("Starting vertices move");
             StartCoroutine(MoveSequence(verticesMove));
         }
+        else
+        {
+            Debug.LogError("Unknown type of move");
+        }
     }
 
      private IEnumerator MoveSequence(FigureVerticesMove verticesMove)
     {
         float lerpParam = 0;
         Assert.IsTrue(verticesMove.Transition.IsCreated);
-        _quadStripTransition.AssignTransition(verticesMove.Transition);
+        _animator_QST.AssignTransition(verticesMove.Transition);
+        print(verticesMove.Transition);
         FigureSegmentMoveJob moveJob = new FigureSegmentMoveJob()
         {
             P_ShouldReorientVertices = verticesMove.ShouldReorientVertices,
-            InputQuadStripTransition = _quadStripTransition,
+            InputQuadStripTransition = _animator_QST,
             OutputIndexers = _indexersForJob
         };
 
@@ -153,22 +158,22 @@ public abstract class FigureSegmentMover : MonoBehaviour
     protected void AssignMeshBuffers(
         NativeArray<VertexData> vertices, 
         NativeArray<short> indices,
-        in MeshBuffersIndexers buffersData
+        in MeshBuffersIndexers buffersIndexers
     )
     { 
         Mesh mesh = MeshContainer.mesh;
         mesh.MarkDynamic();
 
-        mesh.SetVertexBufferParams(buffersData.Count.x, VertexData.VertexBufferMemoryLayout);
-        mesh.SetIndexBufferParams(buffersData.Count.y, IndexFormat.UInt16);
+        mesh.SetVertexBufferParams(buffersIndexers.Count.x, VertexData.VertexBufferMemoryLayout);
+        mesh.SetIndexBufferParams(buffersIndexers.Count.y, IndexFormat.UInt16);
 
-        mesh.SetVertexBufferData(vertices, buffersData.Start.x, 0, buffersData.Count.x, 0, MoveMeshUpdateFlags);
-        mesh.SetIndexBufferData(indices, buffersData.Start.y, 0, buffersData.Count.y, MoveMeshUpdateFlags);
+        mesh.SetVertexBufferData(vertices, buffersIndexers.Start.x, 0, buffersIndexers.Count.x, 0, MoveMeshUpdateFlags);
+        mesh.SetIndexBufferData(indices, buffersIndexers.Start.y, 0, buffersIndexers.Count.y, MoveMeshUpdateFlags);
 
         mesh.subMeshCount = 1;
         SubMeshDescriptor subMesh = new SubMeshDescriptor(
             indexStart: 0,
-            indexCount: buffersData.Count.y
+            indexCount: buffersIndexers.Count.y
         );
         mesh.SetSubMesh(0, subMesh);
 

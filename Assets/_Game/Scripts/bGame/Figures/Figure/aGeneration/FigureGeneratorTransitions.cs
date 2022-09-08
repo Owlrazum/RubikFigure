@@ -18,7 +18,8 @@ public abstract class FigureGeneratorTransitions : MonoBehaviour
     public void StartGeneration(in QuadStripsBuffer quadStripsCollection, JobHandle dependency)
     {
         StartTransitionsGeneration(quadStripsCollection, dependency);
-        
+        StartShuffleTransitionsGeneration(quadStripsCollection);
+
     }
     protected abstract void StartTransitionsGeneration(in QuadStripsBuffer quadStripsCollection, JobHandle dependency);
     
@@ -26,8 +27,9 @@ public abstract class FigureGeneratorTransitions : MonoBehaviour
     private JobHandle _shuffleTransitionsJobHandle;
     private void StartShuffleTransitionsGeneration(in QuadStripsBuffer quadStripCollection)
     {
+        print($"{quadStripCollection.GetQuadCount()} total quad count");
         NativeArray<QST_Segment> buffer = new NativeArray<QST_Segment>(quadStripCollection.GetQuadCount() * 2, Allocator.Persistent);
-        NativeArray<int2> bufferIndexers = new NativeArray<int2>(quadStripCollection.QuadStripsCount * 2, Allocator.TempJob);
+        NativeArray<int2> bufferIndexers = new NativeArray<int2>(quadStripCollection.QuadStripsCount * 2, Allocator.Persistent);
         _shuffleTransitionsCollection = new QS_TransitionsBuffer(buffer, bufferIndexers);
 
         FigureGenJobShuffleTrans job = new FigureGenJobShuffleTrans()
@@ -36,7 +38,6 @@ public abstract class FigureGeneratorTransitions : MonoBehaviour
             OutputQSTransSegmentBuffer = _shuffleTransitionsCollection
         };
         _shuffleTransitionsJobHandle = job.ScheduleParallel(_shuffleTransitionsCollection.TransitionsCount, 8, default);
-        bufferIndexers.Dispose(_shuffleTransitionsJobHandle);
     }
 
     public void FinishGeneration(Figure figure)
@@ -47,19 +48,32 @@ public abstract class FigureGeneratorTransitions : MonoBehaviour
     }
     protected abstract void FinishTransitionsGeneration(Figure figure);
 
+    // Big assumption here: quadStripCollection, hence shuffleTransitionsCollection are placed in 
+    // first increasing Dimensions.y, then increasing Dimensions.x
     private void FinishShuffleTransitionsGeneration(Figure figure)
     {
         _shuffleTransitionsJobHandle.Complete();
+        print($"finish shuffleTransitions {_shuffleTransitionsCollection.TransitionsCount}");
         Array2D<FigureShuffleTransition> shuffleTransitions = new Array2D<FigureShuffleTransition>(figure.Dimensions);
-        for (int i = 0; i < _shuffleTransitionsCollection.TransitionsCount; i++)
+        int2 indexer = int2.zero;
+        for (int i = 0; i < _shuffleTransitionsCollection.TransitionsCount; i += 2)
         {
-            QS_Transition fadeOut = _shuffleTransitionsCollection.GetQSTransition(i);
             QS_Transition fadeIn = _shuffleTransitionsCollection.GetQSTransition(i);
+            QS_Transition fadeOut = _shuffleTransitionsCollection.GetQSTransition(i + 1);
 
+            // print($"fadeOut {fadeOut.Length} :: fadeIn {fadeIn.Length}");
             FigureShuffleTransition transData = new FigureShuffleTransition();
-
-            FigureShuffleTransition.FadeOut(ref transData) = fadeOut;
-            FigureShuffleTransition.FadeIn(ref transData) = fadeIn;
+            transData.FadeIn = fadeIn;
+            transData.FadeOut = fadeOut;
+            print(indexer);
+            shuffleTransitions[indexer] = transData;
+            indexer.y++;
+            if (indexer.y >= figure.Dimensions.y)
+            {
+                indexer.y = 0;
+                indexer.x++;
+            }
+            // print($"transData {FigureShuffleTransition.FadeOut(ref transData)} {FigureShuffleTransition.FadeIn(ref transData)}");
         }
         figure.AssignShuffleTransitions(shuffleTransitions);
     }
@@ -68,21 +82,17 @@ public abstract class FigureGeneratorTransitions : MonoBehaviour
     protected virtual void OnDestroy()
     {
         _transitionsCollection.DisposeIfNeeded();
+        _shuffleTransitionsCollection.DisposeIfNeeded();
     }
 }
 
 public struct FigureShuffleTransition
 {
-    private QS_Transition fadeOut;
-    private QS_Transition fadeIn;
+    public QS_Transition FadeOut;
+    public QS_Transition FadeIn;
 
-    public static ref QS_Transition FadeOut(ref FigureShuffleTransition instance)
+    public override string ToString()
     {
-        return ref instance.fadeOut;
-    }
-
-    public static ref QS_Transition FadeIn(ref FigureShuffleTransition instance)
-    {
-        return ref instance.fadeIn;
+        return $"{FadeOut.Length} {FadeIn.Length} figureShuffleTransition";
     }
 }

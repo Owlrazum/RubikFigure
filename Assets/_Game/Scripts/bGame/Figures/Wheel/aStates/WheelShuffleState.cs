@@ -11,6 +11,24 @@ public class WheelShuffleState : FigureShuffleState
     {
     }
 
+    private bool isCustomShuffled;
+    protected override bool CustomShuffle(float lerpSpeed, out FigureVerticesMove[] customMoves)
+    {
+        if (isCustomShuffled)
+        {
+            return base.CustomShuffle(lerpSpeed, out customMoves);
+        }
+        customMoves = new FigureVerticesMove[1];
+        var move = new FigureVerticesMove();
+        move.AssignFromIndex(new int2(0,1));
+        move.AssignToIndex(new int2(1,1));
+        move.AssignLerpSpeed(lerpSpeed);
+        move.ShouldDisposeTransition = true;
+        customMoves[0] = move;
+        isCustomShuffled = true;
+        return true;
+    }
+
     protected override void ShuffleIndices()
     {
         for (int ring = 0; ring < _figure.RowCount; ring++)
