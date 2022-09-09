@@ -4,10 +4,11 @@
     "references": [
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
-        "aAssemblyMeshing",
         "Unity.Mathematics",
+        "aAssemblyMeshing",
         "aAssemblyCollections",
-        "aAssemblyMath"
+        "aAssemblyMath",
+        "aAssemblyFigure"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

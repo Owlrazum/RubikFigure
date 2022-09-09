@@ -15,6 +15,8 @@ public abstract class FigureGeneratorTransitions : MonoBehaviour
     protected JobHandle _dataJobHandle;
     protected QS_TransitionsBuffer _transitionsCollection;
 
+    private NativeArray<int2> _fadeInOutTransitionsBufferIndexers;
+
     public void StartGeneration(in QuadStripsBuffer quadStripsCollection, JobHandle dependency)
     {
         StartTransitionsGeneration(quadStripsCollection, dependency);
@@ -27,7 +29,8 @@ public abstract class FigureGeneratorTransitions : MonoBehaviour
     private JobHandle _shuffleTransitionsJobHandle;
     private void StartShuffleTransitionsGeneration(in QuadStripsBuffer quadStripCollection)
     {
-        print($"{quadStripCollection.GetQuadCount()} total quad count");
+        _fadeInOutTransitionsBufferIndexers = BufferUtils.GetFadeInOutTransitionsBufferIndexers(quadStripCollection);
+
         NativeArray<QST_Segment> buffer = new NativeArray<QST_Segment>(quadStripCollection.GetQuadCount() * 2, Allocator.Persistent);
         NativeArray<int2> bufferIndexers = new NativeArray<int2>(quadStripCollection.QuadStripsCount * 2, Allocator.Persistent);
         _shuffleTransitionsCollection = new QS_TransitionsBuffer(buffer, bufferIndexers);
@@ -35,7 +38,8 @@ public abstract class FigureGeneratorTransitions : MonoBehaviour
         FigureGenJobShuffleTrans job = new FigureGenJobShuffleTrans()
         {
             InputQuadStripsCollection = quadStripCollection,
-            OutputQSTransSegmentBuffer = _shuffleTransitionsCollection
+            InputQSTransitionsBufferIndexers = _fadeInOutTransitionsBufferIndexers,
+            OutputQSTransitionsBuffer = _shuffleTransitionsCollection
         };
         _shuffleTransitionsJobHandle = job.ScheduleParallel(_shuffleTransitionsCollection.TransitionsCount, 8, default);
     }
@@ -44,6 +48,7 @@ public abstract class FigureGeneratorTransitions : MonoBehaviour
     {
         FinishTransitionsGeneration(figure);
         FinishShuffleTransitionsGeneration(figure);
+        _fadeInOutTransitionsBufferIndexers.Dispose();
 
     }
     protected abstract void FinishTransitionsGeneration(Figure figure);
@@ -54,17 +59,17 @@ public abstract class FigureGeneratorTransitions : MonoBehaviour
     {
         _shuffleTransitionsJobHandle.Complete();
         print($"finish shuffleTransitions {_shuffleTransitionsCollection.TransitionsCount}");
-        Array2D<FigureShuffleTransition> shuffleTransitions = new Array2D<FigureShuffleTransition>(figure.Dimensions);
+        Array2D<FadeOutInTransitions> shuffleTransitions = new Array2D<FadeOutInTransitions>(figure.Dimensions);
         int2 indexer = int2.zero;
         for (int i = 0; i < _shuffleTransitionsCollection.TransitionsCount; i += 2)
         {
-            QS_Transition fadeIn = _shuffleTransitionsCollection.GetQSTransition(i);
-            QS_Transition fadeOut = _shuffleTransitionsCollection.GetQSTransition(i + 1);
+            QS_Transition fadeOut = _shuffleTransitionsCollection.GetQSTransition(i);
+            QS_Transition fadeIn = _shuffleTransitionsCollection.GetQSTransition(i + 1);
 
             // print($"fadeOut {fadeOut.Length} :: fadeIn {fadeIn.Length}");
-            FigureShuffleTransition transData = new FigureShuffleTransition();
-            transData.FadeIn = fadeIn;
+            FadeOutInTransitions transData = new FadeOutInTransitions();
             transData.FadeOut = fadeOut;
+            transData.FadeIn = fadeIn;
             print(indexer);
             shuffleTransitions[indexer] = transData;
             indexer.y++;
@@ -83,16 +88,6 @@ public abstract class FigureGeneratorTransitions : MonoBehaviour
     {
         _transitionsCollection.DisposeIfNeeded();
         _shuffleTransitionsCollection.DisposeIfNeeded();
-    }
-}
-
-public struct FigureShuffleTransition
-{
-    public QS_Transition FadeOut;
-    public QS_Transition FadeIn;
-
-    public override string ToString()
-    {
-        return $"{FadeOut.Length} {FadeIn.Length} figureShuffleTransition";
+        CollectionUtilities.DisposeIfNeeded(_fadeInOutTransitionsBufferIndexers);
     }
 }

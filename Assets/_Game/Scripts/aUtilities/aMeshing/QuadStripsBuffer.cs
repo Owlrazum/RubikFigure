@@ -18,7 +18,7 @@ public struct QuadStripsBuffer : IDisposable
     public int QuadStripsCount { get { return _quadStripsIndexersBuffer.Length; } }
     public int2 Dims { get; set; }
 
-    public QuadStripsBuffer(NativeArray<float3x2> lineSegmentsBuffer, NativeArray<int2> quadStripsIndexersBuffer)
+    public QuadStripsBuffer(in NativeArray<float3x2> lineSegmentsBuffer, in NativeArray<int2> quadStripsIndexersBuffer)
     {
         _lineSegmentsBuffer = lineSegmentsBuffer;
         _quadStripsIndexersBuffer = quadStripsIndexersBuffer;
@@ -56,15 +56,6 @@ public struct QuadStripsBuffer : IDisposable
     {
         Assert.IsTrue(index < QuadStripsCount);
         return _quadStripsIndexersBuffer[index];
-    }
-
-    public int2 GetQuadIndexer(int index)
-    {
-        Assert.IsTrue(index < QuadStripsCount);
-        int2 indexer = _quadStripsIndexersBuffer[index];
-        indexer.x -= index;
-        indexer.y -= 1;
-        return indexer;
     }
 
     public void Dispose()

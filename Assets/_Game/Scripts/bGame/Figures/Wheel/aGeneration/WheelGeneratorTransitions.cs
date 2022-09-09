@@ -32,7 +32,7 @@ public class WheelGeneratorTransitions : FigureGeneratorTransitions
     protected override void StartTransitionsGeneration(in QuadStripsBuffer quadStripsCollection, JobHandle dependency)
     {
         _sidesRingsCount = quadStripsCollection.Dims;
-        _segmentResolution = quadStripsCollection.GetQuadIndexer(0).y;
+        _segmentResolution = quadStripsCollection.GetIndexer(0).y - 1;
 
         PerSideTransitionsCount = _sidesRingsCount.x * 2;
         int PerRingTransitionsCount = _sidesRingsCount.y * 2;

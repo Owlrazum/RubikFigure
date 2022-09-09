@@ -7,17 +7,17 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Assertions;
 
+using Orazum.Meshing;
 using Orazum.Collections;
 using Orazum.Math;
 
-[RequireComponent(typeof(FigureStatesController))]
 public abstract class Figure : MonoBehaviour
 {
     private FigureStatesController _statesController;
     public FigureStatesController StatesController { get { return _statesController; } }
 
     protected Array2D<FigureSegmentPoint> _segmentPoints;
-    private Array2D<FigureShuffleTransition> _shuffleTransitions;
+    private Array2D<FadeOutInTransitions> _shuffleTransitions;
 
     protected int2 _dims;
     public int2 Dimensions { get { return _dims; } }
@@ -25,7 +25,7 @@ public abstract class Figure : MonoBehaviour
     public int RowCount { get { return _dims.y; } }
 
     protected Vector3 _startTeleportPosition;
-    
+
     private int2 _movesCount;
     public bool IsMakingMoves { get { return _movesCount.x < _movesCount.y; } }
     private Action _movesCompleteAction;
@@ -33,9 +33,9 @@ public abstract class Figure : MonoBehaviour
     private FigureSegment[] _movedSegmentsBuffer;
 
     protected abstract void MakeSegmentMove(FigureSegment segment, FigureSegmentMove move, Action moveCompleteAction);
-    
+
     public virtual void Initialize(
-        Array2D<FigureSegmentPoint> segmentPoints, 
+        Array2D<FigureSegmentPoint> segmentPoints,
         FigureParamsSO figureParams
     )
     {
@@ -53,7 +53,7 @@ public abstract class Figure : MonoBehaviour
         _statesController.Initialize(this, figureParams);
     }
 
-    public void AssignShuffleTransitions(Array2D<FigureShuffleTransition> transitions)
+    public void AssignShuffleTransitions(Array2D<FadeOutInTransitions> transitions)
     {
         _shuffleTransitions = transitions;
     }
@@ -90,24 +90,20 @@ public abstract class Figure : MonoBehaviour
     }
 
     private void MakeShuffleMove(FigureSegment segment, FigureVerticesMove move, Action moveCompleteAction)
-    { 
+    {
         Assert.IsTrue(IsValidIndex(move.FromIndex) && IsValidIndex(move.ToIndex));
         AssignShuffleTransitionData(move);
 
-        print("Starting shuffle move");
         segment.StartMove(move, moveCompleteAction);
     }
 
     private void AssignShuffleTransitionData(FigureVerticesMove move)
     {
-        FigureShuffleTransition fromTransData = _shuffleTransitions[move.FromIndex];
-        FigureShuffleTransition toTransData = _shuffleTransitions[move.ToIndex];
-        print($"FigureShuffleTranstition {fromTransData}\n{toTransData}");
-        QS_Transition fadeOut = fromTransData.FadeOut;
-        QS_Transition fadeIn = fromTransData.FadeIn;
+        QS_Transition fadeOut = _shuffleTransitions[move.FromIndex].FadeOut;
+        QS_Transition fadeIn = _shuffleTransitions[move.ToIndex].FadeIn;
         var buffer = QS_Transition.PrepareConcatenationBuffer(fadeOut, fadeIn, Allocator.Persistent);
-        QS_Transition shuffle = QS_Transition.Concatenate(fadeOut, fadeIn, buffer);
-        move.Transition = shuffle;
+        QS_Transition concShuffle = QS_Transition.Concatenate(fadeOut, fadeIn, buffer);
+        move.Transition = concShuffle;
     }
 
     public void MakeMoves(IList<FigureSegmentMove> moves, Action movesCompleteAction)
@@ -163,7 +159,7 @@ public abstract class Figure : MonoBehaviour
     {
         return IsOutOfDimsClockOrder(index, clockOrder, _dims);
     }
-    
+
     public int2 MoveIndexVertOrder(int2 index, VertOrderType vertOrder)
     {
         return MoveIndexVertOrder(index, vertOrder, _dims);
@@ -189,7 +185,7 @@ public abstract class Figure : MonoBehaviour
 
 
     private void EmptyPoints(FigureParamsSO figureParams)
-    { 
+    {
         int2[] emptySegmentPointIndices = null;
 
         if (figureParams.ShouldUsePredefinedEmptyPlaces)
@@ -201,7 +197,7 @@ public abstract class Figure : MonoBehaviour
         {
             int2 dims = figureParams.FigureGenParamsSO.Dimensions;
             emptySegmentPointIndices =
-                GenerateRandomEmptyPoints(figureParams.EmptyPlacesCount,  dims.x, dims.y);
+                GenerateRandomEmptyPoints(figureParams.EmptyPlacesCount, dims.x, dims.y);
         }
 
         FigureSegment[] emptySegments = new FigureSegment[emptySegmentPointIndices.Length];
@@ -241,7 +237,7 @@ public abstract class Figure : MonoBehaviour
     public static int2 MoveIndexClockOrder(int2 index, ClockOrderType clockOrder, int2 dims)
     {
         switch (clockOrder)
-        { 
+        {
             case ClockOrderType.CW:
                 index.x = index.x + 1 < dims.x ? index.x + 1 : 0;
                 return index;
@@ -254,7 +250,7 @@ public abstract class Figure : MonoBehaviour
     }
     public static int2 MoveIndexVertOrder(int2 index, VertOrderType vertOrder, int2 dims)
     {
-        switch(vertOrder)
+        switch (vertOrder)
         {
             case VertOrderType.Up:
                 index.y = index.y + 1 < dims.y ? index.y + 1 : 0;
@@ -269,7 +265,7 @@ public abstract class Figure : MonoBehaviour
 
     public static bool IsOutOfDimsClockOrder(int2 index, ClockOrderType clockOrder, int2 dims)
     {
-         switch (clockOrder)
+        switch (clockOrder)
         {
             case ClockOrderType.CW:
                 index.x++;
@@ -293,7 +289,7 @@ public abstract class Figure : MonoBehaviour
     }
     public static bool IsOutOfDimsVertOrder(int2 index, VertOrderType vertOrder, int2 dims)
     {
-        switch(vertOrder)
+        switch (vertOrder)
         {
             case VertOrderType.Up:
                 index.y++;
@@ -301,7 +297,7 @@ public abstract class Figure : MonoBehaviour
                 {
                     return false;
                 }
-                
+
                 return true;
             case VertOrderType.Down:
                 index.y--;
@@ -312,7 +308,7 @@ public abstract class Figure : MonoBehaviour
 
                 return true;
         }
-        
+
         throw new ArgumentException("Unknown vertical order type");
     }
 

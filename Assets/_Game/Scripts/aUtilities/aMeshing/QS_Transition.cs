@@ -35,7 +35,7 @@ public struct QS_Transition
         _transSegs.Dispose();
     }
 
-    public void DisposeIfNeededConcatenation()
+    public void DisposeConcatenationIfNeeded()
     {
         CollectionUtilities.DisposeIfNeeded(_transSegs);
     }

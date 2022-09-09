@@ -44,9 +44,6 @@ public class ValknutGeneratorGameObject : FigureGeneratorGameObject
     private const int PointColliderTotalIndexCount = (PointColliderIndexCountTAS + PointColliderIndexCountOAS) * 3;
     #endregion
 
-    [SerializeField]
-    private FigureParamsSO _figureParams;
-
     private float _innerTriangleRadius;
     private float _width;
     private float _gapSize;
@@ -75,8 +72,8 @@ public class ValknutGeneratorGameObject : FigureGeneratorGameObject
         _figureVertices = new NativeArray<VertexData>(SegmentsTotalVertexCount, Allocator.TempJob);
         _figureIndices = new NativeArray<short>(SegmentsTotalIndexCount, Allocator.TempJob);
 
-        NativeArray<float3x2> lineSegments = new NativeArray<float3x2>(SegmentsTotalVertexCount, Allocator.TempJob);
-        NativeArray<int2> quadStripsIndexers = new NativeArray<int2>(SegmentsCount, Allocator.TempJob);
+        NativeArray<float3x2> lineSegments = new NativeArray<float3x2>(SegmentsTotalVertexCount, Allocator.Persistent);
+        NativeArray<int2> quadStripsIndexers = new NativeArray<int2>(SegmentsCount, Allocator.Persistent);
         _quadStripsCollection = new QuadStripsBuffer(lineSegments, quadStripsIndexers);
 
         ValknutGenJob valknutGenJob = new ValknutGenJob()

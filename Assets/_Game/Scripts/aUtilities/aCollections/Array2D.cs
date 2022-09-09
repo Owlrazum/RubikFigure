@@ -68,6 +68,37 @@ namespace Orazum.Collections
             this[lhs] = value;
         }
 
+        public void RandomDerangement(int2 rowOrCol)
+        {
+            Assert.IsTrue(rowOrCol.x >= 0 && rowOrCol.y < 0 || rowOrCol.y >= 0 && rowOrCol.x < 0);
+            if (rowOrCol.x >= 0)
+            {
+                T[] row = new T[ColCount];
+                for (int i = 0; i < ColCount; i++)
+                {
+                    row[i] = _array[i, rowOrCol.x];
+                }
+                Algorithms.RandomDerangement(row);
+                for (int i = 0; i < ColCount; i++)
+                {
+                    _array[i, rowOrCol.x] = row[i];
+                }
+            }
+            else
+            { 
+                T[] col = new T[RowCount];
+                for (int i = 0; i < RowCount; i++)
+                {
+                    col[i] = _array[rowOrCol.y, i];
+                }
+                Algorithms.RandomDerangement(col);
+                for (int i = 0; i < RowCount; i++)
+                {
+                    _array[rowOrCol.y, i] = col[i];
+                }
+            }
+        }
+
         public IEnumerator<T> GetEnumerator()
         {
             for (int row = 0; row < _gridSize.y; row++)

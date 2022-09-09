@@ -13,6 +13,6 @@ public class ValknutStatesController : FigureStatesController
             IdleState = new FigureIdleState(raycastSelectable, this, valknut);
         }
         MoveState = new ValknutMoveState(this, valknut, figureParams.MoveLerpSpeed);
-        ShuffleState = new ValknutShuffleState(this, valknut, figureParams);
+        ShuffleState = new FigureShuffleState(this, valknut, figureParams);
     }
 }

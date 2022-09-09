@@ -18,7 +18,6 @@ namespace Orazum.Meshing
             ref NativeArray<QST_Segment> writeBuffer
         )
         {
-            Assert.IsTrue(writeBuffer.Length <= qs.QuadsCount);
             int builderIndexer = 0;
 
             float stripLength = qs.ComputeSingleLength();
@@ -35,7 +34,6 @@ namespace Orazum.Meshing
             ref NativeArray<QST_Segment> writeBuffer
         )
         {
-            Assert.IsTrue(writeBuffer.Length <= qs.QuadsCount);
             int builderIndexer = 0;
 
             float stripLength = qs.ComputeSingleLength();
@@ -98,6 +96,7 @@ namespace Orazum.Meshing
 
             float lengthRatio = DistanceLineSegment(qs[index][0], qs[index + 1][0]) / stripLength;
             MoveLerpOffsets(ref lerpOffsets, lengthRatio);
+            lerpOffsets.y = 1;
 
             lastFadeIn[0] = FillIn(lerpOffsets, isNewQuad: false);
 

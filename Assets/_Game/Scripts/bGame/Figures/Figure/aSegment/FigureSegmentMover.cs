@@ -70,7 +70,7 @@ public abstract class FigureSegmentMover : MonoBehaviour
 
         if (_shouldDispose)
         {
-            toDispose.DisposeIfNeededConcatenation();
+            toDispose.DisposeConcatenationIfNeeded();
         }
 
         CollectionUtilities.DisposeIfNeeded(_vertices);

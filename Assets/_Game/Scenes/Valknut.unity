@@ -752,6 +752,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1421651230}
   - component: {fileID: 1421651229}
+  - component: {fileID: 1421651231}
   m_Layer: 0
   m_Name: ValknutGenerator
   m_TagString: Untagged
@@ -772,7 +773,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _figureParams: {fileID: 11400000, guid: 19c9990a1bf2c4f599d35deb89134161, type: 2}
-  _figureParams: {fileID: 11400000, guid: 19c9990a1bf2c4f599d35deb89134161, type: 2}
 --- !u!4 &1421651230
 Transform:
   m_ObjectHideFlags: 0
@@ -788,6 +788,18 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 5
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1421651231
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1421651228}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5cf730d53f759451bb0799de8ac78f0e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1591665801
 GameObject:
   m_ObjectHideFlags: 0

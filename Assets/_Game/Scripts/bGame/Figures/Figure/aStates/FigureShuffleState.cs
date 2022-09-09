@@ -1,10 +1,14 @@
+using System.Collections.Generic;
+
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Assertions;
 
-using rnd = Unity.Mathematics.Random;
+using Orazum.Collections;
 
-public abstract class FigureShuffleState : FigureState
+using rnd = UnityEngine.Random;
+
+public class FigureShuffleState : FigureState
 { 
     private const int FastSteps = 0;
     private const float FastSpeed = 10;
@@ -17,11 +21,10 @@ public abstract class FigureShuffleState : FigureState
     private int2 _shuffleStep;
     private int2 _dims;
 
-    protected int2[][] _shuffleIndices;
+    protected Array2D<int2> _shuffleIndices;
 
     private bool _isShuffleCompleted;
 
-    protected abstract void ShuffleIndices();
     protected virtual bool CustomShuffle(float lerpSpeed, out FigureVerticesMove[] moves)
     {
         moves = null;
@@ -37,10 +40,13 @@ public abstract class FigureShuffleState : FigureState
         _shuffleStep = new int2(0, figureParams.ShuffleStepsAmount);
         _dims = figureParams.FigureGenParamsSO.Dimensions;
 
-        _shuffleIndices = new int2[_dims.y][];
+        _shuffleIndices = new Array2D<int2>(_dims);
         for (int row = 0; row < _dims.y; row++)
         {
-            _shuffleIndices[row] = new int2[_dims.x];
+            for (int col = 0; col < _dims.x; col++)
+            {
+                _shuffleIndices[col, row] = new int2(-1, -1);
+            }
         }
     }
 
@@ -97,12 +103,12 @@ public abstract class FigureShuffleState : FigureState
 
         FigureVerticesMove[] moves = new FigureVerticesMove[_dims.y * _dims.x];
         int moveIndex = 0;
-        for (int ring = 0; ring < _shuffleIndices.Length; ring++)
+        for (int row = 0; row < _shuffleIndices.RowCount; row++)
         {
-            for (int side = 0; side < _shuffleIndices[ring].Length; side++)
+            for (int col = 0; col < _shuffleIndices.ColCount; col++)
             {
-                int2 fromIndex = new int2(side, ring);
-                int2 toIndex = _shuffleIndices[ring][side];
+                int2 fromIndex = new int2(col, row);
+                int2 toIndex = _shuffleIndices[fromIndex];
                 FigureVerticesMove shuffleMove = new FigureVerticesMove();
                 shuffleMove.AssignFromIndex(fromIndex);
                 shuffleMove.AssignToIndex(toIndex);
@@ -113,11 +119,57 @@ public abstract class FigureShuffleState : FigureState
             }
         }
 
+        ResetShuffleIndices();
         _figure.Shuffle(moves, ShuffleCompleteAction);
+    }
+
+    protected virtual void ShuffleIndices()
+    {
+        List<int2> avalableIndices = new List<int2>(_shuffleIndices.ColCount * _shuffleIndices.RowCount);
+        int2 index = new int2(0, 0);
+        for (int i = 0; i < avalableIndices.Capacity; i++)
+        {
+            avalableIndices.Add(index);
+            MoveIndex(ref index);
+        }
+
+        index = int2.zero;
+        for (int i = 0; i < avalableIndices.Capacity; i++)
+        {
+            int rndIndex = rnd.Range(0, avalableIndices.Count);
+            _shuffleIndices[index] = avalableIndices[rndIndex];
+            avalableIndices.RemoveAt(rndIndex);
+            MoveIndex(ref index);
+            Debug.Log(index);
+        }
+    }
+
+    protected void MoveIndex(ref int2 index)
+    {
+        if (index.x + 1 >= _shuffleIndices.ColCount)
+        {
+            index.x = 0;
+            index.y++;
+        }
+        else
+        {
+            index.x++;
+        }
     }
 
     protected void ShuffleCompleteAction()
     {
         _isShuffleCompleted = true;
+    }
+
+    private void ResetShuffleIndices()
+    {
+        for (int row = 0; row < _figure.RowCount; row++)
+        {
+            for (int col = 0; col < _figure.ColCount; col++)
+            {
+                _shuffleIndices[col, row] = new int2(-1, -1);
+            }
+        }
     }
 }

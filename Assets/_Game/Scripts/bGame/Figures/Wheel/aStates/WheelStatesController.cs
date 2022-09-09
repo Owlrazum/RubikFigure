@@ -15,6 +15,6 @@ public class WheelStatesController : FigureStatesController
         }
 
         MoveState = new WheelMoveState(this, wheel, figureParams.MoveLerpSpeed);
-        ShuffleState = new WheelShuffleState(this, wheel, figureParams);
+        ShuffleState = new FigureShuffleState(this, wheel, figureParams);
     }
 }
