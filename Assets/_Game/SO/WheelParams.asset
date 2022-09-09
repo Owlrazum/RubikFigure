@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   FigureGenParamsSO: {fileID: 11400000, guid: 742513ac5ef65499fb371d4f72c536a9, type: 2}
   SelectMethod: 0
-  ShuffleStepsAmount: 10
+  ShuffleStepsAmount: 3
   ShufflePauseTime: 0.3
   ShuffleLerpSpeed: 2
   MoveLerpSpeed: 2.5

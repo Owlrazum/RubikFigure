@@ -62,7 +62,6 @@ public class FigureShuffleState : FigureState
 
     public override void OnEnter()
     {
-        Debug.Log("OnEnter");
         _shuffleTimer.x = _shuffleTimer.y / 1.5f;
         _shuffleStep.x = 0;
     }
@@ -140,7 +139,6 @@ public class FigureShuffleState : FigureState
             _shuffleIndices[index] = avalableIndices[rndIndex];
             avalableIndices.RemoveAt(rndIndex);
             MoveIndex(ref index);
-            Debug.Log(index);
         }
     }
 

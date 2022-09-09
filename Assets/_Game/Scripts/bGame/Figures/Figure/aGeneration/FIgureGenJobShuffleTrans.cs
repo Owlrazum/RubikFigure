@@ -23,7 +23,6 @@ public struct FigureGenJobShuffleTrans : IJobFor
     {
         QuadStrip qs = InputQuadStripsCollection.GetQuadStrip(i / 2);
         int2 indexer = InputQSTransitionsBufferIndexers[i];
-        Debug.Log(indexer);
         QSTS_QuadBuilder shuffleTransBuilder = new QSTS_QuadBuilder();
 
         if (i % 2 == 0)

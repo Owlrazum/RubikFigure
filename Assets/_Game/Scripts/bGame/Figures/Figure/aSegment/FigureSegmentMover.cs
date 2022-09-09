@@ -93,7 +93,6 @@ public abstract class FigureSegmentMover : MonoBehaviour
                 _shouldDispose = true;
                 toDispose = verticesMove.Transition;
             }
-            Debug.Log("Starting vertices move");
             StartCoroutine(MoveSequence(verticesMove));
         }
         else
@@ -107,7 +106,6 @@ public abstract class FigureSegmentMover : MonoBehaviour
         float lerpParam = 0;
         Assert.IsTrue(verticesMove.Transition.IsCreated);
         _animator_QST.AssignTransition(verticesMove.Transition);
-        print(verticesMove.Transition);
         FigureSegmentMoveJob moveJob = new FigureSegmentMoveJob()
         {
             P_ShouldReorientVertices = verticesMove.ShouldReorientVertices,
