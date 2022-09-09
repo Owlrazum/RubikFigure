@@ -80,23 +80,23 @@ public class Wheel : Figure
         int ringDelta = to.y - from.y;
         if (sideDelta > 0)
         {
-            verticesMove.Transition = WheelSegmentTransitions.AntiCW(ref _transitions.GetElementByRef(to));
+            verticesMove.Transition = _transitions.GetElementByRef(to).AntiCW;
             verticesMove.ShouldReorientVertices = true;
         }
 
         if (sideDelta < 0)
         { 
-            verticesMove.Transition = WheelSegmentTransitions.CW(ref _transitions.GetElementByRef(to));
+            verticesMove.Transition = _transitions.GetElementByRef(to).CW;
         }
 
         if (ringDelta > 0)
         { 
-            verticesMove.Transition = WheelSegmentTransitions.Up(ref _transitions.GetElementByRef(to));
+            verticesMove.Transition = _transitions.GetElementByRef(to).Up;
         }
 
         if (ringDelta < 0)
         { 
-            verticesMove.Transition = WheelSegmentTransitions.Down(ref _transitions.GetElementByRef(to));
+            verticesMove.Transition = _transitions.GetElementByRef(to).Down;
         }
     }
 

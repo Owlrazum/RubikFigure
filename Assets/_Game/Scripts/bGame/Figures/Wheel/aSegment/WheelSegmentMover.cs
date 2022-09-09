@@ -8,26 +8,17 @@ public class WheelSegmentMover : FigureSegmentMover
 }
 
 public struct WheelSegmentTransitions
-{ 
-    private QS_Transition up;
-    private QS_Transition down;
-    private QS_Transition cw;
-    private QS_Transition antiCW;
+{
+    public QS_Transition Up;
+    public QS_Transition Down;
+    public QS_Transition CW;
+    public QS_Transition AntiCW;
 
-    public static ref QS_Transition Up(ref WheelSegmentTransitions instance)
+    public override string ToString()
     {
-        return ref instance.up;
-    }
-    public static ref QS_Transition Down(ref WheelSegmentTransitions instance)
-    {
-        return ref instance.down;
-    }
-    public static ref QS_Transition CW(ref WheelSegmentTransitions instance)
-    {
-        return ref instance.cw;
-    }
-    public static ref QS_Transition AntiCW(ref WheelSegmentTransitions instance)
-    {
-        return ref instance.antiCW;
+        return $"WheelSegmentTransitions:\n" + 
+            $"Up: {Up.Length}; Down: {Down.Length}\n" +
+            $"Clockwise: {CW.Length}; AntiClockwise: {AntiCW.Length}"
+        ;
     }
 }

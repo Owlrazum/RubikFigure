@@ -163,10 +163,8 @@ public class WheelGeneratorTransitions : FigureGeneratorTransitions
             for (int ring = 0; ring < _sidesRingsCount.y; ring++)
             { 
                 WheelSegmentTransitions transData = new WheelSegmentTransitions();
-                var up = WheelSegmentTransitions.Up(ref transData);
-                upTransition.GetSubTransition(upIndexer, out up);
-                var down = WheelSegmentTransitions.Down(ref transData);
-                downTransition.GetSubTransition(downIndexer, out down);
+                upTransition.GetSubTransition(upIndexer, out transData.Up);
+                downTransition.GetSubTransition(downIndexer, out transData.Down);
                 
                 MoveBufferIndexer(ref upIndexer, 1);
                 MoveBufferIndexer(ref downIndexer, i == ring - 1 ? 3 : 1);
@@ -187,10 +185,8 @@ public class WheelGeneratorTransitions : FigureGeneratorTransitions
             for (int side = 0; side < _sidesRingsCount.x; side++)
             {
                 WheelSegmentTransitions transData = transitionDatas[side, ringIndexer];
-                var cw = WheelSegmentTransitions.CW(ref transData);
-                cwTransition.GetSubTransition(cwIndexer, out cw);
-                var antiCW = WheelSegmentTransitions.AntiCW(ref transData);
-                antiCWTransition.GetSubTransition(antiCWIndexer, out antiCW);
+                cwTransition.GetSubTransition(cwIndexer, out transData.CW);
+                antiCWTransition.GetSubTransition(antiCWIndexer, out transData.AntiCW);
 
                 MoveBufferIndexer(ref cwIndexer, 2);
                 MoveBufferIndexer(ref antiCWIndexer, 2);

@@ -42,11 +42,11 @@ public class Valknut : Figure
             from.y == 1 && to.y == 1
         )
         {
-            verticesMove.Transition = ValknutSegmentTransitions.Clockwise(ref _transitions.GetElementByRef(to));
+            verticesMove.Transition = _transitions.GetElementByRef(to).CW;
         }
         else
         { 
-            verticesMove.Transition = ValknutSegmentTransitions.AntiClockwise(ref _transitions.GetElementByRef(to));
+            verticesMove.Transition = _transitions.GetElementByRef(to).AntiCW;
         }
     }
 

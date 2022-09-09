@@ -94,8 +94,8 @@ public class ValknutGeneratorTransitions : FigureGeneratorTransitions
             QS_Transition antiClockWiseTransition = _transitionsCollection.GetQSTransition(i + 1);
 
             ValknutSegmentTransitions transData = new ValknutSegmentTransitions();
-            ValknutSegmentTransitions.Clockwise(ref transData) = clockWiseTransition;
-            ValknutSegmentTransitions.AntiClockwise(ref transData) = antiClockWiseTransition;
+            transData.CW = clockWiseTransition;
+            transData.AntiCW = antiClockWiseTransition;
 
             int2 originTargetIndex = _originTargetIndices[i];
             int2 segmentIndex = new int2(originTargetIndex.y / Valknut.PartsCount, originTargetIndex.y % Valknut.PartsCount);
