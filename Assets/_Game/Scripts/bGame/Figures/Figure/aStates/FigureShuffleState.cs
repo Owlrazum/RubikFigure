@@ -60,10 +60,16 @@ public class FigureShuffleState : FigureState
         return null;
     }
 
+     protected void ShuffleCompleteAction()
+    {
+        _isShuffleCompleted = true;
+    }
+
     public override void OnEnter()
     {
         _shuffleTimer.x = _shuffleTimer.y / 1.5f;
         _shuffleStep.x = 0;
+        _isShuffleCompleted = true;
     }
 
     public override void ProcessState()
@@ -71,7 +77,7 @@ public class FigureShuffleState : FigureState
         _shuffleTimer.x += Time.deltaTime;
         if (_shuffleStep.x < FastSteps)
         {
-            if (_shuffleTimer.x >= FastShuffleTime)
+            if (_shuffleTimer.x >= FastShuffleTime && _isShuffleCompleted)
             {
                 _isShuffleCompleted = false;
                 Shuffle(FastSpeed);
@@ -81,7 +87,7 @@ public class FigureShuffleState : FigureState
         }
         else if (_shuffleStep.x < _shuffleStep.y)
         {
-            if (_shuffleTimer.x >= _shuffleTimer.y)
+            if (_shuffleTimer.x >= _shuffleTimer.y && _isShuffleCompleted)
             {
                 _isShuffleCompleted = false;
                 Shuffle(_shuffleLerpSpeed);
@@ -153,11 +159,6 @@ public class FigureShuffleState : FigureState
         {
             index.x++;
         }
-    }
-
-    protected void ShuffleCompleteAction()
-    {
-        _isShuffleCompleted = true;
     }
 
     private void ResetShuffleIndices()

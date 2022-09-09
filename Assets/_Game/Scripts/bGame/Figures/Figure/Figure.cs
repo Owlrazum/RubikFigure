@@ -70,6 +70,7 @@ public abstract class Figure : MonoBehaviour
             if (movedSegment == null)
             {
                 _movedSegmentsBuffer[i] = null;
+                _movesCount.x++;
                 continue;
             }
 
@@ -118,6 +119,7 @@ public abstract class Figure : MonoBehaviour
             if (movedSegment == null)
             {
                 _movedSegmentsBuffer[i] = null;
+                _movesCount.x++;
                 continue;
             }
 
