@@ -9,9 +9,11 @@ using static Orazum.Math.LineSegmentUtilities;
 public struct QS_Transition
 {
     private NativeArray<QST_Segment> _transSegs;
+    private NativeArray<QST_Segment>.ReadOnly _transSegsReadOnly;
     public QS_Transition(NativeArray<QST_Segment> persistentAllocation)
     {
         _transSegs = persistentAllocation;
+        _transSegsReadOnly = persistentAllocation.AsReadOnly();
     }
 
     public int Length { get { return _transSegs.Length; } }
@@ -19,7 +21,7 @@ public struct QS_Transition
     {
         get
         {
-            return _transSegs[index];
+            return _transSegsReadOnly[index];
         }
     }
     public bool IsCreated { get { return _transSegs.IsCreated; } }
@@ -51,8 +53,8 @@ public struct QS_Transition
     }
 
     public static QS_Transition Concatenate(
-        QS_Transition t1, 
-        QS_Transition t2, 
+        QS_Transition t1,
+        QS_Transition t2,
         NativeArray<QST_Segment> buffer
     )
     {

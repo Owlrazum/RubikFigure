@@ -62,6 +62,7 @@ public class WheelGeneratorGameObject : FigureGeneratorGameObject
         NativeArray<float3x2> lineSegments = new NativeArray<float3x2>(_quadStripCollectionData.x, Allocator.Persistent);
         NativeArray<int2> quadStripsIndexers = new NativeArray<int2>(_quadStripCollectionData.y, Allocator.Persistent);
         _quadStripsCollection = new QuadStripsBuffer(lineSegments, quadStripsIndexers);
+        _quadStripsCollection.Dims = _sidesRingsCount;
 
         WheelGenJob wheelMeshGenJob = new WheelGenJob()
         {

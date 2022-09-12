@@ -17,14 +17,14 @@ public struct WheelGenJobTransData : IJobFor
     public QuadStripsBuffer InQuadStripsCollection;
 
     [ReadOnly]
-    public SegmentedBufferInt2 InOriginsTargetsIndices;
+    public SegmentedBufferInt2 InOriginsTargetsIndicesBuffer;
 
-    public QS_TransitionsBuffer OutTransitionsCollection;
+    public QS_TransitionsBuffer OutTransitionsBuffer;
     
     public void Execute(int i)
     {
-        NativeArray<int2> originTargets = InOriginsTargetsIndices.GetBufferSegment(i);
-        NativeArray<QST_Segment> writeBuffer = OutTransitionsCollection.GetBufferSegment(i);
+        NativeArray<int2> originTargets = InOriginsTargetsIndicesBuffer.GetBufferSegment(i);
+        NativeArray<QST_Segment> writeBuffer = OutTransitionsBuffer.GetBufferSegment(i);
 
         WheelTransitionsBuilder transDataBuilder = new WheelTransitionsBuilder(
             P_SideCount,

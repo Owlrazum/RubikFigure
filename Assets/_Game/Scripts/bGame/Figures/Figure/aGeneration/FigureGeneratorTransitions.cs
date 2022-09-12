@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 
 using Unity.Jobs;
@@ -12,8 +13,25 @@ using Orazum.Meshing;
 
 public abstract class FigureGeneratorTransitions : MonoBehaviour
 {
-    protected JobHandle _dataJobHandle;
-    protected QS_TransitionsBuffer _transitionsCollection;
+    protected struct QST_NativeData : IDisposable
+    {
+        public NativeArray<int2> IndexersBuffer;
+        public NativeArray<QST_Segment> SegmentsBuffer;
+        public QS_TransitionsBuffer TransitionsBuffer;
+
+        public void Dispose()
+        {
+            TransitionsBuffer.Dispose();
+        }
+
+        public void DisposeIfNeeded()
+        { 
+            TransitionsBuffer.DisposeIfNeeded();
+        }
+    }
+
+    protected JobHandle _jobHandle;
+    protected QST_NativeData qst_data;
 
     private NativeArray<int2> _fadeInOutTransitionsBufferIndexers;
 
@@ -21,7 +39,6 @@ public abstract class FigureGeneratorTransitions : MonoBehaviour
     {
         StartTransitionsGeneration(quadStripsCollection, dependency);
         StartShuffleTransitionsGeneration(quadStripsCollection);
-
     }
     protected abstract void StartTransitionsGeneration(in QuadStripsBuffer quadStripsCollection, JobHandle dependency);
     
@@ -84,7 +101,7 @@ public abstract class FigureGeneratorTransitions : MonoBehaviour
 
     protected virtual void OnDestroy()
     {
-        _transitionsCollection.DisposeIfNeeded();
+        qst_data.DisposeIfNeeded();
         _shuffleTransitionsCollection.DisposeIfNeeded();
         CollectionUtilities.DisposeIfNeeded(_fadeInOutTransitionsBufferIndexers);
     }

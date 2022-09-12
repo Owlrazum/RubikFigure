@@ -77,6 +77,16 @@ public abstract class FigureMoveState : FigureState
         }
     }
 
+    protected void PrintMovesToMakeIndices()
+    {
+        string log = "";
+        for (int i = 0; i < _movesToMake.Count; i++)
+        {
+            log += $"From: {_movesToMake[i].FromIndex} To {_movesToMake[i].ToIndex}\n";
+        }
+        Debug.Log(log);
+    }
+
     public override string ToString()
     {
         return "MoveState";

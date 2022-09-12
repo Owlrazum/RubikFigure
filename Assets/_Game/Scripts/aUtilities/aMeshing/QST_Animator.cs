@@ -16,7 +16,9 @@ namespace Orazum.Meshing
 {
     public struct QST_Animator
     {
+        [ReadOnly]
         private QS_Transition _transition;
+
         private QuadStripBuilder _quadStripBuilder;
         private float _globalLerpParam;
 
@@ -176,6 +178,7 @@ namespace Orazum.Meshing
             float lerpOffset = lerpParam - radial.LerpLength;
             float lerpDelta = radial.LerpLength / radial.Resolution;
             bool isStripStarted = false;
+            Assert.IsTrue(radial.Resolution > 1);
             for (int i = 0; i < radial.Resolution; i++)
             {
                 lerpOffset += lerpDelta;
@@ -183,14 +186,12 @@ namespace Orazum.Meshing
                 {
                     float3x2 currentSeg = InterpolateRotationLerp(lerpParam, in radial, startSeg);
                     _quadStripBuilder.Add(currentSeg, ref buffersIndexers, ref isStripStarted);
-                    // DrawLineSegmentWithRaysUp(currentSeg, 1, 0.1f);
                     return;
                 }
                 if (lerpOffset > 0)
                 {
-                    float3x2 currentSeg = InterpolateRotationLerp(lerpParam, in radial, startSeg);
+                    float3x2 currentSeg = InterpolateRotationLerp(lerpOffset, in radial, startSeg);
                     _quadStripBuilder.Add(currentSeg, ref buffersIndexers, ref isStripStarted);
-                    // DrawLineSegmentWithRaysUp(currentSeg, 1, 0.1f);
                 }
             }
         }

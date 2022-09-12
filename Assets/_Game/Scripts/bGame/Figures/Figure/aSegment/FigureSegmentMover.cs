@@ -93,6 +93,10 @@ public abstract class FigureSegmentMover : MonoBehaviour
                 _shouldDispose = true;
                 toDispose = verticesMove.Transition;
             }
+            else
+            {
+                _shouldDispose = false;
+            }
             StartCoroutine(MoveSequence(verticesMove));
         }
         else

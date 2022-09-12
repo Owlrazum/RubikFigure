@@ -19,20 +19,21 @@ public class ValknutGeneratorTransitions : FigureGeneratorTransitions
 
     protected override void StartTransitionsGeneration(in QuadStripsBuffer quadStripsCollection, JobHandle dependency)
     { 
-        _originTargetIndices = new NativeArray<int2>(TotalTransitionsCount, Allocator.Persistent);
-        NativeArray<int2> bufferIndexers = new NativeArray<int2>(TotalTransitionsCount, Allocator.Persistent);
-        GenerateDataJobIndexData(originTargetIndices: ref _originTargetIndices, buffersIndexers: ref bufferIndexers);
+        _originTargetIndices = new NativeArray<int2>(TotalTransitionsCount, Allocator.TempJob);
+        qst_data.IndexersBuffer = new NativeArray<int2>(TotalTransitionsCount, Allocator.Persistent);
+        GenerateDataJobIndexData(originTargetIndices: ref _originTargetIndices, buffersIndexers: ref qst_data.IndexersBuffer);
         
-        NativeArray<QST_Segment> writeBuffer = new NativeArray<QST_Segment>(TotalRangesCount, Allocator.Persistent);
-        _transitionsCollection = new QS_TransitionsBuffer(writeBuffer, bufferIndexers);
+        qst_data.SegmentsBuffer = new NativeArray<QST_Segment>(TotalRangesCount, Allocator.Persistent);
+        qst_data.TransitionsBuffer = new QS_TransitionsBuffer(qst_data.SegmentsBuffer, qst_data.IndexersBuffer);
 
         ValknutGenJobTransData transitionDataJob = new ValknutGenJobTransData()
         {
             InQuadStripsCollection = quadStripsCollection,
             InOriginTargetIndices = _originTargetIndices,
-            OutTransitionsCollection = _transitionsCollection
+            OutTransitionsCollection = qst_data.TransitionsBuffer
         };
-        _dataJobHandle = transitionDataJob.ScheduleParallel(TotalTransitionsCount, 32, dependency);
+        _jobHandle = transitionDataJob.ScheduleParallel(TotalTransitionsCount, 32, dependency);
+        
     }
 
     private void GenerateDataJobIndexData(ref NativeArray<int2> originTargetIndices, ref NativeArray<int2> buffersIndexers)
@@ -81,17 +82,17 @@ public class ValknutGeneratorTransitions : FigureGeneratorTransitions
 
     protected override void FinishTransitionsGeneration(Figure figure)
     {
-        _dataJobHandle.Complete();
+        _jobHandle.Complete();
 
         Valknut valknut = figure as Valknut;
         Assert.IsNotNull(valknut);
 
         Array2D<ValknutSegmentTransitions> transitionDatas =
             new Array2D<ValknutSegmentTransitions>(new int2(Valknut.TrianglesCount, Valknut.PartsCount));
-        for (int i = 0; i < _transitionsCollection.TransitionsCount; i += 2)
+        for (int i = 0; i < qst_data.TransitionsBuffer.TransitionsCount; i += 2)
         {
-            QS_Transition clockWiseTransition = _transitionsCollection.GetQSTransition(i);
-            QS_Transition antiClockWiseTransition = _transitionsCollection.GetQSTransition(i + 1);
+            QS_Transition clockWiseTransition = qst_data.TransitionsBuffer.GetQSTransition(i);
+            QS_Transition antiClockWiseTransition = qst_data.TransitionsBuffer.GetQSTransition(i + 1);
 
             ValknutSegmentTransitions transData = new ValknutSegmentTransitions();
             transData.CW = clockWiseTransition;
@@ -103,6 +104,8 @@ public class ValknutGeneratorTransitions : FigureGeneratorTransitions
         }
 
         valknut.AssignTransitionDatas(transitionDatas);
+
+        _originTargetIndices.Dispose();
     }
 
     protected override void OnDestroy()

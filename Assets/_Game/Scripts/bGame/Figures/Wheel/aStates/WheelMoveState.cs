@@ -12,14 +12,14 @@ public class WheelMoveState : FigureMoveState
 {
     private Wheel _wheel;
 
-    public WheelMoveState( WheelStatesController statesController, Wheel wheel, float moveLerpSpeed)
-        : base (statesController, wheel, moveLerpSpeed)
+    public WheelMoveState(WheelStatesController statesController, Wheel wheel, float moveLerpSpeed)
+        : base(statesController, wheel, moveLerpSpeed)
     {
         _wheel = wheel;
         _movesToMake = new List<FigureSegmentMove>(wheel.SideCount);
     }
 
-     protected override List<FigureSegmentMove> DetermineMovesFromInput(Vector3 worldPos, Vector3 worldDir)
+    protected override List<FigureSegmentMove> DetermineMovesFromInput(Vector3 worldPos, Vector3 worldDir)
     {
         _movesToMake.Clear();
         Debug.Log("Determining");
@@ -35,11 +35,11 @@ public class WheelMoveState : FigureMoveState
         }
         else if (swipeAngle > TAU / 12 && swipeAngle < 5 * TAU / 12)
         {
-            return ConstructVerticesMove(_currentSelectedPoint.Index.y, ClockOrderType.CW);
+            return ConstructVerticesMove(_currentSelectedPoint.Index, ClockOrderType.CW);
         }
         else if (swipeAngle > -5 * TAU / 12 && swipeAngle < -TAU / 12)
         {
-            return ConstructVerticesMove(_currentSelectedPoint.Index.y, ClockOrderType.AntiCW);
+            return ConstructVerticesMove(_currentSelectedPoint.Index, ClockOrderType.AntiCW);
         }
         else
         {
@@ -49,36 +49,42 @@ public class WheelMoveState : FigureMoveState
 
     private List<FigureSegmentMove> ConstructVerticesMove(int2 index, VertOrderType vertOrder)
     {
-        if (_wheel.IsOutOfDimsVertOrder(index, vertOrder))
+        int2 originIndex = index;
+        int2 targetIndex = _wheel.MoveIndexVertOrder(originIndex, vertOrder);
+        for (int side = 0; side < _wheel.SideCount; side++)
         {
             FigureVerticesMove verticesMove = new FigureVerticesMove();
-            verticesMove.AssignFromIndex(index);
-            verticesMove.AssignToIndex(_wheel.MoveIndexVertOrder(index, vertOrder));
+            verticesMove.AssignFromIndex(originIndex);
+            verticesMove.AssignToIndex(targetIndex);
             verticesMove.AssignLerpSpeed(_moveLerpSpeed);
             _movesToMake.Add(verticesMove);
-            return _movesToMake;
+
+            originIndex = targetIndex;
+            targetIndex = _wheel.MoveIndexVertOrder(targetIndex, vertOrder);
         }
-        else
-        {
-            return null;
-        }
+
+        PrintMovesToMakeIndices();
+        return _movesToMake;
     }
 
     private List<FigureSegmentMove> ConstructVerticesMove(int2 index, ClockOrderType clockOrder)
     {
-        if (_wheel.IsValidIndexClockOrder(index, clockOrder))
+        int2 originIndex = index;
+        int2 targetIndex = _wheel.MoveIndexInClockOrder(originIndex, clockOrder);
+        for (int side = 0; side < _wheel.SideCount; side++)
         {
             FigureVerticesMove verticesMove = new FigureVerticesMove();
-            verticesMove.AssignFromIndex(index);
-            verticesMove.AssignToIndex(_wheel.MoveIndexInClockOrder(index, clockOrder));
+            verticesMove.AssignFromIndex(originIndex);
+            verticesMove.AssignToIndex(targetIndex);
             verticesMove.AssignLerpSpeed(_moveLerpSpeed);
             _movesToMake.Add(verticesMove);
-            return _movesToMake;
+
+            originIndex = targetIndex;
+            targetIndex = _wheel.MoveIndexInClockOrder(targetIndex, clockOrder);
         }
-        else
-        {
-            return null;
-        }
+
+        PrintMovesToMakeIndices();
+        return _movesToMake;
     }
 
     private void MoveIndexInRotationOrder(ref int2 index, ClockOrderType clockOrder)
