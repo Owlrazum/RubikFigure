@@ -9,26 +9,24 @@ public struct QSTSFD_Radial
     public enum RadialType
     {
         SingleRotationLerp,
-        DoubleRotationLerp,
-        MoveLerpWithMiddle,
-        MoveLerp
+        DoubleRotationLerpDown,
+        DoubleRotationLerpUp,
+        SingleMoveLerpDown, // single means only one quadstrip, therefore use only start seg
+        SingleMoveLerpUp,
+        DoubleMoveLerpDown, // double means two quadstrips are involved, therefore use start and end segs
+        DoubleMoveLerpUp
     }
     public RadialType Type { get; private set; }
-    public VertOrderType VertOrder { get; set; }
-    public ClockOrderType ClockOrder { get; set; }
 
     // negative lerpLength signifies invalid state
-    public QSTSFD_Radial(float lerpLength)
+    public QSTSFD_Radial(float invalidUselessParameter)
     {
-        LerpLength = lerpLength;
+        LerpLength = -1;
 
         Type = RadialType.SingleRotationLerp;
         Points = float3x2.zero;
         AxisAngles = float4x2.zero;
         Resolution = -1;
-
-        VertOrder = VertOrderType.Up;
-        ClockOrder = ClockOrderType.CW;
     }
 
     public QSTSFD_Radial(
@@ -44,9 +42,6 @@ public struct QSTSFD_Radial
 
         LerpLength = lerpLength;
         Resolution = resolution;
-
-        VertOrder = VertOrderType.Up;
-        ClockOrder = ClockOrderType.CW;
     }
 
     public float4x2 AxisAngles { get; private set; }
@@ -59,14 +54,18 @@ public struct QSTSFD_Radial
     {
         get
         {
-            return Type == RadialType.SingleRotationLerp || Type == RadialType.DoubleRotationLerp;
+            return Type == RadialType.SingleRotationLerp || 
+                   Type == RadialType.DoubleRotationLerpDown || 
+                   Type == RadialType.DoubleRotationLerpUp;
         }
     }
+
     public bool IsMoveLerp
     {
         get
         {
-            return Type == RadialType.MoveLerp || Type == RadialType.MoveLerpWithMiddle;
+            return Type == RadialType.SingleMoveLerpDown || Type == RadialType.SingleMoveLerpDown ||
+                   Type == RadialType.DoubleMoveLerpDown || Type == RadialType.DoubleMoveLerpDown;
         }
     }
 

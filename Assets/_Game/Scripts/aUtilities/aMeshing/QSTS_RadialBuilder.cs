@@ -1,9 +1,12 @@
+using System;
+
 using Unity.Mathematics;
 using Unity.Collections;
 
 using UnityEngine.Assertions;
 
 using Orazum.Math;
+using static Orazum.Meshing.QSTS_BuilderUtils;
 using static Orazum.Math.LineSegmentUtilities;
 using static QST_Segment;
 using static QSTSFD_Radial;
@@ -14,227 +17,214 @@ namespace Orazum.Meshing
     public struct QSTS_RadialBuilder
     {
         // SRL: SingleRotationLerp
-        public float4 SRL_AxisAngleCW { get; set; }
-        public float4 SRL_AxisAngleAntiCW { get; set; }
+        public float3x2 Points { get; set; } // the first one is the center of rotation
 
-        public ClockOrderType ClockOrder { get; set; }
-        public VertOrderType VertOrder { get; set; }
-        public int Resolution { get; set; }
+        private float4x2 ConstructAxisAngles;
+        private int _resolution;
+
+        public QSTS_RadialBuilder(float3 rotationAxis, float angleDeltaRad, int resolution)
+        {
+            ConstructAxisAngles = new float4x2(new float4(rotationAxis, angleDeltaRad * resolution), float4.zero);
+            Points = float3x2.zero;
+            _resolution = resolution;
+        }
 
         public void Filled(
             in QuadStrip qs,
-            FillType fillType,
             float2 lerpRange,
+            bool isNew,
             out QST_Segment qsts
         )
         {
-            Assert.IsTrue(fillType == FillType.NewStartToEnd || fillType == FillType.ContinueStartToEnd);
-            GenerateSingleRotationLerp(in qs, fillType, lerpRange, out qsts);
+            PrepareSegment(qs, QSTS_Type.Radial, fillDataLength: 1, out qsts);
+            PrepareRadial(RadialType.SingleRotationLerp, out QSTSFD_Radial radial);
+            FillType fillType = isNew ? FillType.NewStartToEnd : FillType.ContinueStartToEnd;
+            QSTS_FillData fillData = new QSTS_FillData(fillType, lerpRange, in radial);
+            qsts[0] = fillData;
         }
         #region SingleRotationLerp
         public void FillOut_SRL(
             in QuadStrip qs,
-            float2 lerpRange,
-            FillType fillType,
+            in float2 lerpRange,
+            ClockOrderType clockOrder,
             out QST_Segment qsts
-        )
+            )
         {
-            Assert.IsTrue(fillType == FillType.NewToEnd);
-            GenerateSingleRotationLerp(in qs, fillType, lerpRange, out qsts);
+            PrepareSegment(qs, QSTS_Type.Radial, fillDataLength: 1, out qsts);
+            PrepareRadial(RadialType.SingleRotationLerp, out QSTSFD_Radial radial);
+            FillType fillType = clockOrder == ClockOrderType.CW ? FillType.NewToEnd : FillType.NewToStart;
+            QSTS_FillData fillData = new QSTS_FillData(fillType, lerpRange, in radial);
+            qsts[0] = fillData;
         }
 
         public void FillIn_SRL(
             in QuadStrip qs,
-            float2 lerpRange,
-            FillType fillType,
+            in float2 lerpRange,
+            ClockOrderType clockOrder,
             out QST_Segment qsts
-        )
+            )
         {
-            Assert.IsTrue(fillType == FillType.NewFromStart || fillType == FillType.ContinueFromStart);
-            GenerateSingleRotationLerp(in qs, fillType, lerpRange, out qsts);
-        }
-
-        private void GenerateSingleRotationLerp(
-            in QuadStrip qs,
-            FillType fillType,
-            float2 lerpRange,
-            out QST_Segment qsts)
-        {
-            float3x2 startLineSeg = float3x2.zero;
-            switch (ClockOrder)
-            {
-                case ClockOrderType.CW:
-                    startLineSeg = qs[0];
-                    break;
-                case ClockOrderType.AntiCW:
-                    startLineSeg = qs[qs.LineSegmentsCount - 1];
-                    break;
-            }
-
-            qsts = new QST_Segment(startLineSeg, float3x2.zero, 1);
-            qsts.Type = QSTS_Type.Radial;
-            float4x2 axisAngles = new float4x2(
-                ClockOrder == ClockOrderType.CW ? SRL_AxisAngleCW : SRL_AxisAngleAntiCW,
-                float4.zero
-            );
-
-            QSTSFD_Radial radial = new QSTSFD_Radial(
-                RadialType.SingleRotationLerp,
-                in axisAngles,
-                in float3x2.zero,
-                lerpLength: 1,
-                Resolution
-            );
-            radial.VertOrder = VertOrder;
-            radial.ClockOrder = ClockOrder;
-
+            PrepareSegment(qs, QSTS_Type.Radial, fillDataLength: 1, out qsts);
+            PrepareRadial(RadialType.SingleRotationLerp, out QSTSFD_Radial radial);
+            FillType fillType = clockOrder == ClockOrderType.CW ? FillType.NewFromStart : FillType.NewFromEnd;
             QSTS_FillData fillData = new QSTS_FillData(fillType, lerpRange, in radial);
             qsts[0] = fillData;
         }
+
         #endregion
 
         #region DoubleRotationLerp
-        public void GenerateDoubleRotationLerp(
+        public void GenerateLevitaion(
             in QuadStrip origin,
             in QuadStrip target,
             float3 lerpRangeLerpLength,
+            VertOrderType vertOrder,
             out QST_Segment qsts
         )
         {
-            quaternion perp;
-            float3x2 startLineSeg = float3x2.zero;
-            float3x2 endLineSeg = float3x2.zero;
-            if (VertOrder == VertOrderType.Up)
+            float3x2 start, end;
+            RadialType radialType;
+            FillType fillType;
+            switch (vertOrder)
             {
-                startLineSeg = new float3x2(
-                    origin[0][1],
-                    origin[origin.LineSegmentsCount - 1][1]
-                );
-                endLineSeg = new float3x2(
-                    target[0][0],
-                    target[target.LineSegmentsCount - 1][0]
-                );
+                case VertOrderType.Down:
+                    start = new float3x2(
+                        origin[0][0],
+                        origin[origin.LineSegmentsCount - 1][0]
+                    );
 
-                perp = quaternion.AxisAngle(math.up(), -90);
+                    end = new float3x2(
+                        target[0][1],
+                        target[target.LineSegmentsCount - 1][1]
+                    );
+
+                    radialType = RadialType.DoubleRotationLerpDown;
+                    fillType = FillType.NewToEnd;
+                    break;
+                case VertOrderType.Up:
+                    start = new float3x2(
+                        target[0][0],
+                        target[origin.LineSegmentsCount - 1][0]
+                    );
+
+                    end = new float3x2(
+                        origin[0][1],
+                        origin[target.LineSegmentsCount - 1][1]
+                    );
+
+                    radialType = RadialType.DoubleRotationLerpUp;
+                    fillType = FillType.NewToStart;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException("Unknown VertOrderType");
             }
-            else
-            {
-                startLineSeg = new float3x2(
-                    origin[0][0],
-                    origin[origin.LineSegmentsCount - 1][0]
-                );
-                endLineSeg = new float3x2(
-                    target[0][1],
-                    target[target.LineSegmentsCount - 1][1]
-                );
 
-                perp = quaternion.AxisAngle(math.up(), 90);
-            }
+            PrepareSegment(start, end, QSTS_Type.Radial, 1, out qsts);
 
-            qsts = new QST_Segment(startLineSeg, endLineSeg, 1);
-            qsts.Type = QSTS_Type.Radial;
-
+            quaternion perp = quaternion.AxisAngle(math.up(), -90);
             float3x2 startLS = origin[0];
             float3x2 endLS = origin[origin.LineSegmentsCount - 1];
-
             float4x2 axisAngles = new float4x2(
                 new float4(GetDirection(perp, startLS), 180),
                 new float4(GetDirection(perp, endLS), 180)
             );
 
             float3x2 points = new float3x2(
-                GetLineSegmentCenter(startLineSeg[0], endLineSeg[0]),
-                GetLineSegmentCenter(startLineSeg[1], endLineSeg[1])
+                GetLineSegmentCenter(start[0], end[0]),
+                GetLineSegmentCenter(start[1], end[1])
             );
 
             QSTSFD_Radial radial = new QSTSFD_Radial(
-                RadialType.DoubleRotationLerp,
+                radialType,
                 in axisAngles,
                 in points,
                 lerpLength: lerpRangeLerpLength.z,
-                Resolution
+                _resolution
             );
 
-            radial.VertOrder = VertOrderType.Up;
-            radial.ClockOrder = ClockOrderType.CW;
-
-            QSTS_FillData fillData = new QSTS_FillData(FillType.NewStartToEnd, lerpRangeLerpLength.xy, in radial);
+            QSTS_FillData fillData = new QSTS_FillData(fillType, lerpRangeLerpLength.xy, in radial);
             qsts[0] = fillData;
         }
         #endregion
 
         #region MoveLerp
-        public void GenerateMoveLerp(
+        public void GenerateSingleMoveLerp(
             in QuadStrip qs,
             float2 lerpRange,
+            VertOrderType vertOrder,
             out QST_Segment qsts
         )
         {
-            float3x2 startLineSeg = new float3x2(
-                qs[0][0],
-                qs[0][1]
-            );
-            float4x2 axisAngle = new float4x2(
-                SRL_AxisAngleCW,
-                float4.zero
-            );
+            float3x2 start = qs[0];
+            RadialType radialType;
+            FillType fillType;
+            switch (vertOrder)
+            {
+                case VertOrderType.Down:
+                    radialType = RadialType.SingleMoveLerpDown;
+                    fillType = FillType.NewToStart;
+                    break;
+                case VertOrderType.Up:
+                    radialType = RadialType.SingleMoveLerpUp;
+                    fillType = FillType.NewToEnd;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException("Unknown VertOrderType");
+            }
 
-            float3x2 points = float3x2.zero;
-
-            qsts = new QST_Segment(startLineSeg, float3x2.zero, 1);
-            qsts.Type = QSTS_Type.Radial;
-
-            QSTSFD_Radial radial = new QSTSFD_Radial(
-                RadialType.MoveLerp,
-                in axisAngle,
-                in points,
-                1,
-                Resolution
-            );
-            radial.VertOrder = VertOrder;
-            radial.ClockOrder = ClockOrderType.CW;
-
-            QSTS_FillData fillData = new QSTS_FillData(FillType.NewStartToEnd, lerpRange, in radial);
+            PrepareSegment(start, float3x2.zero, QSTS_Type.Radial, fillDataLength: 1, out qsts);
+            PrepareRadial(radialType, out QSTSFD_Radial radial);
+            QSTS_FillData fillData = new QSTS_FillData(fillType, lerpRange, in radial);
             qsts[0] = fillData;
         }
 
-        public void GenerateMoveLerpWithMiddle(
+        public void GenerateDoubleMoveLerp(
             in QuadStrip origin,
             in QuadStrip target,
             float2 lerpRange,
+            VertOrderType vertOrder,
             out QST_Segment qsts
         )
         {
-            float3x2 startLineSeg = new float3x2(
-                origin[0][0],
-                target[0][1]
-            );
-            float3x2 points = new float3x2(
-                float3.zero,
-                origin[0][1]
-            );
+            float3x2 start, end;
+            RadialType radialType;
+            FillType fillType;
+            switch (vertOrder)
+            {
+                case VertOrderType.Down:
+                    start = target[0];
+                    end = origin[0];
 
-            qsts = new QST_Segment(startLineSeg, float3x2.zero, 1);
-            qsts.Type = QSTS_Type.Radial;
+                    radialType = RadialType.DoubleMoveLerpDown;
+                    fillType = FillType.NewToStart;
+                    break;
+                case VertOrderType.Up:
+                    start = origin[0];
+                    end = target[0];
 
-            float4x2 axisAngle = new float4x2(
-                SRL_AxisAngleCW,
-                float4.zero
-            );
+                    radialType = RadialType.DoubleMoveLerpDown;
+                    fillType = FillType.NewToStart;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException("Unknown VertOrderType");
+            }
+            PrepareSegment(start, end, QSTS_Type.Radial, fillDataLength: 1, out qsts);
+            PrepareRadial(radialType, out QSTSFD_Radial radial);
 
-            QSTSFD_Radial radial = new QSTSFD_Radial(
-                RadialType.MoveLerpWithMiddle,
-                in axisAngle,
-                in points,
-                lerpLength: 1,
-                Resolution
-            );
-            radial.VertOrder = VertOrder;
-            radial.ClockOrder = ClockOrderType.CW;
-
-            QSTS_FillData fillData = new QSTS_FillData(FillType.NewStartToEnd, lerpRange, in radial);
+            QSTS_FillData fillData = new QSTS_FillData(fillType, lerpRange, in radial);
             qsts[0] = fillData;
         }
         #endregion
+
+        private void PrepareRadial(RadialType radialType, out QSTSFD_Radial radial)
+        {
+            radial = new QSTSFD_Radial(
+                radialType,
+                ConstructAxisAngles,
+                Points,
+                lerpLength: 1,
+                _resolution
+            );
+        }
     }
 }

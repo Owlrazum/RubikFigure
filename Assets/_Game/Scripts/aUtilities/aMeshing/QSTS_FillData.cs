@@ -7,10 +7,11 @@ public struct QSTS_FillData
     {
         NewStartToEnd,
         NewFromStart,
+        NewFromEnd,
+        NewToStart,
         NewToEnd,
         ContinueStartToEnd,
-        ContinueFromStart,
-        ContinueToEnd
+        ContinueFromStart
     }
     public FillType Fill { get; private set; }
     public float2 LerpRange { get; set; }

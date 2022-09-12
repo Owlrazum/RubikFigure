@@ -17,7 +17,7 @@ public struct QST_Segment
     private QSTS_FillData _f2;
     private QSTS_FillData _f3;
 
-    public QST_Segment(float3x2 startLineSegment, float3x2 endLineSegment, int fillDataLength)
+    public QST_Segment(in float3x2 startLineSegment, in float3x2 endLineSegment, int fillDataLength)
     {
         Type = QSTS_Type.Quad;
 

@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.Assertions;
 
 using Orazum.Math;
+using Orazum.Collections;
 
 using static Orazum.Math.LineSegmentUtilities;
 using static Orazum.Math.MathUtils;
@@ -65,27 +66,21 @@ namespace Orazum.Meshing
         {
             if (_globalLerpParam >= fillData.LerpRange.x && _globalLerpParam <= fillData.LerpRange.y)
             {
-                float3x4 startEndLineSegs = new float3x4(
-                    segment.StartLineSegment[0],
-                    segment.StartLineSegment[1],
-                    segment.EndLineSegment[0],
-                    segment.EndLineSegment[1]
-                );
-
                 if (segment.Type == QSTS_Type.Quad)
                 {
                     ConstructWithQuadType(
                         in fillData,
-                        in startEndLineSegs,
+                        segment.StartLineSegment,
+                        segment.EndLineSegment,
                         ref buffersIndexers
                     );
                 }
                 else if (segment.Type == QSTS_Type.Radial)
                 {
-                    float3x2 startSeg = new float3x2(startEndLineSegs[0], startEndLineSegs[1]);
                     ConstructWithRadialType(
                         in fillData,
-                        in startSeg,
+                        segment.StartLineSegment,
+                        segment.EndLineSegment,
                         ref buffersIndexers
                     );
                 }
@@ -98,54 +93,26 @@ namespace Orazum.Meshing
 
         private void ConstructWithQuadType(
             in QSTS_FillData fillData,
-            in float3x4 startEndLineSegs,
+            float3x2 start,
+            float3x2 end,
             ref MeshBuffersIndexers buffersIndexers)
         {
             FillType fillType = fillData.Fill;
             float2 lerpRange = fillData.LerpRange;
-            float3x2 start = new float3x2(startEndLineSegs[0], startEndLineSegs[1]);
-            float3x2 end = new float3x2(startEndLineSegs[2], startEndLineSegs[3]);
 
-            if (fillType == FillType.NewStartToEnd ||
-                fillType == FillType.ContinueStartToEnd)
-            {
-                if (fillType == FillType.NewStartToEnd)
-                {
-                    _quadStripBuilder.Start(start, ref buffersIndexers);
-                }
-                _quadStripBuilder.Continue(end, ref buffersIndexers);
-            }
-            else
-            {
-                float localLerpParam = math.unlerp(lerpRange.x, lerpRange.y, _globalLerpParam);
-                float3x2 middle = new float3x2(
-                    math.lerp(start[0], end[0], localLerpParam),
-                    math.lerp(start[1], end[1], localLerpParam)
-                );
-                if (fillType == FillType.NewFromStart)
-                {
-                    _quadStripBuilder.Start(start, ref buffersIndexers);
-                    _quadStripBuilder.Continue(middle, ref buffersIndexers);
-                }
-                else if (fillType == FillType.NewToEnd)
-                {
-                    _quadStripBuilder.Start(middle, ref buffersIndexers);
-                    _quadStripBuilder.Continue(end, ref buffersIndexers);
-                }
-                else if (fillType == FillType.ContinueFromStart)
-                {
-                    _quadStripBuilder.Continue(middle, ref buffersIndexers);
-                }
-                else
-                {
-                    throw new System.ArgumentOutOfRangeException("Unknown QSTransSegment.ConstructType");
-                }
-            }
+            float localLerpParam = math.unlerp(lerpRange.x, lerpRange.y, _globalLerpParam);
+            float3x2 middle = new float3x2(
+                math.lerp(start[0], end[0], localLerpParam),
+                math.lerp(start[1], end[1], localLerpParam)
+            );
+
+            FillBasedOnFillType(fillType, start, end, middle, ref buffersIndexers);
         }
 
         private void ConstructWithRadialType(
             in QSTS_FillData fillData,
-            in float3x2 startSeg,
+            float3x2 start,
+            float3x2 end,
             ref MeshBuffersIndexers buffersIndexers
         )
         {
@@ -160,50 +127,72 @@ namespace Orazum.Meshing
 
             if (radial.IsRotationLerp)
             {
-                ConstructRotationLerp(in radial, in startSeg, ref buffersIndexers, lerpParam);
+                ConstructRotationLerp(fillData, start, end, ref buffersIndexers, lerpParam);
             }
             else if (radial.IsMoveLerp)
             {
-                ConstructMoveLerp(lerpParam, in radial, in startSeg, ref buffersIndexers);
+                ConstructMoveLerp(lerpParam, in radial, in start, ref buffersIndexers);
             }
         }
 
         private void ConstructRotationLerp(
-            in QSTSFD_Radial radial,
-            in float3x2 startSeg,
+            in QSTS_FillData fillData,
+            in float3x2 start,
+            in float3x2 end,
             ref MeshBuffersIndexers buffersIndexers,
             float lerpParam
         )
         {
+            QSTSFD_Radial radial = fillData.Radial;
             float lerpOffset = lerpParam - radial.LerpLength;
             float lerpDelta = radial.LerpLength / radial.Resolution;
-            bool isStripStarted = false;
+
             Assert.IsTrue(radial.Resolution > 1);
+            int maxMiddlesCount = 0;
+            if (lerpOffset < 0)
+            {
+                float lerpAmount = lerpOffset + radial.LerpLength;
+                maxMiddlesCount = (int)(lerpAmount / lerpDelta + 1);
+                Debug.Log($"{lerpAmount:F2} {lerpAmount / lerpDelta + 1:F2} {maxMiddlesCount}");
+            }
+            else
+            {
+                maxMiddlesCount = radial.Resolution;
+            }
+
+            NativeList<float3x2> middles = new NativeList<float3x2>(maxMiddlesCount, Allocator.Temp);
             for (int i = 0; i < radial.Resolution; i++)
             {
                 lerpOffset += lerpDelta;
                 if (lerpOffset > lerpParam)
                 {
-                    float3x2 currentSeg = InterpolateRotationLerp(lerpParam, in radial, startSeg);
-                    _quadStripBuilder.Add(currentSeg, ref buffersIndexers, ref isStripStarted);
-                    return;
+                    if (lerpParam != 1)
+                    { 
+                        float3x2 currentSeg = InterpolateRotationLerp(lerpParam, in radial, start);
+                        middles.Add(currentSeg);
+                    }
+                    break;
                 }
                 if (lerpOffset > 0)
                 {
-                    float3x2 currentSeg = InterpolateRotationLerp(lerpOffset, in radial, startSeg);
-                    _quadStripBuilder.Add(currentSeg, ref buffersIndexers, ref isStripStarted);
+                    float3x2 currentSeg = InterpolateRotationLerp(lerpOffset, in radial, start);
+                    middles.Add(currentSeg);
                 }
             }
+            Debug.Log("c " + middles.Count);
+
+            FillBasedOnFillType(fillData.Fill, start, end, middles, ref buffersIndexers);
         }
 
         private float3x2 InterpolateRotationLerp(float lerpParam, in QSTSFD_Radial radial, in float3x2 startSeg)
         {
-            Assert.IsTrue(radial.Type == RadialType.SingleRotationLerp || radial.Type == RadialType.DoubleRotationLerp);
+            Assert.IsTrue(radial.IsRotationLerp);
             switch (radial.Type)
             {
                 case RadialType.SingleRotationLerp:
                     return RotateWithLerp(lerpParam, radial.AxisAngles[0], radial.Points[0], startSeg);
-                case RadialType.DoubleRotationLerp:
+                case RadialType.DoubleRotationLerpDown:
+                    lerpParam = 1 - lerpParam;
                     float2 rotAngles = new float2(
                         radial.AxisAngles[0].w * lerpParam,
                         radial.AxisAngles[1].w * lerpParam
@@ -213,6 +202,17 @@ namespace Orazum.Meshing
                     quaternion q2 = quaternion.AxisAngle(radial.AxisAngles[1].xyz, rotAngles[1]);
 
                     float3x2 doubleCenters = new float3x2(radial.Points[0], radial.Points[1]);
+                    return RotateLineSegmentAround(q1, q2, doubleCenters, startSeg);
+                case RadialType.DoubleRotationLerpUp:
+                    rotAngles = new float2(
+                        radial.AxisAngles[0].w * lerpParam,
+                        radial.AxisAngles[1].w * lerpParam
+                    );
+
+                    q1 = quaternion.AxisAngle(radial.AxisAngles[0].xyz, rotAngles[0]);
+                    q2 = quaternion.AxisAngle(radial.AxisAngles[1].xyz, rotAngles[1]);
+
+                    doubleCenters = new float3x2(radial.Points[0], radial.Points[1]);
                     return RotateLineSegmentAround(q1, q2, doubleCenters, startSeg);
             }
 
@@ -242,49 +242,49 @@ namespace Orazum.Meshing
         private float3x2 InterpolateStartSegMoveLerp(float lerpParam, in QSTSFD_Radial radial, in float3x2 startSeg)
         {
             // clockOrder is assumed as clockwise
-            float3x2 toReturn;
-            switch (radial.Type)
-            {
-                case RadialType.MoveLerp:
-                    float3 lerped = math.lerp(startSeg[0], startSeg[1], lerpParam);
-                    switch (radial.VertOrder)
-                    {
-                        case VertOrderType.Up:
-                            toReturn = new float3x2(
-                                lerped,
-                                startSeg[1]
-                            );
-                            return toReturn;
-                        case VertOrderType.Down:
-                            toReturn = new float3x2(
-                                startSeg[0],
-                                lerped
-                            );
-                            return toReturn;
-                    }
-                    break;
-                case RadialType.MoveLerpWithMiddle:
-                    float3 middle = radial.Points[1];
-                    float3 start, end;
-                    switch (radial.VertOrder)
-                    {
-                        case VertOrderType.Up:
-                            start = math.lerp(startSeg[0], middle, lerpParam);
-                            end = math.lerp(middle, startSeg[1], lerpParam);
-                            break;
-                        case VertOrderType.Down:
-                            start = math.lerp(middle, startSeg[0], lerpParam);
-                            end = math.lerp(startSeg[1], middle, lerpParam);
-                            break;
-                        default:
-                            throw new System.ArgumentOutOfRangeException("Unknown VertOrderType");
-                    }
-                    toReturn = new float3x2(
-                        start,
-                        end
-                    );
-                    break;
-            }
+            // float3x2 toReturn;
+            // switch (radial.Type)
+            // {
+            //     case RadialType.MoveLerp:
+            //         float3 lerped = math.lerp(startSeg[0], startSeg[1], lerpParam);
+            //         switch (radial.VertOrder)
+            //         {
+            //             case VertOrderType.Up:
+            //                 toReturn = new float3x2(
+            //                     lerped,
+            //                     startSeg[1]
+            //                 );
+            //                 return toReturn;
+            //             case VertOrderType.Down:
+            //                 toReturn = new float3x2(
+            //                     startSeg[0],
+            //                     lerped
+            //                 );
+            //                 return toReturn;
+            //         }
+            //         break;
+            //     case RadialType.MoveLerpWithMiddle:
+            //         float3 middle = radial.Points[1];
+            //         float3 start, end;
+            //         switch (radial.VertOrder)
+            //         {
+            //             case VertOrderType.Up:
+            //                 start = math.lerp(startSeg[0], middle, lerpParam);
+            //                 end = math.lerp(middle, startSeg[1], lerpParam);
+            //                 break;
+            //             case VertOrderType.Down:
+            //                 start = math.lerp(middle, startSeg[0], lerpParam);
+            //                 end = math.lerp(startSeg[1], middle, lerpParam);
+            //                 break;
+            //             default:
+            //                 throw new System.ArgumentOutOfRangeException("Unknown VertOrderType");
+            //         }
+            //         toReturn = new float3x2(
+            //             start,
+            //             end
+            //         );
+            //         break;
+            // }
 
             throw new System.ArgumentOutOfRangeException("Unknown RadialType of VertOrderType");
         }
@@ -294,6 +294,95 @@ namespace Orazum.Meshing
             float rotAngle = axisAngle.w * lerpParam;
             quaternion q = quaternion.AxisAngle(axisAngle.xyz, rotAngle);
             return RotateLineSegmentAround(q, center, startSeg);
+        }
+
+        private void FillBasedOnFillType(
+            FillType fillType,
+            in float3x2 start,
+            in float3x2 end,
+            in float3x2 middle,
+            ref MeshBuffersIndexers buffersIndexers)
+        {
+            if (fillType == FillType.NewStartToEnd ||
+                fillType == FillType.ContinueStartToEnd)
+            {
+                if (fillType == FillType.NewStartToEnd)
+                {
+                    _quadStripBuilder.Start(start, ref buffersIndexers);
+                }
+                _quadStripBuilder.Continue(end, ref buffersIndexers);
+            }
+            else
+            {
+                if (fillType == FillType.NewFromStart)
+                {
+                    _quadStripBuilder.Start(start, ref buffersIndexers);
+                    _quadStripBuilder.Continue(middle, ref buffersIndexers);
+                }
+                else if (fillType == FillType.NewToEnd)
+                {
+                    _quadStripBuilder.Start(middle, ref buffersIndexers);
+                    _quadStripBuilder.Continue(end, ref buffersIndexers);
+                }
+                else if (fillType == FillType.ContinueFromStart)
+                {
+                    _quadStripBuilder.Continue(middle, ref buffersIndexers);
+                }
+                else
+                {
+                    throw new System.ArgumentOutOfRangeException("Unknown QSTransSegment.FillType");
+                }
+            }
+        }
+
+        private void FillBasedOnFillType(
+            FillType fillType,
+            in float3x2 start,
+            in float3x2 end,
+            in NativeList<float3x2> middles,
+            ref MeshBuffersIndexers buffersIndexers
+        )
+        { 
+            if (fillType == FillType.NewStartToEnd ||
+                fillType == FillType.ContinueStartToEnd)
+            {
+                if (fillType == FillType.NewStartToEnd)
+                {
+                    _quadStripBuilder.Start(start, ref buffersIndexers);
+                }
+                _quadStripBuilder.Continue(end, ref buffersIndexers);
+            }
+            else
+            {
+                if (fillType == FillType.NewFromStart)
+                {
+                    _quadStripBuilder.Start(start, ref buffersIndexers);
+                    for (int i = 0; i < middles.Count; i++)
+                    {
+                        _quadStripBuilder.Continue(middles[i], ref buffersIndexers);
+                    }
+                }
+                else if (fillType == FillType.NewToEnd)
+                {
+                    _quadStripBuilder.Start(middles[0], ref buffersIndexers);
+                    for (int i = 1; i < middles.Count; i++)
+                    {
+                        _quadStripBuilder.Continue(middles[i], ref buffersIndexers);
+                    }
+                    _quadStripBuilder.Continue(end, ref buffersIndexers);
+                }
+                else if (fillType == FillType.ContinueFromStart)
+                {
+                    for (int i = 0; i < middles.Count; i++)
+                    { 
+                        _quadStripBuilder.Continue(middles[i], ref buffersIndexers);
+                    }
+                }
+                else
+                {
+                    throw new System.ArgumentOutOfRangeException("Unknown QSTransSegment.FillType");
+                }
+            }          
         }
     }
 }
