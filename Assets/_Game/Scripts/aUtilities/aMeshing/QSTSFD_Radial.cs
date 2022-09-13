@@ -8,13 +8,10 @@ public struct QSTSFD_Radial
     // CQ: continue quad
     public enum RadialType
     {
-        SingleRotationLerp,
-        DoubleRotationLerpDown,
-        DoubleRotationLerpUp,
-        SingleMoveLerpDown, // single means only one quadstrip, therefore use only start seg
-        SingleMoveLerpUp,
-        DoubleMoveLerpDown, // double means two quadstrips are involved, therefore use start and end segs
-        DoubleMoveLerpUp
+        SingleRotation,
+        DoubleRotation,
+        SingleMove, // single means only one quadstrip, therefore use only start seg
+        DoubleMove, // double means two quadstrips are involved, therefore use start and end segs
     }
     public RadialType Type { get; private set; }
 
@@ -23,7 +20,7 @@ public struct QSTSFD_Radial
     {
         LerpLength = -1;
 
-        Type = RadialType.SingleRotationLerp;
+        Type = RadialType.SingleRotation;
         Points = float3x2.zero;
         AxisAngles = float4x2.zero;
         Resolution = -1;
@@ -54,9 +51,8 @@ public struct QSTSFD_Radial
     {
         get
         {
-            return Type == RadialType.SingleRotationLerp || 
-                   Type == RadialType.DoubleRotationLerpDown || 
-                   Type == RadialType.DoubleRotationLerpUp;
+            return Type == RadialType.SingleRotation ||
+                   Type == RadialType.DoubleRotation;
         }
     }
 
@@ -64,8 +60,8 @@ public struct QSTSFD_Radial
     {
         get
         {
-            return Type == RadialType.SingleMoveLerpDown || Type == RadialType.SingleMoveLerpDown ||
-                   Type == RadialType.DoubleMoveLerpDown || Type == RadialType.DoubleMoveLerpDown;
+            return Type == RadialType.SingleMove || Type == RadialType.SingleMove ||
+                   Type == RadialType.DoubleMove || Type == RadialType.DoubleMove;
         }
     }
 

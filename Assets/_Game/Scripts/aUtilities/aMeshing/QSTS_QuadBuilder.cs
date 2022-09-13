@@ -22,7 +22,7 @@ namespace Orazum.Meshing
 
             float stripLength = qs.ComputeSingleLength();
             float2 lerpOffsets = float2.zero;
-            writeBuffer[builderIndexer++] = BuildFirstFadeOutTransSeg(in qs, stripLength, ref lerpOffsets); 
+            writeBuffer[builderIndexer++] = BuildFirstFadeOutTransSeg(in qs, stripLength, ref lerpOffsets);
             for (int i = 1; i < qs.QuadsCount; i++)
             {
                 writeBuffer[builderIndexer++] = BuildUsualFadeOutTransSeg(qs, i, stripLength, ref lerpOffsets);
@@ -50,7 +50,7 @@ namespace Orazum.Meshing
         {
             QST_Segment firstFadeOut = new QST_Segment(qs[0], qs[1], 1);
             firstFadeOut.Type = QSTS_Type.Quad;
-            
+
             float lengthRatio = DistanceLineSegment(qs[0][0], qs[1][0]) / stripLength;
             MoveLerpOffsets(ref lerpOffsets, lengthRatio);
 
@@ -69,7 +69,7 @@ namespace Orazum.Meshing
 
             fadeOutSeg[0] = Filled(new float2(0, lerpOffsets.x), isNewQuad: false);
             fadeOutSeg[1] = FillOut(lerpOffsets);
-            
+
             return fadeOutSeg;
         }
 
@@ -105,21 +105,21 @@ namespace Orazum.Meshing
         #endregion
         private QSTS_FillData FillOut(in float2 lerpRange)
         {
-            QSTS_FillData fillOut = new QSTS_FillData(FillType.NewToEnd, lerpRange);
+            QSTS_FillData fillOut = new QSTS_FillData(ConstructType.New, FillType.ToEnd, lerpRange);
             return fillOut;
         }
 
         private QSTS_FillData FillIn(in float2 lerpRange, bool isNewQuad)
-        { 
-            FillType fillType = isNewQuad ? FillType.NewFromStart : FillType.ContinueFromStart;
-            QSTS_FillData fillIn = new QSTS_FillData(fillType, lerpRange);
+        {
+            ConstructType constructType = isNewQuad ? ConstructType.New : ConstructType.Continue;
+            QSTS_FillData fillIn = new QSTS_FillData(constructType, FillType.FromStart, lerpRange);
             return fillIn;
         }
 
         private QSTS_FillData Filled(in float2 lerpRange, bool isNewQuad)
         {
-            FillType fillType = isNewQuad ? FillType.NewStartToEnd : FillType.ContinueStartToEnd;
-            QSTS_FillData filledData = new QSTS_FillData(fillType, lerpRange);
+            ConstructType constructType = isNewQuad ? ConstructType.New : ConstructType.Continue;
+            QSTS_FillData filledData = new QSTS_FillData(constructType, FillType.StartToEnd, lerpRange);
             return filledData;
         }
 

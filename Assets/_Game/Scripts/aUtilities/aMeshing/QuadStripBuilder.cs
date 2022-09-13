@@ -25,7 +25,7 @@ namespace Orazum.Meshing
         {
             for (int i = 0; i < bufferLength; i += 2)
             {
-                CollectionUtilities.Swap(ref _vertices, i, i + 1);
+                _vertices.Swap(i, i + 1);
             }   
         }
 

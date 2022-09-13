@@ -39,9 +39,9 @@ public struct WheelTransitionsBuilder
             QuadStrip origin = quadStrips.GetQuadStrip(originTarget.x);
             QuadStrip target = quadStrips.GetQuadStrip(originTarget.y);
 
-            _radialBuilder.FillOut_SRL(in origin, WholeLerpRange, clockOrder, out QST_Segment qsts);
+            _radialBuilder.FillOut_SRL(in origin, WholeLerpRange, isNew: true, clockOrder, out QST_Segment qsts);
             writeBuffer[QSTS_indexer++] = qsts;
-            _radialBuilder.FillIn_SRL(in target, WholeLerpRange, clockOrder, out qsts);
+            _radialBuilder.FillIn_SRL(in target, WholeLerpRange, isNew: true, clockOrder, out qsts);
             writeBuffer[QSTS_indexer++] = qsts;
         }
     }
@@ -64,9 +64,9 @@ public struct WheelTransitionsBuilder
             if (i == 0 && vertOrder == VertOrderType.Down)
             {
                 float3 lerpPoints = GetLerpPointsForLevitation(origin, target, vertOrder);
-                _radialBuilder.GenerateSingleMoveLerp(origin, new float2(0, lerpPoints.x), vertOrder, out QST_Segment s1);
-                _radialBuilder.GenerateLevitaion(in origin, in target, lerpPoints, vertOrder, out QST_Segment s2);
-                _radialBuilder.GenerateSingleMoveLerp(target, new float2(lerpPoints.y, 1), vertOrder, out QST_Segment s3);
+                _radialBuilder.GenerateSingleMoveLerp(origin, new float2(0, lerpPoints.x), isNew: true, vertOrder, out QST_Segment s1);
+                _radialBuilder.GenerateLevitaion        (in origin, in target, lerpPoints, isNew: true, vertOrder, out QST_Segment s2);
+                _radialBuilder.GenerateSingleMoveLerp(target, new float2(lerpPoints.y, 1), isNew: true, vertOrder, out QST_Segment s3);
                 writeBuffer[QSTS_indexer++] = s1;
                 writeBuffer[QSTS_indexer++] = s2;
                 writeBuffer[QSTS_indexer++] = s3;
@@ -74,16 +74,16 @@ public struct WheelTransitionsBuilder
             else if (i == originsTargets.Length - 1 && vertOrder == VertOrderType.Up)
             {
                 float3 lerpPoints = GetLerpPointsForLevitation(origin, target, vertOrder);
-                _radialBuilder.GenerateSingleMoveLerp(origin, new float2(0, lerpPoints.x), vertOrder, out QST_Segment s1);
-                _radialBuilder.GenerateLevitaion(in origin, in target, lerpPoints, vertOrder, out QST_Segment s2);
-                _radialBuilder.GenerateSingleMoveLerp(target, new float2(lerpPoints.y, 1), vertOrder, out QST_Segment s3);
+                _radialBuilder.GenerateSingleMoveLerp(origin, new float2(0, lerpPoints.x), isNew: true, vertOrder, out QST_Segment s1);
+                _radialBuilder.GenerateLevitaion        (in origin, in target, lerpPoints, isNew: true, vertOrder, out QST_Segment s2);
+                _radialBuilder.GenerateSingleMoveLerp(target, new float2(lerpPoints.y, 1), isNew: true, vertOrder, out QST_Segment s3);
                 writeBuffer[QSTS_indexer++] = s1;
                 writeBuffer[QSTS_indexer++] = s2;
                 writeBuffer[QSTS_indexer++] = s3;
             }
             else
             {
-                _radialBuilder.GenerateDoubleMoveLerp(in origin, in target, WholeLerpRange, vertOrder, out QST_Segment qsts);
+                _radialBuilder.GenerateDoubleMoveLerp(in origin, in target, WholeLerpRange, isNew: true, vertOrder, out QST_Segment qsts);
                 writeBuffer[QSTS_indexer++] = qsts;
             }
         }

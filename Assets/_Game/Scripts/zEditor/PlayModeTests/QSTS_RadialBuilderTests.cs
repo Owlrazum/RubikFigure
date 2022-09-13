@@ -68,10 +68,10 @@ public class QSTS_RadialBuilderTests
         QSTS_RadialBuilder radialBuilder = new QSTS_RadialBuilder();
         radialBuilder = new QSTS_RadialBuilder(math.up(), angleRad, resolution);
 
-        radialBuilder.FillIn_SRL(qs, new float2(0, 1), ClockOrderType.CW, out QST_Segment qsts);
+        radialBuilder.FillIn_SRL(qs, new float2(0, 1), isNew: true, ClockOrderType.CW, out QST_Segment qsts);
         data.CW[0] = qsts;
 
-        radialBuilder.FillOut_SRL(qs, new float2(0, 1), ClockOrderType.CW, out qsts);
+        radialBuilder.FillOut_SRL(qs, new float2(0, 1), isNew: true, ClockOrderType.CW, out qsts);
         data.AntiCW[0] = qsts;
 
         QS_Transition fadeInTransition = new QS_Transition(data.CW);

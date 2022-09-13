@@ -232,7 +232,8 @@ public struct ValknutTransitionsBuilder
                 QST_Segment firstSegment = new QST_Segment(x0z(startLineSeg), x0z(endLineSeg), fillDataLength: 1);
                 firstSegment.Type = QSTS_Type.Quad;
                 QSTS_FillData fillOutState = new QSTS_FillData(
-                    FillType.NewToEnd,
+                    ConstructType.New,
+                    FillType.ToEnd,
                     new float2(0, dr.y)
                 );
                 firstSegment[0] = fillOutState;
@@ -242,12 +243,14 @@ public struct ValknutTransitionsBuilder
             {
                 QST_Segment segment = new QST_Segment(x0z(startLineSeg), x0z(endLineSeg), fillDataLength: 2);
                 QSTS_FillData filledState = new QSTS_FillData(
-                    FillType.ContinueStartToEnd,
+                    ConstructType.Continue,
+                    FillType.StartToEnd,
                     new float2(0, dr.x)
                 );
 
                 QSTS_FillData fillingOutState = new QSTS_FillData(
-                    FillType.NewToEnd,
+                    ConstructType.New,
+                    FillType.ToEnd,
                     new float2(dr.x, dr.y)
                 );
 
@@ -268,12 +271,14 @@ public struct ValknutTransitionsBuilder
         float2x2 lastEndLineSeg = new float2x2(lastStartEndSeg[2], lastStartEndSeg[3]);
         lastFillOutSegment = new QST_Segment(x0z(lastStartLineSeg), x0z(lastEndLineSeg), 3);
         QSTS_FillData lastSegFilledState = new QSTS_FillData(
-            FillType.ContinueStartToEnd,            
+            ConstructType.Continue,
+            FillType.StartToEnd,            
             new float2(0, dr.x)
         );
 
         QSTS_FillData lastSegFillingOutState = new QSTS_FillData(
-            FillType.NewToEnd,
+            ConstructType.New,
+            FillType.ToEnd,
             new float2(dr.x, 1)
         );
 
@@ -286,7 +291,8 @@ public struct ValknutTransitionsBuilder
     {
         float lerpOffset = _emptyZoneLength / inFillTotalDistance;
         QSTS_FillData firstSegFillInData = new QSTS_FillData(
-            FillType.ContinueFromStart,
+            ConstructType.Continue,
+            FillType.FromStart,
             new float2(0, lerpOffset)
         );
         lastFillOutSegment[0] = firstSegFillInData;
@@ -308,12 +314,14 @@ public struct ValknutTransitionsBuilder
             {
                 QST_Segment firstFillInSegment = new QST_Segment(x0z(startLineSeg), x0z(endLineSeg), fillDataLength: 2);
                 QSTS_FillData fillInState = new QSTS_FillData(
-                    FillType.NewFromStart,
+                    ConstructType.Continue,
+                    FillType.FromStart,
                     new float2(dr.x, dr.y)
                 );
 
                 QSTS_FillData filledState = new QSTS_FillData(
-                    FillType.NewStartToEnd,
+                    ConstructType.New,
+                    FillType.StartToEnd,
                     new float2(dr.y, 1)
                 );
 
@@ -326,11 +334,13 @@ public struct ValknutTransitionsBuilder
             {
                 QST_Segment segment = new QST_Segment(x0z(startLineSeg), x0z(endLineSeg), fillDataLength: 2);
                 QSTS_FillData fillInState = new QSTS_FillData(
-                    FillType.ContinueFromStart,
+                    ConstructType.Continue,
+                    FillType.FromStart,
                     new float2(dr.x, dr.y)
                 );
                 QSTS_FillData filledState = new QSTS_FillData(
-                    FillType.NewStartToEnd,
+                    ConstructType.New,
+                    FillType.StartToEnd,
                     new float2(dr.y, 1)
                 );
                 segment[0] = fillInState;
@@ -341,7 +351,8 @@ public struct ValknutTransitionsBuilder
             {
                 QST_Segment lastFillInSegment = new QST_Segment(x0z(startLineSeg), x0z(endLineSeg), fillDataLength: 1);
                 QSTS_FillData fillInState = new QSTS_FillData(
-                    FillType.ContinueFromStart,
+                    ConstructType.Continue,
+                    FillType.FromStart,
                     new float2(dr.x, 1)
                 );
                 lastFillInSegment[0] = fillInState;

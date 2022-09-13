@@ -22,9 +22,7 @@ namespace Orazum.Collections
             int end = array.Length - 1;
             for (int i = 0; i < array.Length; i++)
             {
-                T element = array[start];
-                array[start] = array[end];
-                array[end] = element;
+                array.Swap(start, end);
                 start++;
                 end--;
                 if (start >= end)
@@ -34,7 +32,23 @@ namespace Orazum.Collections
             }
         }
 
-        public static void DisposeIfNeeded<T>(NativeArray<T> array) where T : struct
+        public static void ReverseNativeList<T>(in NativeList<T> list) where T : struct
+        {
+            int start = 0;
+            int end = list.Count - 1;
+            for (int i = 0; i < list.Count; i++)
+            {
+                list.Swap(start, end);
+                start++;
+                end--;
+                if (start >= end)
+                {
+                    break;
+                }
+            }
+        }
+
+        public static void DisposeIfNeeded<T>(in NativeArray<T> array) where T : struct
         {
             if (array.IsCreated)
             {
@@ -49,14 +63,21 @@ namespace Orazum.Collections
             list[rhs] = element;
         }
 
-        public static void Swap<T>(ref NativeArray<T> nativeArray, int lhs, int rhs) where T : struct
+        public static void Swap<T>(this NativeArray<T> nativeArray, int lhs, int rhs) where T : struct
         {
             T element = nativeArray[lhs];
             nativeArray[lhs] = nativeArray[rhs];
             nativeArray[rhs] = element;
         }
 
-        public static bool Contains<T>(List<T> list, T value) where T : System.IEquatable<T>
+        public static void Swap<T>(this NativeList<T> nativeList, int lhs, int rhs) where T : struct
+        { 
+            T element = nativeList[lhs];
+            nativeList[lhs] = nativeList[rhs];
+            nativeList[rhs] = element;
+        }
+
+        public static bool Contains<T>(this List<T> list, T value) where T : System.IEquatable<T>
         {
             for (int i = 0; i < list.Count; i++)
             {

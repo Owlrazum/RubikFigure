@@ -44,7 +44,7 @@ namespace Orazum.Collections
                 int d = Random.Range(0, list.Length - marks.Count - 1);
                 for (int j = 0; j < list.Length; j++)
                 {
-                    if (!Contains(marks, j) && j != i)
+                    if (!marks.Contains(j) && j != i)
                     { 
                         possible.Add(j);
                     }
