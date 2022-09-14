@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public enum GameStateType
@@ -40,7 +41,7 @@ public class GameController : MonoBehaviour
         {
             return;
         }
-        
+
 #if UNITY_EDITOR
         if (_sceneIndexToTest >= 0)
         {

@@ -38,11 +38,11 @@ public struct QSTS_FillData
         Fill = fill;
         LerpRange = lerpRange;
         Radial = radial;
-        Assert.IsTrue(radial.LerpLength > 0);
+        Assert.IsTrue(radial.MaxLerpLength > 0);
     }
 
     public override string ToString()
     {
-        return $"{Fill} {LerpRange.x:F2} {LerpRange.y:F2}" + (Radial.LerpLength > 0 ? $"{Radial}" : "");
+        return $"{Fill} {LerpRange.x:F2} {LerpRange.y:F2}" + (Radial.MaxLerpLength > 0 ? $"{Radial}" : "");
     }
 }

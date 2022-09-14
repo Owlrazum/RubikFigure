@@ -122,7 +122,7 @@ namespace Orazum.Meshing
             FillType fillType = fillData.Fill;
             ConstructType constructType = fillData.Construct;
             switch (fillType)
-            { 
+            {
                 case FillType.StartToEnd:
                     StartStripIfNeeded(start, constructType, ref buffersIndexers);
                     _quadStripBuilder.Continue(end, ref buffersIndexers);
@@ -179,11 +179,10 @@ namespace Orazum.Meshing
             ref MeshBuffersIndexers buffersIndexers
         )
         {
-            RadialType radialType = fillData.Radial.Type;
             QSTSFD_Radial radial = fillData.Radial;
             float lerpParam = math.unlerp(fillData.LerpRange.x, fillData.LerpRange.y, _globalLerpParam);
 
-            if (radial.LerpLength > 1)
+            if (radial.MaxLerpLength > 1)
             {
                 Debug.LogWarning("LerpLength is > 1, is this correct behaviour?");
             }
@@ -203,61 +202,178 @@ namespace Orazum.Meshing
             in QSTS_FillData fillData,
             in float3x2 start,
             in float3x2 end,
-            float lerpParam,
+            in float lerpParam,
             ref MeshBuffersIndexers buffersIndexers
         )
         {
-            QSTSFD_Radial radial = fillData.Radial;
-            float lerpOffset = lerpParam - radial.LerpLength;
-            float lerpDelta = radial.LerpLength / radial.Resolution;
+            Assert.IsTrue(fillData.Radial.IsRotationLerp);
+            Assert.IsTrue(fillData.Radial.Resolution > 1);
 
-            Assert.IsTrue(radial.Resolution > 1);
-            Assert.IsTrue(radial.IsRotationLerp);
-
-            int maxMiddlesCount = 0;
-            if (lerpOffset < 0)
+            NativeArray<float3x2> segs = GetRotationSegs(fillData, start, end, lerpParam);
+            if (segs.Length == 0)
             {
-                float lerpAmount = lerpOffset + radial.LerpLength;
-                maxMiddlesCount = (int)(lerpAmount / lerpDelta + 1);
-                Debug.Log($"{lerpAmount:F2} {lerpAmount / lerpDelta + 1:F2} {maxMiddlesCount}");
-            }
-            else
-            {
-                maxMiddlesCount = radial.Resolution;
+                return;
             }
 
-            NativeList<float3x2> middles = new NativeList<float3x2>(maxMiddlesCount, Allocator.Temp);
-            for (int i = 0; i < radial.Resolution; i++)
+            FillType fillType = fillData.Fill;
+            ConstructType constructType = fillData.Construct;
+            if ((fillType == FillType.ToEnd || fillType == FillType.ToStart) && constructType == ConstructType.Continue)
             {
-                lerpOffset += lerpDelta;
-                if (lerpOffset > lerpParam)
-                {
-                    if (lerpParam != 1)
-                    {
-                        float3x2 rotationMiddle = GetRotationMiddle(fillData, start, end, lerpOffset);
-                        middles.Add(rotationMiddle);
-                    }
-                    break;
-                }
-                if (lerpOffset > 0)
-                {
-                    float3x2 rotationMiddle = GetRotationMiddle(fillData, start, end, lerpOffset);
-                    middles.Add(rotationMiddle);
-                }
+                Debug.LogWarning("ToX fillType with Continue ConstructType may lead to not wanted results.");
             }
-
-            FillRadialTypeRotationLerp(fillData, start, end, middles, ref buffersIndexers);
+            StartStripIfNeeded(segs[0], constructType, ref buffersIndexers);
+            for (int i = 1; i < segs.Length; i++)
+            {
+                _quadStripBuilder.Continue(segs[i], ref buffersIndexers);
+            }
         }
 
-        private float3x2 GetRotationMiddle(
+        private NativeArray<float3x2> GetRotationSegs(
             in QSTS_FillData fillData,
+            in float3x2 start,
+            in float3x2 end,
+            in float lerpParamInput
+        )
+        {
+            QSTSFD_Radial radial = fillData.Radial;
+            FillType fillType = fillData.Fill;
+
+            float lerpDelta = radial.MaxLerpLength / radial.Resolution;
+            float2 lerpOffset = float2.zero;
+            float lerpLength = 0;
+            int addStart = 0;
+            int addEnd = 0;
+            int addLerpParam = 0;
+            bool addLerpAtStart = false;
+            bool addLerpAtEnd = false;
+
+            float lerpParam = lerpParamInput;
+
+            if (fillType == FillType.FromEnd || fillType == FillType.ToStart)
+            {
+                lerpParam = 1 - lerpParam;
+            }
+            switch (fillType)
+            {
+                case FillType.FromStart:
+                    addLerpAtEnd = true;
+                    addLerpParam = 1;
+
+                    lerpOffset.y = lerpParam;
+
+                    float lengthStart = lerpParam - radial.MaxLerpLength;
+                    if (lengthStart > 0)
+                    {
+                        lerpOffset.x = lengthStart;
+                    }
+                    else
+                    {
+                        addStart = 1;
+                        lerpOffset.x = 0;
+                    }
+                    break;
+                case FillType.ToEnd:
+                    addLerpAtStart = true;
+                    addLerpParam = 1;
+
+                    lerpOffset.x = lerpParam;
+
+                    float lengthEnd = lerpParam + radial.MaxLerpLength;
+                    if (lengthEnd < 1)
+                    {
+                        lerpOffset.y = lengthEnd;
+                    }
+                    else
+                    {
+                        addEnd = 1;
+                        lerpOffset.y = 1;
+                    }
+                    break;
+                case FillType.FromEnd:
+                    addLerpAtStart = true;
+                    addLerpParam = 1;
+
+                    lerpOffset.x = lerpParam;
+
+                    lengthEnd = lerpParam + radial.MaxLerpLength;
+                    if (lengthEnd < 1)
+                    {
+                        lerpOffset.y = lengthEnd;
+                    }
+                    else
+                    {
+                        addEnd = 1;
+                        lerpOffset.y = 1;
+                    }
+                    break;
+                case FillType.ToStart:
+                    addLerpAtEnd = true;
+                    addLerpParam = 1;
+
+                    lerpOffset.y = lerpParam;
+
+                    lengthStart = lerpParam - radial.MaxLerpLength;
+                    if (lengthStart > 0)
+                    {
+                        lerpOffset.x = lengthStart;
+                    }
+                    else
+                    {
+                        addStart = 1;
+                        lerpOffset.x = 0;
+                    }
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException($"This fillType {fillData.Fill} is not supported for RotationLerp");
+            }
+            
+            lerpLength = lerpOffset.y - lerpOffset.x;
+
+            int deltaSegCount = (int)(lerpLength / lerpDelta);
+            int segsCount = deltaSegCount + addStart + addEnd + addLerpParam;
+
+            NativeArray<float3x2> segs = new NativeArray<float3x2>(segsCount, Allocator.Temp);
+            int indexer = 0;
+            if (addStart > 0)
+            {
+                segs[indexer++] = start;
+            }
+
+            float3x2 lerpSeg = RotateLerp(fillData, start, end, lerpParam);
+            if (addLerpAtStart)
+            {
+                segs[indexer++] = lerpSeg;
+            }
+
+            for (int i = 0; i < deltaSegCount; i++)
+            {
+                lerpOffset.x += lerpDelta;
+                if (lerpOffset.x < lerpOffset.y)
+                {
+                    segs[indexer++] = RotateLerp(fillData, start, end, lerpOffset.x);
+                }
+            }
+
+            if (addLerpAtEnd)
+            {
+                segs[indexer++] = lerpSeg;
+            }
+
+            if (addEnd > 0)
+            {
+                segs[indexer++] = end;
+            }
+            return segs;
+        }
+
+        private float3x2 RotateLerp(
+            QSTS_FillData fillData,
             in float3x2 start,
             in float3x2 end,
             float lerpParam
         )
         {
             QSTSFD_Radial radial = fillData.Radial;
-
             float2 angles;
             if (radial.Type == RadialType.SingleRotation)
             {
@@ -275,24 +391,7 @@ namespace Orazum.Meshing
                 throw new ArgumentOutOfRangeException("Unsupported RadialType");
             }
 
-            float3x2 rotationSegment;
-            float angleSign = 0;
-            switch (fillData.Fill)
-            {
-                case FillType.FromStart:
-                case FillType.ToEnd:
-                    rotationSegment = start;
-                    angleSign = 1;
-                    break;
-                case FillType.FromEnd:
-                case FillType.ToStart:
-                    rotationSegment = end;
-                    angleSign = -1;
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException($"This fillType {fillData.Fill} is not supported for RotationLerp");
-            }
-            angles *= angleSign;
+            float3x2 rotationSegment = start;
 
             switch (radial.Type)
             {
@@ -310,9 +409,9 @@ namespace Orazum.Meshing
 
                     float3x2 centers = new float3x2(radial.Points[0], radial.Points[1]);
                     return RotateDouble(rotationSegment, centers, axises, angles);
+                default:
+                    throw new System.ArgumentOutOfRangeException("Unknown RadialConstructType");
             }
-
-            throw new System.ArgumentOutOfRangeException("Unknown RadialConstructType");
         }
 
         private float3x2 RotateSingle(in float3x2 start, in float3 center, in float3 axis, float angle)
@@ -327,73 +426,6 @@ namespace Orazum.Meshing
             return RotateLineSegmentAround(q1, q2, centers, start);
         }
 
-        private void FillRadialTypeRotationLerp(
-            QSTS_FillData fillData,
-            in float3x2 start,
-            in float3x2 end,
-            in NativeList<float3x2> middles,
-            ref MeshBuffersIndexers buffersIndexers
-        )
-        {
-            FillType fillType = fillData.Fill;
-            ConstructType constructType = fillData.Construct;
-            switch (fillType)
-            { 
-                case FillType.FromStart:
-                    StartStripIfNeeded(start, constructType, ref buffersIndexers);
-                    for (int i = 0; i < middles.Count; i++)
-                    { 
-                        _quadStripBuilder.Continue(middles[i], ref buffersIndexers);
-                    }
-                    break;
-                case FillType.ToEnd:
-                    if (constructType == ConstructType.Continue)
-                    {
-                        Debug.LogWarning("ToX fillType with Continue ConstructType may lead to not wanted results.");
-                    }
-                    StartStripIfNeeded(middles[0], constructType, ref buffersIndexers);
-                    for (int i = 1; i < middles.Count; i++)
-                    {
-                        _quadStripBuilder.Continue(middles[i], ref buffersIndexers);
-                    }
-                    _quadStripBuilder.Continue(end, ref buffersIndexers);
-                    break;
-                case FillType.FromEnd:
-                    float3x2 flippedMiddle;
-                    // negative direction, we should flipped line segments and reverse middles
-                    CollectionUtilities.ReverseNativeList(middles);
-
-                    float3x2 flippedEnd = new float3x2(end[1], end[0]);
-                    StartStripIfNeeded(flippedEnd, constructType, ref buffersIndexers);
-                    for (int i = 0; i < middles.Count; i++)
-                    { 
-                        flippedMiddle = new float3x2(middles[i][1], middles[i][0]);
-                        _quadStripBuilder.Continue(flippedMiddle, ref buffersIndexers);
-                    }
-                    break;
-                case FillType.ToStart:
-                    // negative direction, we should flipped line segments and reverse middles
-                    CollectionUtilities.ReverseNativeList(middles);
-
-                    flippedMiddle = new float3x2(middles[0][1], middles[0][0]);
-                    if (constructType == ConstructType.Continue)
-                    {
-                        Debug.LogWarning("ToX fillType with Continue ConstructType may lead to not wanted results.");
-                    }
-                    StartStripIfNeeded(flippedMiddle, constructType, ref buffersIndexers);
-
-                    for (int i = 1; i < middles.Count; i++)
-                    { 
-                        flippedMiddle = new float3x2(middles[i][1], middles[i][0]);
-                        _quadStripBuilder.Continue(flippedMiddle, ref buffersIndexers);    
-                    }
-                    float3x2 flippedStart = new float3x2(start[1], start[0]);
-                    _quadStripBuilder.Continue(flippedStart, ref buffersIndexers);
-                    break;
-                default:
-                    throw new System.ArgumentOutOfRangeException($"This fillType {fillType} is not supported for RotationLerp");
-            }
-        }
         #endregion // RadialLerp
 
         #region MoveLerp
@@ -490,7 +522,7 @@ namespace Orazum.Meshing
             }
         }
         #endregion // MoveLerp
-        
+
         #endregion // RadialType
     }
 }

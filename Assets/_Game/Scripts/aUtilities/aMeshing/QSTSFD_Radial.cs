@@ -18,7 +18,7 @@ public struct QSTSFD_Radial
     // negative lerpLength signifies invalid state
     public QSTSFD_Radial(float invalidUselessParameter)
     {
-        LerpLength = -1;
+        MaxLerpLength = -1;
 
         Type = RadialType.SingleRotation;
         Points = float3x2.zero;
@@ -37,7 +37,7 @@ public struct QSTSFD_Radial
         AxisAngles = axisAngles;
         Points = points;
 
-        LerpLength = lerpLength;
+        MaxLerpLength = lerpLength;
         Resolution = resolution;
     }
 
@@ -45,7 +45,7 @@ public struct QSTSFD_Radial
     public float3x2 Points { get; private set; }
 
     public int Resolution { get; set; }
-    public float LerpLength { get; set; }
+    public float MaxLerpLength { get; set; }
 
     public bool IsRotationLerp
     {
@@ -67,6 +67,6 @@ public struct QSTSFD_Radial
 
     public override string ToString()
     {
-        return $"{LerpLength:F2} {Points:F2} {Resolution} {AxisAngles:F2}";
+        return $"{MaxLerpLength:F2} {Points:F2} {Resolution} {AxisAngles:F2}";
     }
 }
