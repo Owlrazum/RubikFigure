@@ -33,7 +33,7 @@ namespace Orazum.Math
 
         public static float3 GetLineSegmentCenter(float3 p1, float3 p2)
         {
-            return (p2 - p1) / 2;
+            return (p2 + p1) / 2;
         }
         public static float3 GetLineSegmentCenter(in float3x2 lineSegment)
         {
