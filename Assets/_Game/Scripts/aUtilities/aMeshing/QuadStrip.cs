@@ -60,19 +60,15 @@ public struct QuadStrip : IDisposable
 
     public float3x4 GetRays(LineEndType quadStripEnd, LineEndDirectionType raysDirection)
     {
-        float3x2 startSegment = float3x2.zero;
-        float3x2 endSegment = float3x2.zero;
+        float3x2 startSegment, endSegment;
 
-        switch (quadStripEnd)
-        {
-            case LineEndType.Start:
-                GetSegmentsForStartRay(raysDirection, out startSegment, out endSegment);
-                break;
-            case LineEndType.End:
-                GetSegmentsForEndRay(raysDirection, out startSegment, out endSegment);
-                break;
-            default:
-                throw new System.ArgumentOutOfRangeException("Unknown LineEndType");
+        if (quadStripEnd == LineEndType.Start)
+        { 
+            GetSegmentsForStartRay(raysDirection, out startSegment, out endSegment);
+        }
+        else
+        { 
+            GetSegmentsForEndRay(raysDirection, out startSegment, out endSegment);
         }
 
         return RaysUtilities.GetSegmentRays(in startSegment, in endSegment);
@@ -80,29 +76,24 @@ public struct QuadStrip : IDisposable
 
     public float3x2 GetRay(LineEndType quadStripEnd, LineEndType lineSegmentEnd, LineEndDirectionType rayDirection)
     {
-        float3x2 startSegment = float3x2.zero;
-        float3x2 endSegment = float3x2.zero;
+        float3x2 startSegment, endSegment;
 
-        switch (quadStripEnd)
-        {
-            case LineEndType.Start:
-                GetSegmentsForStartRay(rayDirection, out startSegment, out endSegment);
-                break;
-            case LineEndType.End:
-                GetSegmentsForEndRay(rayDirection, out startSegment, out endSegment);
-                break;
-            default:
-                throw new System.ArgumentOutOfRangeException("UnknonwLineEndType");
+        if (quadStripEnd == LineEndType.Start)
+        { 
+            GetSegmentsForStartRay(rayDirection, out startSegment, out endSegment);
+        }
+        else
+        { 
+            GetSegmentsForEndRay(rayDirection, out startSegment, out endSegment);
         }
 
-        switch (lineSegmentEnd)
-        {
-            case LineEndType.Start:
-                return RaysUtilities.RayFromDelta(startSegment[0], endSegment[0]);
-            case LineEndType.End:
-                return RaysUtilities.RayFromDelta(startSegment[1], endSegment[1]);
-            default:
-                throw new System.ArgumentOutOfRangeException("UnknonwLineEndType");
+        if (lineSegmentEnd == LineEndType.Start)
+        { 
+            return RaysUtilities.RayFromDelta(startSegment[0], endSegment[0]);
+        }
+        else
+        { 
+            return RaysUtilities.RayFromDelta(startSegment[1], endSegment[1]);
         }
     }
 
@@ -113,35 +104,29 @@ public struct QuadStrip : IDisposable
 
     private void GetSegmentsForStartRay(LineEndDirectionType raysDirection, out float3x2 start, out float3x2 end)
     {
-        switch (raysDirection)
-        {
-            case LineEndDirectionType.StartToEnd:
-                start = _lineSegments[0];
-                end = _lineSegments[1];
-                return;
-            case LineEndDirectionType.EndToStart:
-                end = _lineSegments[0];
-                start = _lineSegments[1];
-                return;
+        if (raysDirection == LineEndDirectionType.StartToEnd)
+        { 
+            start = _lineSegments[0];
+            end = _lineSegments[1];
         }
-
-        throw new System.ArgumentOutOfRangeException("Unknown LineEndDirectionType");
+        else
+        { 
+            end = _lineSegments[0];
+            start = _lineSegments[1];
+        }
     }
 
     private void GetSegmentsForEndRay(LineEndDirectionType raysDirection, out float3x2 start, out float3x2 end)
     {
-        switch (raysDirection)
-        {
-            case LineEndDirectionType.StartToEnd:
-                start = _lineSegments[LineSegmentsCount - 2];
-                end = _lineSegments[LineSegmentsCount - 1];
-                return;
-            case LineEndDirectionType.EndToStart:
-                end = _lineSegments[LineSegmentsCount - 1];
-                start = _lineSegments[LineSegmentsCount - 2];
-                return;
+        if (raysDirection == LineEndDirectionType.StartToEnd)
+        { 
+            start = _lineSegments[LineSegmentsCount - 2];
+            end = _lineSegments[LineSegmentsCount - 1];
         }
-
-        throw new System.ArgumentOutOfRangeException("Unknown LineEndDirectionType");
+        else
+        { 
+            end = _lineSegments[LineSegmentsCount - 1];
+            start = _lineSegments[LineSegmentsCount - 2];
+        }
     }
 }

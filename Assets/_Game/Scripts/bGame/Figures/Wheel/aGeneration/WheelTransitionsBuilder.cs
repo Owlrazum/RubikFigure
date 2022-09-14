@@ -95,13 +95,13 @@ public struct WheelTransitionsBuilder
         VertOrderType vertOrder
     )
     {
-        float d1 = 0, d2 = 0;
+        float d1, d2;
         if (vertOrder == VertOrderType.Down)
         {
             d1 = DistanceLineSegment(origin[0][0], origin[0][1]);
             d2 = DistanceLineSegment(origin[0][0], target[0][1]);
         }
-        else if (vertOrder == VertOrderType.Up)
+        else
         { 
             d1 = DistanceLineSegment(origin[0][0], origin[0][1]);
             d2 = DistanceLineSegment(origin[0][1], target[0][0]);

@@ -238,80 +238,77 @@ public abstract class Figure : MonoBehaviour
 
     public static int2 MoveIndexClockOrder(int2 index, ClockOrderType clockOrder, int2 dims)
     {
-        switch (clockOrder)
+        if (clockOrder == ClockOrderType.CW)
         {
-            case ClockOrderType.CW:
-                index.x = index.x + 1 < dims.x ? index.x + 1 : 0;
-                return index;
-            case ClockOrderType.AntiCW:
-                index.x = index.x - 1 >= 0 ? index.x - 1 : dims.x - 1;
-                return index;
+            index.x = index.x + 1 < dims.x ? index.x + 1 : 0;
+            return index;
         }
-
-        throw new ArgumentException("Unknown clock order type");
+        else
+        {
+            index.x = index.x - 1 >= 0 ? index.x - 1 : dims.x - 1;
+            return index;
+        }
     }
     public static int2 MoveIndexVertOrder(int2 index, VertOrderType vertOrder, int2 dims)
     {
-        switch (vertOrder)
+        if (vertOrder == VertOrderType.Up)
         {
-            case VertOrderType.Up:
-                index.y = index.y + 1 < dims.y ? index.y + 1 : 0;
-                return index;
-            case VertOrderType.Down:
-                index.y = index.y - 1 >= 0 ? index.y - 1 : dims.y - 1;
-                return index;
+            index.y = index.y + 1 < dims.y ? index.y + 1 : 0;
+            return index;
         }
-
-        throw new ArgumentException("Unknown vertical order type");
+        else
+        {
+            index.y = index.y - 1 >= 0 ? index.y - 1 : dims.y - 1;
+            return index;
+        }
     }
 
     public static bool IsOutOfDimsClockOrder(int2 index, ClockOrderType clockOrder, int2 dims)
     {
-        switch (clockOrder)
+        if (clockOrder == ClockOrderType.CW)
         {
-            case ClockOrderType.CW:
-                index.x++;
-                if (index.x >= dims.x)
-                {
-                    return false;
-                }
+            index.x++;
+            if (index.x >= dims.x)
+            {
+                return false;
+            }
 
-                return true;
-            case ClockOrderType.AntiCW:
-                index.x--;
-                if (index.x < 0)
-                {
-                    return false;
-                }
-
-                return true;
+            return true;
         }
+        else
+        {
+            index.x--;
+            if (index.x < 0)
+            {
+                return false;
+            }
 
-        throw new ArgumentException("Unknown clock order type");
+            return true;
+        }
     }
+    
     public static bool IsOutOfDimsVertOrder(int2 index, VertOrderType vertOrder, int2 dims)
     {
-        switch (vertOrder)
+        if (vertOrder == VertOrderType.Up)
         {
-            case VertOrderType.Up:
-                index.y++;
-                if (index.y >= dims.y)
-                {
-                    return false;
-                }
+            index.y++;
+            if (index.y >= dims.y)
+            {
+                return false;
+            }
 
-                return true;
-            case VertOrderType.Down:
-                index.y--;
-                if (index.y < 0)
-                {
-                    return false;
-                }
-
-                return true;
+            return true;
         }
+        else
+        {
+            index.y--;
+            if (index.y < 0)
+            {
+                return false;
+            }
 
-        throw new ArgumentException("Unknown vertical order type");
+            return true;
+        }
     }
 
     public override string ToString()
