@@ -85,6 +85,12 @@ namespace Orazum.Math
             return cubicBeizerPos;
         }
 
+        public static float3 RotateAround(in float3 point, in float3 center, in quaternion q)
+        {
+            Debug.DrawRay(float3.zero, point, Color.green, 0.1f);
+            return math.rotate(q, point - center) + center;
+        }
+
         /// <summary>
         /// She would like it to be added to Unity.
         /// </summary>
@@ -107,17 +113,17 @@ namespace Orazum.Math
         }
 
         // Vector2
-        public static Vector2 AngToDir(float aRad) => new Vector2(Mathf.Cos(aRad), Mathf.Sin(aRad));
-        public static float DirToAng(Vector2 dir) => Mathf.Atan2(dir.y, dir.x);
-        public static Vector2 Rotate90CW(Vector2 v) => new Vector2(v.y, -v.x);
-        public static Vector2 Rotate90CCW(Vector2 v) => new Vector2(-v.y, v.x);
-        public static Vector2 Rotate(Vector2 v, float angRad)
+        public static Vector2 AngToDir2D(float aRad) => new Vector2(Mathf.Cos(aRad), Mathf.Sin(aRad));
+        public static float DirToAng2D(Vector2 dir) => Mathf.Atan2(dir.y, dir.x);
+        public static Vector2 Rotate90CW2D(Vector2 v) => new Vector2(v.y, -v.x);
+        public static Vector2 Rotate90CCW2D(Vector2 v) => new Vector2(-v.y, v.x);
+        public static Vector2 Rotate2D(Vector2 v, float angRad)
         {
             float ca = Mathf.Cos(angRad);
             float sa = Mathf.Sin(angRad);
             return new Vector2(ca * v.x - sa * v.y, sa * v.x + ca * v.y);
         }
-        public static Vector2 RotateAround(Vector2 v, Vector2 pivot, float angRad) => Rotate(v - pivot, angRad) + pivot;
+        public static Vector2 RotateAround2D(Vector2 v, Vector2 pivot, float angRad) => Rotate2D(v - pivot, angRad) + pivot;
         #endregion
     }
 }

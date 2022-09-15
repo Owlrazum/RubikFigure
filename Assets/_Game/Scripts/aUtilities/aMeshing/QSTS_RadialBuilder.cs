@@ -19,15 +19,18 @@ namespace Orazum.Meshing
     {
         // SRL: SingleRotationLerp
         // DRL: DoubleRotationLerp
-        public float3x2 Points { get; set; } // the first one is the center of rotation
+        
+        public float3 RotationCenter { get; set; } 
 
-        private float4x2 ConstructAxisAngles;
-        private int _resolution;
+        private readonly float4 PrimaryAxisAngle;
+        private readonly float SecondaryAngle;
+        private readonly int _resolution;
 
-        public QSTS_RadialBuilder(float3 rotationAxis, float angleDeltaRad, int resolution)
+        public QSTS_RadialBuilder(float3 primaryAxis, float2 anglesRad, int resolution)
         {
-            ConstructAxisAngles = new float4x2(new float4(rotationAxis, angleDeltaRad * resolution), float4.zero);
-            Points = float3x2.zero;
+            PrimaryAxisAngle = new float4(primaryAxis, anglesRad.x);
+            SecondaryAngle = anglesRad.y;
+            RotationCenter = float3.zero;
             _resolution = resolution;
         }
 
@@ -93,34 +96,19 @@ namespace Orazum.Meshing
             out QST_Segment qsts
         )
         {
-            RadialType radialType = RadialType.DoubleRotation;
             ConstructType constructType = isNew ? ConstructType.New : ConstructType.Continue;
 
-            float3x2 start = new float3x2(down[0][0], down[down.LineSegmentsCount - 1][0]);
-            float3x2 end = new float3x2(up[0][1], up[up.LineSegmentsCount - 1][1]);
+            float3x2 start = new float3x2(down[0][0], up[0][1]);
+            float3x2 end = new float3x2(down[down.LineSegmentsCount - 1][0], up[up.LineSegmentsCount - 1][1]);
             FillType fillType = vertOrder == VertOrderType.Up ? FillType.ToEnd : FillType.ToStart;
 
-            PrepareSegment(start, end, QSTS_Type.Radial, 1, out qsts);
-
-            quaternion perp = quaternion.AxisAngle(math.up(), TAU / 4);
-            float3x2 startLS = down[0];
-            float3x2 endLS = down[down.LineSegmentsCount - 1];
-            float4x2 axisAngles = new float4x2(
-                new float4(GetDirection(perp, startLS), TAU / 2),
-                new float4(GetDirection(perp, endLS), TAU / 2)
-            );
-
-            float3x2 points = new float3x2(
-                GetLineSegmentCenter(start[0], end[0]),
-                GetLineSegmentCenter(start[1], end[1])
-            );
-
-            DrawLineSegmentWithRaysUp(points, 3, 30);
+            PrepareSegment(start, end, QSTS_Type.Radial, fillDataLength: 1, out qsts);
 
             QSTSFD_Radial radial = new QSTSFD_Radial(
-                radialType,
-                in axisAngles,
-                in points,
+                RadialType.DoubleRotation,
+                PrimaryAxisAngle,
+                SecondaryAngle,
+                RotationCenter,
                 lerpLength,
                 _resolution
             );
@@ -180,8 +168,9 @@ namespace Orazum.Meshing
         {
             radial = new QSTSFD_Radial(
                 radialType,
-                ConstructAxisAngles,
-                Points,
+                PrimaryAxisAngle,
+                secondaryAngle: 0,
+                RotationCenter,
                 lerpLength,
                 _resolution
             );

@@ -1,11 +1,12 @@
 using UnityEngine;
 using Unity.Mathematics;
+using Unity.Collections;
 
 namespace Orazum.Math
 {
     public static class LineSegmentUtilities
     { 
-        public static float DistanceLineSegment(float3 p1, float3 p2)
+        public static float DistanceLineSegment(in float3 p1, in float3 p2)
         {
             return math.length(p2 - p1);
         }
@@ -21,17 +22,17 @@ namespace Orazum.Math
             );
         }
 
-        public static float3 GetDirection(quaternion q, float3 p1, float3 p2)
+        public static float3 GetDirection(in quaternion q, in float3 p1, in float3 p2)
         { 
             float3 direction = math.normalize(p2 - p1);
             return math.rotate(q, direction);
         }
-        public static float3 GetDirection(quaternion q, in float3x2 lineSegment)
+        public static float3 GetDirection(in quaternion q, in float3x2 lineSegment)
         {
             return GetDirection(q, lineSegment[0], lineSegment[1]);
         }
 
-        public static float3 GetLineSegmentCenter(float3 p1, float3 p2)
+        public static float3 GetLineSegmentCenter(in float3 p1, in float3 p2)
         {
             return (p2 + p1) / 2;
         }
@@ -40,14 +41,14 @@ namespace Orazum.Math
             return GetLineSegmentCenter(lineSegment[0], lineSegment[1]);
         }
 
-        public static float3x2 RotateLineSegment(quaternion q, in float3x2 lineSegment)
+        public static float3x2 RotateLineSegment(in quaternion q, in float3x2 lineSegment)
         {
             return new float3x2(
                 math.rotate(q, lineSegment[0]),
                 math.rotate(q, lineSegment[1])
             );
         }
-        public static float3x2 RotateLineSegmentAround(quaternion q, float3 center, in float3x2 lineSegment)
+        public static float3x2 RotateLineSegmentAround(in quaternion q, in float3 center, in float3x2 lineSegment)
         {
             float3x2 toReturn = new float3x2(
                 lineSegment[0] - center,
@@ -60,8 +61,9 @@ namespace Orazum.Math
             return toReturn;
         }
         public static float3x2 RotateLineSegmentAround(
-            quaternion q1, quaternion q2, 
-            float3x2 centers,
+            in quaternion q1, 
+            in quaternion q2, 
+            in float3x2 centers,
             in float3x2 lineSegment
         )
         {
@@ -81,8 +83,18 @@ namespace Orazum.Math
 
         public static void DrawLineSegmentWithRaysUp(float3x2 lineSegment, float length, float duration)
         {
+            Debug.DrawLine(lineSegment[0], lineSegment[1], Color.green, duration);
             Debug.DrawRay(lineSegment[0], Vector3.up * length, Color.red, duration);
             Debug.DrawRay(lineSegment[1], Vector3.up * length, Color.red, duration);
+        }
+
+        public static void DrawGridDim(in NativeArray<float3> gridDim, float duration)
+        {
+            float3 prev = gridDim[0];
+            for (int i = 1; i < gridDim.Length; i++)
+            {
+                Debug.DrawLine(prev, gridDim[i], Color.red, duration);
+            }
         }
     }
 }

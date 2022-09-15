@@ -23,8 +23,9 @@ public struct WheelTransitionsBuilder
         WholeLerpRange = new float2(0, 1);
         WholeLerpLength = 1;
 
-        float rotationAngle = TAU / sideCount;
-        _radialBuilder = new QSTS_RadialBuilder(math.up(), rotationAngle, segmentResolution);
+        float2 anglesRad = new float2(TAU / sideCount, TAU / 2);
+        float3 primaryAxis = math.up();
+        _radialBuilder = new QSTS_RadialBuilder(primaryAxis, anglesRad, segmentResolution);
     }
 
     public void BuildClockOrderTransition(

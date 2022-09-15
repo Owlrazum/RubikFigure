@@ -21,28 +21,32 @@ public struct QSTSFD_Radial
         MaxLerpLength = -1;
 
         Type = RadialType.SingleRotation;
-        Points = float3x2.zero;
-        AxisAngles = float4x2.zero;
+        PrimaryAxisAngle = float4.zero;
+        SecondaryAngle = 0;
+        RotationCenter = float3.zero;
         Resolution = -1;
     }
 
     public QSTSFD_Radial(
         RadialType radial,
-        in float4x2 axisAngles,
-        in float3x2 points,
+        in float4 primaryAxisAngle,
+        in float secondaryAngle,
+        in float3 rotationCenter,
         float lerpLength,
         int resolution)
     {
         Type = radial;
-        AxisAngles = axisAngles;
-        Points = points;
+        PrimaryAxisAngle = primaryAxisAngle;
+        SecondaryAngle = secondaryAngle;
+        RotationCenter = rotationCenter;
 
         MaxLerpLength = lerpLength;
         Resolution = resolution;
     }
 
-    public float4x2 AxisAngles { get; private set; }
-    public float3x2 Points { get; private set; }
+    public float4 PrimaryAxisAngle { get; private set; }
+    public float SecondaryAngle { get; private set; }
+    public float3 RotationCenter { get; private set; }
 
     public int Resolution { get; set; }
     public float MaxLerpLength { get; set; }
@@ -67,6 +71,6 @@ public struct QSTSFD_Radial
 
     public override string ToString()
     {
-        return $"{MaxLerpLength:F2} {Points:F2} {Resolution} {AxisAngles:F2}";
+        return $"{MaxLerpLength:F2} {RotationCenter:F2} {Resolution} {PrimaryAxisAngle:F2}";
     }
 }
