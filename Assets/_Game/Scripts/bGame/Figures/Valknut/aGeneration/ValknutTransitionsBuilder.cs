@@ -4,6 +4,7 @@ using Unity.Collections;
 using UnityEngine.Assertions;
 
 using Orazum.Math;
+using Orazum.Meshing;
 using static Orazum.Math.RaysUtilities;
 using static Orazum.Math.MathUtils;
 using static QST_Segment;
@@ -229,8 +230,8 @@ public struct ValknutTransitionsBuilder
 
             if (i == 0)
             {
-                QST_Segment firstSegment = new QST_Segment(x0z(startLineSeg), x0z(endLineSeg), fillDataLength: 1);
-                firstSegment.Type = QSTS_Type.Quad;
+                QSTS_BuilderUtils.PrepareSegment(x0z(startLineSeg), x0z(endLineSeg), QSTS_Type.Quad, 
+                    fillDataLength: 1, out QST_Segment firstSegment);
                 QSTS_FillData fillOutState = new QSTS_FillData(
                     ConstructType.New,
                     FillType.ToEnd,
@@ -241,7 +242,8 @@ public struct ValknutTransitionsBuilder
             }
             else
             {
-                QST_Segment segment = new QST_Segment(x0z(startLineSeg), x0z(endLineSeg), fillDataLength: 2);
+                QSTS_BuilderUtils.PrepareSegment(x0z(startLineSeg), x0z(endLineSeg), QSTS_Type.Quad, 
+                    fillDataLength: 2, out QST_Segment segment);
                 QSTS_FillData filledState = new QSTS_FillData(
                     ConstructType.Continue,
                     FillType.StartToEnd,
@@ -269,7 +271,9 @@ public struct ValknutTransitionsBuilder
         float2x4 lastStartEndSeg = _startEndSegs[_transSegmentsIndexer.x];
         float2x2 lastStartLineSeg = new float2x2(lastStartEndSeg[0], lastStartEndSeg[1]);
         float2x2 lastEndLineSeg = new float2x2(lastStartEndSeg[2], lastStartEndSeg[3]);
-        lastFillOutSegment = new QST_Segment(x0z(lastStartLineSeg), x0z(lastEndLineSeg), 3);
+        
+        QSTS_BuilderUtils.PrepareSegment(x0z(lastStartLineSeg), x0z(lastEndLineSeg), QSTS_Type.Quad, 
+                    fillDataLength: 3, out lastFillOutSegment);
         QSTS_FillData lastSegFilledState = new QSTS_FillData(
             ConstructType.Continue,
             FillType.StartToEnd,            
@@ -312,7 +316,9 @@ public struct ValknutTransitionsBuilder
 
             if (i == 0)
             {
-                QST_Segment firstFillInSegment = new QST_Segment(x0z(startLineSeg), x0z(endLineSeg), fillDataLength: 2);
+                QSTS_BuilderUtils.PrepareSegment(x0z(startLineSeg), x0z(endLineSeg), QSTS_Type.Quad, 
+                    fillDataLength: 2, out QST_Segment firstFillInSegment);
+
                 QSTS_FillData fillInState = new QSTS_FillData(
                     ConstructType.Continue,
                     FillType.FromStart,
@@ -332,7 +338,8 @@ public struct ValknutTransitionsBuilder
             }
             else if (i < _target.QuadsCount - 1)
             {
-                QST_Segment segment = new QST_Segment(x0z(startLineSeg), x0z(endLineSeg), fillDataLength: 2);
+                QSTS_BuilderUtils.PrepareSegment(x0z(startLineSeg), x0z(endLineSeg), QSTS_Type.Quad, 
+                    fillDataLength: 2, out QST_Segment segment);
                 QSTS_FillData fillInState = new QSTS_FillData(
                     ConstructType.Continue,
                     FillType.FromStart,
@@ -349,7 +356,8 @@ public struct ValknutTransitionsBuilder
             }
             else
             {
-                QST_Segment lastFillInSegment = new QST_Segment(x0z(startLineSeg), x0z(endLineSeg), fillDataLength: 1);
+                QSTS_BuilderUtils.PrepareSegment(x0z(startLineSeg), x0z(endLineSeg), QSTS_Type.Quad, 
+                    fillDataLength: 1, out QST_Segment lastFillInSegment);
                 QSTS_FillData fillInState = new QSTS_FillData(
                     ConstructType.Continue,
                     FillType.FromStart,

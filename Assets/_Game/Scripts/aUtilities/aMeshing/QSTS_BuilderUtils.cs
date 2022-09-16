@@ -23,8 +23,7 @@ namespace Orazum.Meshing
             float3x2 start = qs[0];
             float3x2 end = qs[qs.LineSegmentsCount - 1];
 
-            qsts = new QST_Segment(start, end, fillDataLength);
-            qsts.Type = type;
+            qsts = new QST_Segment(type, start, end, fillDataLength);
         }
 
         public static void PrepareSegment(
@@ -35,8 +34,7 @@ namespace Orazum.Meshing
             out QST_Segment qsts
         )
         { 
-            qsts = new QST_Segment(start, end, fillDataLength);
-            qsts.Type = type;
+            qsts = new QST_Segment(type, start, end, fillDataLength);
         }
     }
 }

@@ -12,7 +12,7 @@ using Orazum.Meshing;
 using static Orazum.Math.EasingUtilities;
 using static Orazum.Math.MathUtils;
 
-public class QuadBulderTest
+public class QSTS_QuadBulderTests
 {
     private static float LerpSpeed = 1f;
 

@@ -243,10 +243,9 @@ namespace Orazum.Meshing
 
             float lerpDelta = radial.MaxLerpLength / radial.Resolution;
             float lerpParam = lerpParamInput;
-            FillTypeLerpConstruct lerpConstruct = new FillTypeLerpConstruct(fillType, radial.MaxLerpLength, ref lerpParam);
-            int segsCount = lerpConstruct.GetSegsCount(lerpDelta, out int deltaSegsCount);
+            FillTypeLerpConstruct lerpConstruct = new FillTypeLerpConstruct(fillData, radial.MaxLerpLength, ref lerpParam);
 
-            NativeArray<float3x2> segs = new NativeArray<float3x2>(segsCount, Allocator.Temp);
+            NativeArray<float3x2> segs = new NativeArray<float3x2>(lerpConstruct.SegsCount, Allocator.Temp);
             int indexer = 0;
             if (lerpConstruct.AddStart > 0)
             {
@@ -260,9 +259,13 @@ namespace Orazum.Meshing
             }
 
             float2 lerpOffset = lerpConstruct.LerpOffset;
-            for (int i = 0; i < deltaSegsCount; i++)
+            for (int i = 0; i < lerpConstruct.DeltaSegsCount; i++)
             {
                 lerpOffset.x += lerpDelta;
+                if (lerpOffset.x >= 1)
+                {
+                    break;
+                }
                 if (lerpOffset.x < lerpOffset.y)
                 {
                     segs[indexer++] = RotateLerp_SRL(radial, start, lerpOffset.x);
@@ -306,48 +309,56 @@ namespace Orazum.Meshing
         )
         {
             QuadStrip quadStrip = GetRadialQuadStrip(fillData.Radial, start);
+            // _quadStripBuilder.Build(quadStrip, ref buffersIndexers);
 
             float lerpParam = lerpParamInput;
-            var lerpConstruct = new FillTypeLerpConstruct(fillData.Fill, fillData.Radial.MaxLerpLength, ref lerpParam);
-
+            var lerpConstruct = new FillTypeLerpConstruct(fillData, fillData.Radial.MaxLerpLength, ref lerpParam);
+ 
             QSTSFD_Radial radial = fillData.Radial;
             float lerpDelta = radial.MaxLerpLength / radial.Resolution;
-            int segsCount = lerpConstruct.GetSegsCount(lerpDelta, out int deltaSegsCount);
-            NativeArray<float3> lerpPoints = new NativeArray<float3>(segsCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            if (fillData.IsTemporary)
+            {
+                lerpDelta += radial.MaxLerpLength / radial.Resolution;
+            }
+            NativeArray<float3> lerpPoints = new NativeArray<float3>(lerpConstruct.SegsCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
 
-            NativeArray<float3> dim = UpdateLerpedPoints_DRL(
-                radial, 
-                quadStrip[0], 
-                lerpConstruct, 
-                lerpDelta, lerpParam, 
-                ref lerpPoints
+            UpdateLerpedPoints_DRL(
+                radial,
+                quadStrip[0],
+                lerpConstruct,
+                lerpDelta, lerpParam,
+                ref lerpPoints,
+                out int indexer
             );
 
+            NativeArray<float3> gridDim = lerpPoints.GetSubArray(0, indexer);
             // DrawGridDim(dim, 10);
 
-            _gridBuilder.Start(dim, ref buffersIndexers);
+            _gridBuilder.Start(gridDim, ref buffersIndexers);
             for (int i = 1; i < quadStrip.LineSegmentsCount; i++)
             {
-                dim = UpdateLerpedPoints_DRL(
-                    radial, 
-                    quadStrip[i], 
-                    lerpConstruct, 
-                    lerpDelta, lerpParam, 
-                    ref lerpPoints
+                UpdateLerpedPoints_DRL(
+                    radial,
+                    quadStrip[i],
+                    lerpConstruct,
+                    lerpDelta, lerpParam,
+                    ref lerpPoints,
+                    out indexer
                 );
                 // DrawGridDim(dim, 10);
 
-                _gridBuilder.Continue(dim, ref buffersIndexers);
+                _gridBuilder.Continue(gridDim, ref buffersIndexers);
             }
         }
 
-        private NativeArray<float3> UpdateLerpedPoints_DRL(
+        private void UpdateLerpedPoints_DRL(
             in QSTSFD_Radial radial,
             in float3x2 lineSegment,
             in FillTypeLerpConstruct lerpConstruct,
             in float lerpDelta,
             in float lerpParam,
-            ref NativeArray<float3> lerpPoints
+            ref NativeArray<float3> lerpPoints,
+            out int indexer
         )
         {
             float3 start = lineSegment[0];
@@ -355,13 +366,14 @@ namespace Orazum.Meshing
             quaternion perp = quaternion.AxisAngle(math.up(), TAU / 4);
             float3 axis = GetDirection(perp, lineSegment);
             float3 center = GetLineSegmentCenter(lineSegment);
-            int indexer = 0;
+            indexer = 0;
             if (lerpConstruct.AddStart > 0)
             {
                 lerpPoints[indexer++] = start;
             }
 
             float angle = radial.SecondaryAngle * lerpParam;
+            Debug.Log(angle);
             quaternion q = quaternion.AxisAngle(axis, angle);
 
             float3 lerpPoint = RotateAround(start, center, q);
@@ -370,11 +382,14 @@ namespace Orazum.Meshing
                 lerpPoints[indexer++] = lerpPoint;
             }
 
-            int deltaSegsCount = lerpConstruct.GetDeltaSegsCount(lerpDelta);
             float2 lerpOffset = lerpConstruct.LerpOffset;
-            for (int i = 0; i < deltaSegsCount; i++)
+            for (int i = 0; i < lerpConstruct.DeltaSegsCount; i++)
             {
                 lerpOffset.x += lerpDelta;
+                if (lerpOffset.x >= 1)
+                {
+                    break;
+                }
                 if (lerpOffset.x < lerpOffset.y)
                 {
                     angle = radial.SecondaryAngle * lerpOffset.x;
@@ -392,7 +407,6 @@ namespace Orazum.Meshing
             {
                 lerpPoints[indexer++] = end;
             }
-            return lerpPoints;
         }
         #endregion
 
@@ -434,6 +448,7 @@ namespace Orazum.Meshing
                     throw new System.ArgumentOutOfRangeException("Unknown RadialType Move");
             }
         }
+
         private float3x2 MoveSingle(FillType fillType, in float3x2 range, float lerpParam)
         {
             switch (fillType)
@@ -490,7 +505,7 @@ namespace Orazum.Meshing
 
             NativeArray<float3x2> lineSegments = new NativeArray<float3x2>(radial.Resolution + 1, Allocator.Temp);
             int indexer = 0;
-            for (int i = 0; i < radial.Resolution; i++)
+            for (int i = 0; i < radial.Resolution + 1; i++)
             {
                 lineSegments[indexer++] = RotateLerp_SRL(radial, rotationSegment, lerpOffset);
                 lerpOffset += lerpDelta;

@@ -25,6 +25,15 @@ public static class PlayModeTestsUtils
         gb.transform.rotation = quaternion.LookRotationSafe(forward, up);
     }
 
+    public static void CreateLight(float3 forward, float3 up)
+    {
+        GameObject gb = new GameObject("Light", typeof(Light));
+        Light light = gb.GetComponent<Light>();
+        light.type = LightType.Directional;
+        light.intensity = 2;
+        gb.transform.rotation = quaternion.LookRotationSafe(forward, up);
+    }
+
     public static void ApplyMeshBuffers(
         in NativeArray<VertexData> vertices, 
         in NativeArray<short> indices, 
@@ -47,7 +56,7 @@ public static class PlayModeTestsUtils
         );
         mesh.SetSubMesh(0, subMesh);
 
-        // mesh.RecalculateNormals();
+        mesh.RecalculateNormals();
         mesh.RecalculateBounds();
     }
 }

@@ -44,7 +44,7 @@ public struct WheelTransitionsBuilder
 
             _radialBuilder.FillOut_SRL(in origin, WholeLerpRange, WholeLerpLength, isNew: true, clockOrder, out QST_Segment qsts);
             writeBuffer[QSTS_indexer++] = qsts;
-            _radialBuilder.FillIn_SRL(in target, WholeLerpRange, WholeLerpLength, isNew: true, clockOrder, out qsts);
+            _radialBuilder.FillIn_SRL(in target, WholeLerpRange, WholeLerpLength, isNew: true, isTemporary: false, clockOrder, out qsts);
             writeBuffer[QSTS_indexer++] = qsts;
         }
     }
@@ -57,7 +57,7 @@ public struct WheelTransitionsBuilder
     )
     {
         int QSTS_indexer = 0;
-        
+
         for (int i = 0; i < originsTargets.Length; i++)
         {
             int2 originTarget = originsTargets[i];
@@ -66,20 +66,22 @@ public struct WheelTransitionsBuilder
 
             if (i == 0 && vertOrder == VertOrderType.Down)
             {
+                FillType fillType = FillType.StartToEnd;
                 GetLerpPointsForLevitation(origin, target, vertOrder, out float2 lerpRange, out float lerpLength);
-                _radialBuilder.GenerateSingleMoveLerp(origin, new float2(0, lerpRange.x), WholeLerpLength, isNew: true, vertOrder, out QST_Segment s1);
-                _radialBuilder.FillIn_DRL        (in origin, in target, lerpRange, lerpLength, isNew: true, vertOrder, out QST_Segment s2);
-                _radialBuilder.GenerateSingleMoveLerp(target, new float2(lerpRange.y, 1), WholeLerpLength, isNew: true, vertOrder, out QST_Segment s3);
+                _radialBuilder.GenerateSingleMoveLerp(origin, new float2(0, lerpRange.x), WholeLerpLength, isNew: true, fillType, out QST_Segment s1);
+                _radialBuilder.FillIn_DRL(in origin, in target, lerpRange, lerpLength, isNew: true, isTemporary: false, vertOrder, out QST_Segment s2);
+                _radialBuilder.GenerateSingleMoveLerp(target, new float2(lerpRange.y, 1), WholeLerpLength, isNew: true, fillType, out QST_Segment s3);
                 writeBuffer[QSTS_indexer++] = s1;
                 writeBuffer[QSTS_indexer++] = s2;
                 writeBuffer[QSTS_indexer++] = s3;
             }
             else if (i == originsTargets.Length - 1 && vertOrder == VertOrderType.Up)
             {
+                FillType fillType = FillType.StartToEnd;
                 GetLerpPointsForLevitation(origin, target, vertOrder, out float2 lerpRange, out float lerpLength);
-                _radialBuilder.GenerateSingleMoveLerp(origin, new float2(0, lerpRange.x), WholeLerpLength, isNew: true, vertOrder, out QST_Segment s1);
-                _radialBuilder.FillIn_DRL        (in origin, in target, lerpRange, lerpLength, isNew: true, vertOrder, out QST_Segment s2);
-                _radialBuilder.GenerateSingleMoveLerp(target, new float2(lerpRange.y, 1), WholeLerpLength, isNew: true, vertOrder, out QST_Segment s3);
+                _radialBuilder.GenerateSingleMoveLerp(origin, new float2(0, lerpRange.x), WholeLerpLength, isNew: true, fillType, out QST_Segment s1);
+                _radialBuilder.FillIn_DRL(in origin, in target, lerpRange, lerpLength, isNew: true, isTemporary: false, vertOrder, out QST_Segment s2);
+                _radialBuilder.GenerateSingleMoveLerp(target, new float2(lerpRange.y, 1), WholeLerpLength, isNew: true, fillType, out QST_Segment s3);
                 writeBuffer[QSTS_indexer++] = s1;
                 writeBuffer[QSTS_indexer++] = s2;
                 writeBuffer[QSTS_indexer++] = s3;
@@ -107,7 +109,7 @@ public struct WheelTransitionsBuilder
             radius = DistanceLineSegment(origin[0][0], target[0][1]) / 2;
         }
         else
-        { 
+        {
             moveDistance = DistanceLineSegment(origin[0][0], origin[0][1]);
             radius = DistanceLineSegment(origin[0][1], target[0][0]) / 2;
         }

@@ -7,7 +7,7 @@ public struct QST_Segment
         Quad,
         Radial
     }
-    public QSTS_Type Type { get; set; }
+    public QSTS_Type Type { get; private set; }
 
     public float3x2 StartLineSegment { get; private set; }
     public float3x2 EndLineSegment { get; private set; }
@@ -17,9 +17,9 @@ public struct QST_Segment
     private QSTS_FillData _f2;
     private QSTS_FillData _f3;
 
-    public QST_Segment(in float3x2 startLineSegment, in float3x2 endLineSegment, int fillDataLength)
+    internal QST_Segment(QSTS_Type type, in float3x2 startLineSegment, in float3x2 endLineSegment, int fillDataLength)
     {
-        Type = QSTS_Type.Quad;
+        Type = type;
 
         StartLineSegment = startLineSegment;
         EndLineSegment = endLineSegment;
@@ -63,12 +63,15 @@ public struct QST_Segment
             { 
                 case 0:
                     _f1 = value;
+                    _f1.SegmentType = Type;
                     return;
                 case 1:
                     _f2 = value;
+                    _f1.SegmentType = Type;
                     return;
                 case 2:
                     _f3 = value;
+                    _f1.SegmentType = Type;
                     return;
             }
         }

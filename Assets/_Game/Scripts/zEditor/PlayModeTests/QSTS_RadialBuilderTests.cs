@@ -18,17 +18,17 @@ using static Orazum.Constants.Math;
 
 public class QSTS_RadialBuilderTests
 {
-    private static float LerpSpeed = 0.1f;
+    private static float LerpSpeed = 0.5f;
 
     private struct TransitionData : IDisposable
-    { 
+    {
         public NativeArray<VertexData> Vertices;
         public NativeArray<short> Indices;
         public NativeArray<QST_Segment> First;
         public NativeArray<QST_Segment> Second;
 
         public TransitionData(int lineSegmentsCount, int transSegmentsCount)
-        { 
+        {
             Vertices = new NativeArray<VertexData>(lineSegmentsCount * lineSegmentsCount, Allocator.Persistent);
             Indices = new NativeArray<short>((lineSegmentsCount - 1) * (lineSegmentsCount - 1) * 6, Allocator.Persistent);
             First = new NativeArray<QST_Segment>(transSegmentsCount, Allocator.Persistent);
@@ -36,7 +36,7 @@ public class QSTS_RadialBuilderTests
         }
 
         public void Dispose()
-        { 
+        {
             Vertices.Dispose();
             Indices.Dispose();
             First.Dispose();
@@ -51,14 +51,14 @@ public class QSTS_RadialBuilderTests
         public NativeArray<short> Indices;
 
         public MeshData(int lineSegmentsCount)
-        { 
+        {
             LineSegments = new NativeArray<float3x2>(lineSegmentsCount, Allocator.Persistent);
             Vertices = new NativeArray<VertexData>(lineSegmentsCount * 2, Allocator.Persistent);
             Indices = new NativeArray<short>((lineSegmentsCount - 1) * 6, Allocator.Persistent);
         }
 
         public void Dispose()
-        { 
+        {
             LineSegments.Dispose();
             Vertices.Dispose();
             Indices.Dispose();
@@ -83,7 +83,7 @@ public class QSTS_RadialBuilderTests
         float totalAngle = TAU / 4;
         float deltaAngle = totalAngle / (resolution);
         QuadStrip quadStrip = GenerateSimpleQuadStrip(ref meshData, start, deltaAngle);
-        
+
         float3x2 normalUV = new float3x2(new float3(0, 1, 0), float3.zero);
 
         _transitionData = new TransitionData(resolution + 1, 1);
@@ -95,7 +95,9 @@ public class QSTS_RadialBuilderTests
 
         PlayModeTestsUtils.CreateMeshDummy(out MeshFilter staticMesh);
         PlayModeTestsUtils.CreateCamera(new float3(0, 10, 0), math.down(), math.forward());
+        PlayModeTestsUtils.CreateLight(new float3(0, -1, 1), math.forward());
         PlayModeTestsUtils.ApplyMeshBuffers(_transitionData.Vertices, _transitionData.Indices, staticMesh, buffersIndexers);
+
 
         yield return new WaitForSeconds(0.5f);
         GameObject.Destroy(staticMesh.gameObject);
@@ -113,7 +115,7 @@ public class QSTS_RadialBuilderTests
     {
         PlayModeTestsUtils.CreateMeshDummy(out MeshFilter dynamicMesh);
 
-        _radialBuilder.FillIn_SRL(quadStrip, lerpRange: new float2(0, 1), lerpLength: 1, isNew: true, ClockOrderType.CW, out QST_Segment qsts);
+        _radialBuilder.FillIn_SRL(quadStrip, lerpRange: new float2(0, 1), lerpLength: 1, isNew: true, isTemporary: false, ClockOrderType.CW, out QST_Segment qsts);
         _transitionData.First[0] = qsts;
         QS_Transition fadeInTransition = new QS_Transition(_transitionData.First);
 
@@ -149,10 +151,10 @@ public class QSTS_RadialBuilderTests
         GameObject.Destroy(dynamicMesh.gameObject);
     }
     private IEnumerator TestAntiClockwise_SRL(QuadStrip quadStrip)
-    { 
+    {
         PlayModeTestsUtils.CreateMeshDummy(out MeshFilter dynamicMesh);
 
-        _radialBuilder.FillIn_SRL(quadStrip, lerpRange: new float2(0, 1), lerpLength: 1, isNew: true, ClockOrderType.AntiCW, out QST_Segment qsts);
+        _radialBuilder.FillIn_SRL(quadStrip, lerpRange: new float2(0, 1), lerpLength: 1, isNew: true, isTemporary: false, ClockOrderType.AntiCW, out QST_Segment qsts);
         _transitionData.First[0] = qsts;
         QS_Transition fadeInTransition = new QS_Transition(_transitionData.First);
 
@@ -192,7 +194,6 @@ public class QSTS_RadialBuilderTests
     #endregion
 
     #region DoubleRotationLerp
-    #endregion
     [UnityTest]
     public IEnumerator DoubleRotationLerp()
     {
@@ -206,7 +207,7 @@ public class QSTS_RadialBuilderTests
         float deltaAngle = totalAngle / resolution;
         float3x2 startUp = new float3x2(new float3(0, 0, 3), new float3(0, 0, 4));
         QuadStrip quadStripUp = GenerateSimpleQuadStrip(ref meshDataUp, startUp, deltaAngle);
-        
+
         float3x2 startDown = new float3x2(new float3(0, 0, 1), new float3(0, 0, 2));
         QuadStrip quadStripDown = GenerateSimpleQuadStrip(ref meshDataDown, startDown, deltaAngle);
 
@@ -219,20 +220,21 @@ public class QSTS_RadialBuilderTests
         PlayModeTestsUtils.CreateMeshDummy(out MeshFilter meshUp);
         PlayModeTestsUtils.CreateMeshDummy(out MeshFilter meshDown);
         PlayModeTestsUtils.CreateCamera(new float3(2, 13, 0), math.down(), math.forward());
+        PlayModeTestsUtils.CreateLight(new float3(0, -1, 1), math.forward());
         PlayModeTestsUtils.ApplyMeshBuffers(meshDataUp.Vertices, meshDataUp.Indices, meshUp, buffersIndexersUp);
         PlayModeTestsUtils.ApplyMeshBuffers(meshDataDown.Vertices, meshDataDown.Indices, meshDown, buffersIndexersDown);
 
         float2 angles = new float2(totalAngle, TAU / 2);
 
-        _transitionData = new TransitionData((resolution + 1) * 2, 1);
+        _transitionData = new TransitionData((resolution + 1) * 2, transSegmentsCount: 3);
         _radialBuilder = new QSTS_RadialBuilder(math.up(), angles, resolution);
         _animator = new QST_Animator(_transitionData.Vertices, _transitionData.Indices, normalUV);
 
         yield return new WaitForSeconds(0.5f);
-        // GameObject.Destroy(meshUp.gameObject);
-        // GameObject.Destroy(meshDown.gameObject);
+        GameObject.Destroy(meshUp.gameObject);
+        GameObject.Destroy(meshDown.gameObject);
         yield return TestUp_DRL(quadStripDown, quadStripUp);
-        // yield return TestAntiClockwise_SRL();
+        //syield return TestDown_DRL(quadStripDown, quadStripUp);
 
         _transitionData.Dispose();
         meshDataUp.Dispose();
@@ -244,20 +246,50 @@ public class QSTS_RadialBuilderTests
 
     private IEnumerator TestUp_DRL(QuadStrip down, QuadStrip up)
     {
-        PlayModeTestsUtils.CreateMeshDummy(out MeshFilter meshDown);
+        PlayModeTestsUtils.CreateMeshDummy(out MeshFilter meshUp);
         GetLerpPointsForLevitation(down, up, out float2 lerpRange, out float lerpLength);
-        
-        _radialBuilder.FillIn_DRL(down, up, new float2(0, 1), lerpLength, isNew: true, VertOrderType.Up, out QST_Segment qsts);
-        _transitionData.First[0] = qsts;
+
+        _radialBuilder.GenerateSingleMoveLerp(down, new float2(0, lerpRange.x), lerpLength: 1, isNew: true, FillType.ToStart, out QST_Segment s1);
+        _radialBuilder.FillIn_DRL(down, up, new float2(0, 1), lerpLength, isNew: true, isTemporary: true, VertOrderType.Up, out QST_Segment s2);
+        _radialBuilder.GenerateSingleMoveLerp(up, new float2(lerpRange.y, 1), lerpLength: 1, isNew: true, FillType.FromEnd, out QST_Segment s3);
+        _transitionData.First[0] = s1;
+        _transitionData.First[1] = s2;
+        _transitionData.First[2] = s3;
+
         QS_Transition upTransition = new QS_Transition(_transitionData.First);
 
         _animator.AssignTransition(upTransition);
         float lerpParam = 0;
-        MeshBuffersIndexers buffersIndexers = new MeshBuffersIndexers();;
+        MeshBuffersIndexers buffersIndexers = new MeshBuffersIndexers(); ;
         while (lerpParam < 1)
         {
             lerpParam += LerpSpeed * Time.deltaTime;
-            Debug.Log(lerpParam);
+            ClampToOne(ref lerpParam);
+            _animator.UpdateWithLerpPos(lerpParam, shouldReorientVertices: false, ref buffersIndexers);
+            PlayModeTestsUtils.ApplyMeshBuffers(_transitionData.Vertices, _transitionData.Indices, meshUp, buffersIndexers);
+            buffersIndexers.Reset();
+            yield return null;
+        }
+
+        yield return new WaitForSeconds(10);
+        GameObject.Destroy(meshUp);
+    }
+
+    private IEnumerator TestDown_DRL(QuadStrip down, QuadStrip up)
+    {
+        PlayModeTestsUtils.CreateMeshDummy(out MeshFilter meshDown);
+        GetLerpPointsForLevitation(down, up, out float2 lerpRange, out float lerpLength);
+
+        _radialBuilder.FillIn_DRL(down, up, new float2(0, 1), lerpLength, isNew: true, isTemporary: true, VertOrderType.Down, out QST_Segment qsts);
+        _transitionData.First[0] = qsts;
+        QS_Transition downTransition = new QS_Transition(_transitionData.First);
+
+        _animator.AssignTransition(downTransition);
+        float lerpParam = 0;
+        MeshBuffersIndexers buffersIndexers = new MeshBuffersIndexers(); ;
+        while (lerpParam < 1)
+        {
+            lerpParam += LerpSpeed * Time.deltaTime;
             ClampToOne(ref lerpParam);
             _animator.UpdateWithLerpPos(EaseOut(lerpParam), shouldReorientVertices: false, ref buffersIndexers);
             PlayModeTestsUtils.ApplyMeshBuffers(_transitionData.Vertices, _transitionData.Indices, meshDown, buffersIndexers);
@@ -265,20 +297,9 @@ public class QSTS_RadialBuilderTests
             yield return null;
         }
 
-        // _animator.AssignTransition(fadeOutTransition);
-        // lerpParam = 0;
-        // while (lerpParam < 1)
-        // {
-        //     lerpParam += LerpSpeed * Time.deltaTime;
-        //     ClampToOne(ref lerpParam);
-        //     _animator.UpdateWithLerpPos(EaseOut(lerpParam), shouldReorientVertices: false, ref _buffersIndexers);
-        //     PlayModeTestsUtils.ApplyMeshBuffers(_transitionData.Vertices, _transitionData.Indices, _meshContainer, _buffersIndexers);
-        //     _buffersIndexers.Reset();
-        //     yield return null;
-        // }
-
+        GameObject.Destroy(meshDown);
     }
-    
+
     private void GetLerpPointsForLevitation(
         in QuadStrip down,
         in QuadStrip up,
@@ -296,6 +317,59 @@ public class QSTS_RadialBuilderTests
         float end = start + levitationDistance / totalDistance;
         lerpRange = new float2(start, end);
         lerpLength = moveDistance / totalDistance;
+    }
+    #endregion
+
+    #region MoveLerp
+    #endregion // MoveLerp
+    [UnityTest]
+    public IEnumerator MoveLerp()
+    {
+        int resolution = 15;
+        MeshData meshDataUp = new MeshData(resolution + 1);
+        MeshData meshDataDown = new MeshData(resolution + 1);
+        MeshBuffersIndexers buffersIndexersUp = new MeshBuffersIndexers();
+        MeshBuffersIndexers buffersIndexersDown = new MeshBuffersIndexers();
+
+        float totalAngle = TAU / 4;
+        float deltaAngle = totalAngle / resolution;
+        float3x2 startUp = new float3x2(new float3(0, 0, 3), new float3(0, 0, 4));
+        QuadStrip quadStripUp = GenerateSimpleQuadStrip(ref meshDataUp, startUp, deltaAngle);
+
+        float3x2 startDown = new float3x2(new float3(0, 0, 1), new float3(0, 0, 2));
+        QuadStrip quadStripDown = GenerateSimpleQuadStrip(ref meshDataDown, startDown, deltaAngle);
+
+        float3x2 normalUV = new float3x2(new float3(0, 1, 0), float3.zero);
+        QuadStripBuilder builder = new QuadStripBuilder(meshDataUp.Vertices, meshDataUp.Indices, normalUV);
+        builder.Build(quadStripUp, ref buffersIndexersUp);
+        builder = new QuadStripBuilder(meshDataDown.Vertices, meshDataDown.Indices, normalUV);
+        builder.Build(quadStripDown, ref buffersIndexersDown);
+
+        PlayModeTestsUtils.CreateMeshDummy(out MeshFilter meshUp);
+        PlayModeTestsUtils.CreateMeshDummy(out MeshFilter meshDown);
+        PlayModeTestsUtils.CreateCamera(new float3(2, 13, 0), math.down(), math.forward());
+        PlayModeTestsUtils.CreateLight(new float3(0, -1, 1), math.forward());
+        PlayModeTestsUtils.ApplyMeshBuffers(meshDataUp.Vertices, meshDataUp.Indices, meshUp, buffersIndexersUp);
+        PlayModeTestsUtils.ApplyMeshBuffers(meshDataDown.Vertices, meshDataDown.Indices, meshDown, buffersIndexersDown);
+
+        float2 angles = new float2(totalAngle, TAU / 2);
+
+        _transitionData = new TransitionData((resolution + 1) * 2, 1);
+        _radialBuilder = new QSTS_RadialBuilder(math.up(), angles, resolution);
+        _animator = new QST_Animator(_transitionData.Vertices, _transitionData.Indices, normalUV);
+
+        yield return new WaitForSeconds(0.5f);
+        GameObject.Destroy(meshUp.gameObject);
+        GameObject.Destroy(meshDown.gameObject);
+        yield return TestUp_DRL(quadStripDown, quadStripUp);
+        yield return TestDown_DRL(quadStripDown, quadStripUp);
+
+        _transitionData.Dispose();
+        meshDataUp.Dispose();
+        meshDataDown.Dispose();
+        yield return new WaitForSeconds(0.5f);
+
+        yield return new WaitUntil(() => Input.GetKeyDown(KeyCode.F));
     }
 
     private QuadStrip GenerateSimpleQuadStrip(ref MeshData data, in float3x2 start, float angleRad)

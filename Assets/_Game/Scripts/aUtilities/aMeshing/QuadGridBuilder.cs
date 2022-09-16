@@ -14,17 +14,20 @@ namespace Orazum.Meshing
         private float2 _uv;
 
         private NativeArray<int> _prevIndices;
+        private NativeArray<int> _indexBuffer;
         public QuadGridBuilder(in NativeArray<VertexData> vertices, in NativeArray<short> indices, in float2 uv)
         {
             _vertices = vertices;
             _indices = indices;
             _uv = uv;
             _prevIndices = new NativeArray<int>();
+            _indexBuffer = new NativeArray<int>();
         }
 
         public void Start(in NativeArray<float3> gridDim, ref MeshBuffersIndexers buffersIndexers)
         {
             _prevIndices = new NativeArray<int>(gridDim.Length, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            _indexBuffer = new NativeArray<int>(gridDim.Length, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
             for (int i = 0; i < gridDim.Length; i++)
             {
                 _prevIndices[i] = AddVertex(gridDim[i], ref buffersIndexers);
@@ -34,27 +37,25 @@ namespace Orazum.Meshing
         public void Continue(in NativeArray<float3> gridDim, ref MeshBuffersIndexers buffersIndexers)
         {
             Assert.IsTrue(_prevIndices.Length == gridDim.Length, "GridBuilder supports only gridDims of the same size");
-            int2 newIndices = int2.zero;
+            Assert.IsTrue(_prevIndices.Length > 1, "Grid cannot consist from dimension equal or less than 1");
+
             int2 indexer = new int2(0, 1);
-            for (int i = 0; i < gridDim.Length - 1; i++)
+            int prevIndex = AddVertex(gridDim[0], ref buffersIndexers);
+            _indexBuffer[0] = prevIndex;
+            for (int i = 1; i < gridDim.Length; i++)
             {
-                int2 prevIndices = new int2(
-                    _prevIndices[indexer.x],
-                    _prevIndices[indexer.y]
-                );
-
-                newIndices = new int2(
-                    AddVertex(gridDim[i], ref buffersIndexers),
-                    AddVertex(gridDim[i + 1], ref buffersIndexers)
-                );              
-
-                int4 quadIndices = new int4(prevIndices, newIndices.yx);
+                int newIndex = AddVertex(gridDim[i], ref buffersIndexers);
+                _indexBuffer[i] = newIndex;
+                int2 prevDimIndices = new int2(_prevIndices[indexer.x], _prevIndices[indexer.y]);
+                int4 quadIndices = new int4(prevDimIndices, newIndex, prevIndex);
                 AddQuadIndices(quadIndices, ref buffersIndexers);
+                indexer++;
+                prevIndex = newIndex;
+            }
 
-                _prevIndices[indexer.x] = newIndices.x;
-                _prevIndices[indexer.y] = newIndices.y;
-                indexer.x++;
-                indexer.y++;
+            for (int i = 0; i < _prevIndices.Length; i++)
+            {
+                _prevIndices[i] = _indexBuffer[i];
             }
         }
 
@@ -80,7 +81,7 @@ namespace Orazum.Meshing
             _prevIndices.Dispose();
         }
 
-        private void AddQuadIndices(int4 quadIndices, ref MeshBuffersIndexers buffersIndexers)
+        private void AddQuadIndices(in int4 quadIndices, ref MeshBuffersIndexers buffersIndexers)
         {
             AddIndex(quadIndices.x, ref buffersIndexers);
             AddIndex(quadIndices.y, ref buffersIndexers);

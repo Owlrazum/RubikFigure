@@ -48,8 +48,8 @@ namespace Orazum.Meshing
         #region FadeOut
         private QST_Segment BuildFirstFadeOutTransSeg(in QuadStrip qs, float stripLength, ref float2 lerpOffsets)
         {
-            QST_Segment firstFadeOut = new QST_Segment(qs[0], qs[1], 1);
-            firstFadeOut.Type = QSTS_Type.Quad;
+            QSTS_BuilderUtils.PrepareSegment(qs[0], qs[1], QSTS_Type.Quad, 
+                fillDataLength: 1, out QST_Segment firstFadeOut);
 
             float lengthRatio = DistanceLineSegment(qs[0][0], qs[1][0]) / stripLength;
             MoveLerpOffsets(ref lerpOffsets, lengthRatio);
@@ -61,8 +61,8 @@ namespace Orazum.Meshing
 
         private QST_Segment BuildUsualFadeOutTransSeg(in QuadStrip qs, int index, float stripLength, ref float2 lerpOffsets)
         {
-            QST_Segment fadeOutSeg = new QST_Segment(qs[index], qs[index + 1], 2);
-            fadeOutSeg.Type = QSTS_Type.Quad;
+            QSTS_BuilderUtils.PrepareSegment(qs[index], qs[index+ 1], QSTS_Type.Quad, 
+                fillDataLength: 2, out QST_Segment fadeOutSeg);
 
             float lengthRatio = DistanceLineSegment(qs[index][0], qs[index + 1][0]) / stripLength;
             MoveLerpOffsets(ref lerpOffsets, lengthRatio);
@@ -77,8 +77,8 @@ namespace Orazum.Meshing
         #region FadeIn
         private QST_Segment BuildUsualFadeInTransSeg(in QuadStrip qs, int index, float stripLength, ref float2 lerpOffsets)
         {
-            QST_Segment fadeInSeg = new QST_Segment(qs[index], qs[index + 1], 2);
-            fadeInSeg.Type = QSTS_Type.Quad;
+            QSTS_BuilderUtils.PrepareSegment(qs[index], qs[index+ 1], QSTS_Type.Quad, 
+                fillDataLength: 2, out QST_Segment fadeInSeg);
 
             float lengthRatio = DistanceLineSegment(qs[index][0], qs[index + 1][0]) / stripLength;
             MoveLerpOffsets(ref lerpOffsets, lengthRatio);
@@ -91,8 +91,8 @@ namespace Orazum.Meshing
 
         private QST_Segment BuildLastFadeInTransSeg(in QuadStrip qs, int index, float stripLength, ref float2 lerpOffsets)
         {
-            QST_Segment lastFadeIn = new QST_Segment(qs[index], qs[index + 1], 1);
-            lastFadeIn.Type = QSTS_Type.Quad;
+            QSTS_BuilderUtils.PrepareSegment(qs[index], qs[index+ 1], QSTS_Type.Quad, 
+                fillDataLength: 1, out QST_Segment lastFadeIn);
 
             float lengthRatio = DistanceLineSegment(qs[index][0], qs[index + 1][0]) / stripLength;
             MoveLerpOffsets(ref lerpOffsets, lengthRatio);

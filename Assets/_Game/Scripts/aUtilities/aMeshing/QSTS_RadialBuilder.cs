@@ -71,6 +71,7 @@ namespace Orazum.Meshing
             in float2 lerpRange,
             in float lerpLength,
             bool isNew,
+            bool isTemporary,
             ClockOrderType clockOrder,
             out QST_Segment qsts
             )
@@ -80,6 +81,7 @@ namespace Orazum.Meshing
             ConstructType constructType = isNew ? ConstructType.New : ConstructType.Continue;
             FillType fillType = clockOrder == ClockOrderType.CW ? FillType.FromStart : FillType.FromEnd;
             QSTS_FillData fillData = new QSTS_FillData(constructType, fillType, lerpRange, in radial);
+            fillData.IsTemporary = isTemporary;
             qsts[0] = fillData;
         }
 
@@ -92,6 +94,7 @@ namespace Orazum.Meshing
             in float2 lerpRange,
             in float lerpLength,
             bool isNew,
+            bool isTemporary,
             VertOrderType vertOrder,
             out QST_Segment qsts
         )
@@ -100,7 +103,7 @@ namespace Orazum.Meshing
 
             float3x2 start = new float3x2(down[0][0], up[0][1]);
             float3x2 end = new float3x2(down[down.LineSegmentsCount - 1][0], up[up.LineSegmentsCount - 1][1]);
-            FillType fillType = vertOrder == VertOrderType.Up ? FillType.ToEnd : FillType.ToStart;
+            FillType fillType = vertOrder == VertOrderType.Up ? FillType.FromStart : FillType.FromEnd;
 
             PrepareSegment(start, end, QSTS_Type.Radial, fillDataLength: 1, out qsts);
 
@@ -114,6 +117,7 @@ namespace Orazum.Meshing
             );
 
             QSTS_FillData fillData = new QSTS_FillData(constructType, fillType, lerpRange, in radial);
+            fillData.IsTemporary = isTemporary;
             qsts[0] = fillData;
         }
         #endregion
@@ -124,14 +128,13 @@ namespace Orazum.Meshing
             in float2 lerpRange,
             in float lerpLength,
             bool isNew,
-            VertOrderType vertOrder,
+            FillType fillType,
             out QST_Segment qsts
         )
         {
             float3x2 start = qs[0];
             RadialType radialType = RadialType.SingleMove;
             ConstructType constructType = isNew ? ConstructType.New : ConstructType.Continue;
-            FillType fillType = vertOrder == VertOrderType.Up ? FillType.ToEnd : FillType.ToStart;
 
             PrepareSegment(start, float3x2.zero, QSTS_Type.Radial, fillDataLength: 1, out qsts);
             PrepareRadial(radialType, lerpLength, out QSTSFD_Radial radial);
