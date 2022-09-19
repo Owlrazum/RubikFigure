@@ -51,6 +51,7 @@ namespace Orazum.Meshing
             QSTS_BuilderUtils.PrepareSegment(qs[0], qs[1], QSTS_Type.Quad, 
                 fillDataLength: 1, out QST_Segment firstFadeOut);
 
+
             float lengthRatio = DistanceLineSegment(qs[0][0], qs[1][0]) / stripLength;
             MoveLerpOffsets(ref lerpOffsets, lengthRatio);
 

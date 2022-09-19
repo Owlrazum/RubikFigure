@@ -19,8 +19,7 @@ namespace Orazum.Meshing
     {
         // SRL: SingleRotationLerp
         // DRL: DoubleRotationLerp
-        
-        public float3 RotationCenter { get; set; } 
+        public float3 RotationCenter { get; set; }
 
         private readonly float4 PrimaryAxisAngle;
         private readonly float SecondaryAngle;
@@ -34,61 +33,85 @@ namespace Orazum.Meshing
             _resolution = resolution;
         }
 
+        public struct Parameters
+        {
+            public float2 LerpRange;
+            public float LerpLength;
+            public ConstructType Construct;
+            public bool IsTemporary;
+            public FillType Fill;
+        }
+
+        public static Parameters DefaultParameters()
+        {
+            return new Parameters()
+            {
+                LerpRange = new float2(0, 1),
+                LerpLength = 1,
+                Construct = ConstructType.New,
+                IsTemporary = false,
+                Fill = FillType.StartToEnd
+            };
+        }
+
         public void Filled(
             in QuadStrip qs,
             float2 lerpRange,
             in float lerpLength,
-            bool isNew,
+            ConstructType constructType,
             out QST_Segment qsts
         )
         {
             PrepareSegment(qs, QSTS_Type.Radial, fillDataLength: 1, out qsts);
-            PrepareRadial(RadialType.SingleRotation, lerpLength, out QSTSFD_Radial radial);
-            ConstructType constructType = isNew ? ConstructType.New : ConstructType.Continue;
+            PrepareRadial(RadialType.FirstOrderRotation, lerpLength, out QSTSFD_Radial radial);
             QSTS_FillData fillData = new QSTS_FillData(constructType, FillType.StartToEnd, lerpRange, in radial);
             qsts[0] = fillData;
         }
-        #region SingleRotationLerp
-        public void FillOut_SRL(
+
+        public void SingleRotationLerp(
             in QuadStrip qs,
-            in float2 lerpRange,
-            in float lerpLength,
-            bool isNew,
-            ClockOrderType clockOrder,
+            in Parameters p,
             out QST_Segment qsts
             )
         {
             PrepareSegment(qs, QSTS_Type.Radial, fillDataLength: 1, out qsts);
-            PrepareRadial(RadialType.SingleRotation, lerpLength, out QSTSFD_Radial radial);
-            ConstructType constructType = isNew ? ConstructType.New : ConstructType.Continue;
-            FillType fillType = clockOrder == ClockOrderType.CW ? FillType.ToEnd : FillType.ToStart;
-            QSTS_FillData fillData = new QSTS_FillData(constructType, fillType, lerpRange, in radial);
+            PrepareRadial(RadialType.FirstOrderRotation, p.LerpLength, out QSTSFD_Radial radial);
+            QSTS_FillData fillData = new QSTS_FillData(p.Construct, p.Fill, p.LerpRange, in radial);
+            fillData.IsTemporary = p.IsTemporary;
             qsts[0] = fillData;
         }
 
-        public void FillIn_SRL(
+        public void MoveLerp(
             in QuadStrip qs,
-            in float2 lerpRange,
-            in float lerpLength,
-            bool isNew,
-            bool isTemporary,
-            ClockOrderType clockOrder,
+            in Parameters p,
             out QST_Segment qsts
-            )
+        )
         {
-            PrepareSegment(qs, QSTS_Type.Radial, fillDataLength: 1, out qsts);
-            PrepareRadial(RadialType.SingleRotation, lerpLength, out QSTSFD_Radial radial);
-            ConstructType constructType = isNew ? ConstructType.New : ConstructType.Continue;
-            FillType fillType = clockOrder == ClockOrderType.CW ? FillType.FromStart : FillType.FromEnd;
-            QSTS_FillData fillData = new QSTS_FillData(constructType, fillType, lerpRange, in radial);
-            fillData.IsTemporary = isTemporary;
+            RadialType radialType = RadialType.Move;
+            PrepareSegment(qs[0], float3x2.zero, QSTS_Type.Radial, fillDataLength: 1, out qsts);
+            PrepareRadial(radialType, p.LerpLength, out QSTSFD_Radial radial);
+
+            QSTS_FillData fillData = new QSTS_FillData(p.Construct, p.Fill, p.LerpRange, in radial);
+            fillData.IsTemporary = p.IsTemporary;
             qsts[0] = fillData;
         }
 
-        #endregion
+        private void PrepareRadial(RadialType radialType, in float lerpLength, out QSTSFD_Radial radial)
+        {
+            radial = new QSTSFD_Radial(
+                radialType,
+                PrimaryAxisAngle,
+                secondaryAngle: 0,
+                RotationCenter,
+                lerpLength,
+                _resolution
+            );
+        }
+    }
+}
 
-        #region DoubleRotationLerp
-        public void FillIn_DRL(
+/*
+        public void DoubleRotationLerp(
             in QuadStrip down,
             in QuadStrip up,
             in float2 lerpRange,
@@ -108,7 +131,7 @@ namespace Orazum.Meshing
             PrepareSegment(start, end, QSTS_Type.Radial, fillDataLength: 1, out qsts);
 
             QSTSFD_Radial radial = new QSTSFD_Radial(
-                RadialType.DoubleRotation,
+                RadialType.SecondOrderRotation,
                 PrimaryAxisAngle,
                 SecondaryAngle,
                 RotationCenter,
@@ -120,63 +143,4 @@ namespace Orazum.Meshing
             fillData.IsTemporary = isTemporary;
             qsts[0] = fillData;
         }
-        #endregion
-
-        #region MoveLerp
-        public void GenerateSingleMoveLerp(
-            in QuadStrip qs,
-            in float2 lerpRange,
-            in float lerpLength,
-            bool isNew,
-            FillType fillType,
-            out QST_Segment qsts
-        )
-        {
-            float3x2 start = qs[0];
-            RadialType radialType = RadialType.SingleMove;
-            ConstructType constructType = isNew ? ConstructType.New : ConstructType.Continue;
-
-            PrepareSegment(start, float3x2.zero, QSTS_Type.Radial, fillDataLength: 1, out qsts);
-            PrepareRadial(radialType, lerpLength, out QSTSFD_Radial radial);
-            QSTS_FillData fillData = new QSTS_FillData(constructType, fillType, lerpRange, in radial);
-            qsts[0] = fillData;
-        }
-
-        public void GenerateDoubleMoveLerp(
-            in QuadStrip origin,
-            in QuadStrip target,
-            float2 lerpRange,
-            in float lerpLength,
-            bool isNew,
-            VertOrderType vertOrder,
-            out QST_Segment qsts
-        )
-        {
-            RadialType radialType = RadialType.DoubleMove;
-            ConstructType constructType = isNew ? ConstructType.New : ConstructType.Continue;
-            bool isUp = vertOrder == VertOrderType.Up;
-            float3x2 start = isUp ? origin[0] : target[0];
-            float3x2 end   = isUp ? target[0] : origin[0];
-            FillType fillType = isUp ? FillType.ToEnd : FillType.ToStart;
-            
-            PrepareSegment(start, end, QSTS_Type.Radial, fillDataLength: 1, out qsts);
-            PrepareRadial(radialType, lerpLength, out QSTSFD_Radial radial);
-
-            QSTS_FillData fillData = new QSTS_FillData(constructType, fillType, lerpRange, in radial);
-            qsts[0] = fillData;
-        }
-        #endregion
-
-        private void PrepareRadial(RadialType radialType, in float lerpLength, out QSTSFD_Radial radial)
-        {
-            radial = new QSTSFD_Radial(
-                radialType,
-                PrimaryAxisAngle,
-                secondaryAngle: 0,
-                RotationCenter,
-                lerpLength,
-                _resolution
-            );
-        }
-    }
-}
+*/

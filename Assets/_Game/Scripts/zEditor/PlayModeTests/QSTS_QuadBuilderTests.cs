@@ -59,6 +59,7 @@ public class QSTS_QuadBulderTests
 
         PlayModeTestsUtils.CreateMeshDummy(out MeshFilter meshContainer);
         PlayModeTestsUtils.CreateCamera(new float3(2.5f, 10, 0), new float3(0, -1, 0), new float3(1, 0, 0));
+        PlayModeTestsUtils.CreateLight(new float3(0, -1, 1), math.forward());
         PlayModeTestsUtils.ApplyMeshBuffers(data.Vertices, data.Indices, meshContainer, buffersIndexers);
 
         QSTS_QuadBuilder transitionBuilder = new QSTS_QuadBuilder();
@@ -128,6 +129,7 @@ public class QSTS_QuadBulderTests
 
         PlayModeTestsUtils.CreateMeshDummy(out MeshFilter meshLeft_);
         PlayModeTestsUtils.CreateMeshDummy(out MeshFilter meshRight);
+        PlayModeTestsUtils.CreateLight(new float3(0, -1, 1), math.forward());
         PlayModeTestsUtils.CreateCamera(new float3(2.5f, 10, 0), new float3(0, -1, 0), new float3(1, 0, 0));
         PlayModeTestsUtils.ApplyMeshBuffers(dataLeft_.Vertices, dataLeft_.Indices, meshLeft_, biLeft_);
         PlayModeTestsUtils.ApplyMeshBuffers(dataRight.Vertices, dataRight.Indices, meshRight, biRight);
@@ -197,6 +199,7 @@ public class QSTS_QuadBulderTests
 
         PlayModeTestsUtils.CreateMeshDummy(out MeshFilter meshLeft_);
         PlayModeTestsUtils.CreateMeshDummy(out MeshFilter meshRight);
+        PlayModeTestsUtils.CreateLight(new float3(0, -1, 1), math.forward());
         PlayModeTestsUtils.CreateCamera(new float3(2.5f, 10, 0), new float3(0, -1, 0), new float3(1, 0, 0));
         PlayModeTestsUtils.ApplyMeshBuffers(dataLeft_.Vertices, dataLeft_.Indices, meshLeft_, biLeft_);
         PlayModeTestsUtils.ApplyMeshBuffers(dataRight.Vertices, dataRight.Indices, meshRight, biRight);

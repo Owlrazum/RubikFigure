@@ -55,7 +55,7 @@ public struct QSTS_FillData
         return $"{Fill} {LerpRange.x:F2} {LerpRange.y:F2}" + (Radial.MaxLerpLength > 0 ? $"{Radial}" : "");
     }
 
-    public struct FillTypeLerpConstruct
+    public struct FillTypeLerpConstruct // for complex cases
     {
         public readonly int AddStart;
         public readonly int AddEnd;
@@ -96,6 +96,7 @@ public struct QSTS_FillData
             {
                 AddLerpAtEnd = true;
                 LerpOffset.y = lerpParam;
+
                 float lengthStart = lerpParam - maxLerpLength;
                 if (lengthStart > 0)
                 {
@@ -103,19 +104,13 @@ public struct QSTS_FillData
                 }
                 else
                 {
-                    if (fillType == FillType.FromStart)
-                    {
-                        AddStart = 1;
-                    }
-                    else
-                    {
-                        AddEnd = 1;
-                    }
+                    AddStart = 1;
                     LerpOffset.x = 0;
                 }
             }
             else if (fillType == FillType.FromEnd || fillType == FillType.ToEnd)
             {
+                AddLerpAtStart = true;
                 LerpOffset.x = lerpParam;
 
                 float lengthEnd = lerpParam + maxLerpLength;
@@ -125,15 +120,7 @@ public struct QSTS_FillData
                 }
                 else
                 {
-                    if (fillType == FillType.ToEnd)
-                    {
-                        AddEnd = 1;
-                    }
-                    else
-                    {
-                        AddStart = 1;
-                    }
-
+                    AddEnd = 1;
                     LerpOffset.y = 1;
                 }
             }
@@ -158,9 +145,16 @@ public struct QSTS_FillData
             }
 
             LerpLength = LerpOffset.y - LerpOffset.x;
+            if (LerpLength == 0)
+            {
+                LerpLength = 0.1f;
+            }
             LerpDelta = LerpLength / resolution;
             DeltaSegsCount = (int)(LerpLength / LerpDelta);
+            UnityEngine.Debug.Log($"{LerpLength} {LerpDelta}");
             SegsCount = DeltaSegsCount + AddStart + AddEnd + _addLerpParam;
+            UnityEngine.Debug.Log($"{DeltaSegsCount} {AddStart} {AddEnd} {_addLerpParam}");
+            Assert.IsTrue(SegsCount > 0);
         }
 
         public override string ToString()

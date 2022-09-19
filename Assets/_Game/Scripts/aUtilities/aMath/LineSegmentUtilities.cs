@@ -6,7 +6,7 @@ namespace Orazum.Math
 {
     public static class LineSegmentUtilities
     { 
-        public static float DistanceLineSegment(in float3 p1, in float3 p2)
+        public static float DistanceLineSegment(float3 p1, float3 p2)
         {
             return math.length(p2 - p1);
         }

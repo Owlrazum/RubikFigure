@@ -1,3 +1,5 @@
+using System.Collections;
+
 using Unity.Collections;
 using Unity.Mathematics;
 
@@ -58,5 +60,22 @@ public static class PlayModeTestsUtils
 
         mesh.RecalculateNormals();
         mesh.RecalculateBounds();
+    }
+
+    private static MonoBehaviour runner;
+    public static void StartCoroutine(IEnumerator coroutine)
+    {
+        if (runner == null)
+        {
+            GameObject gb = new GameObject("CoroutineRunner", typeof(CoroutineRunner));
+            runner = gb.GetComponent<CoroutineRunner>();
+        }
+        
+        runner.StartCoroutine(coroutine);
+    }
+
+    private class CoroutineRunner : MonoBehaviour
+    { 
+
     }
 }

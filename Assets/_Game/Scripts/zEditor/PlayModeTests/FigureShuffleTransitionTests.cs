@@ -18,7 +18,7 @@ using static Orazum.Math.MathUtils;
 
 public class FigureShuffleTranstionTests
 {
-    private static float LerpSpeed = 1f;
+    private static float LerpSpeed = 0.2f;
     private static int QSLS_Count = 10;
 
     private struct NativeData : IDisposable
@@ -73,6 +73,7 @@ public class FigureShuffleTranstionTests
 
         PlayModeTestsUtils.CreateMeshDummy(out MeshFilter mesh);
         PlayModeTestsUtils.CreateCamera(new float3(2.5f, 10, 0), new float3(0, -1, 0), new float3(1, 0, 0));
+        PlayModeTestsUtils.CreateLight(new float3(0, -1, 1), math.forward());
         PlayModeTestsUtils.ApplyMeshBuffers(data.Vertices, data.Indices, mesh, bi);
 
         var bufferIndexers = BufferUtils.GetFadeInOutTransitionsBufferIndexers(quadStripsBuffer);
@@ -114,8 +115,7 @@ public class FigureShuffleTranstionTests
         {
             lerpParam += LerpSpeed * Time.deltaTime;
             ClampToOne(ref lerpParam);
-            float easedLerp = EaseOut(lerpParam);
-            animConc.UpdateWithLerpPos(easedLerp, shouldReorientVertices: false, ref bi);
+            animConc.UpdateWithLerpPos(EaseOut(lerpParam), shouldReorientVertices: false, ref bi);
             PlayModeTestsUtils.ApplyMeshBuffers(data.Vertices, data.Indices, mesh, bi);
             bi.Reset();
             yield return null;

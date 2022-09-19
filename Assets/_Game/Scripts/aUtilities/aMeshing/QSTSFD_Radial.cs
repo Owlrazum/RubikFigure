@@ -8,10 +8,9 @@ public struct QSTSFD_Radial
     // CQ: continue quad
     public enum RadialType
     {
-        SingleRotation,
-        DoubleRotation,
-        SingleMove, // single means only one quadstrip, therefore use only start seg
-        DoubleMove, // double means two quadstrips are involved, therefore use start and end segs
+        FirstOrderRotation, // Single rotateOnce, one quadStrip
+        SecondOrderRotation, // Double rotateTwice, one quadStrip, donut shape.
+        Move
     }
     public RadialType Type { get; private set; }
 
@@ -20,9 +19,9 @@ public struct QSTSFD_Radial
     {
         MaxLerpLength = -1;
 
-        Type = RadialType.SingleRotation;
+        Type = RadialType.FirstOrderRotation;
         PrimaryAxisAngle = float4.zero;
-        SecondaryAngle = 0;
+        SecondOrderAngle = 0;
         RotationCenter = float3.zero;
         Resolution = -1;
     }
@@ -37,7 +36,7 @@ public struct QSTSFD_Radial
     {
         Type = radial;
         PrimaryAxisAngle = primaryAxisAngle;
-        SecondaryAngle = secondaryAngle;
+        SecondOrderAngle = secondaryAngle;
         RotationCenter = rotationCenter;
 
         MaxLerpLength = lerpLength;
@@ -45,7 +44,7 @@ public struct QSTSFD_Radial
     }
 
     public float4 PrimaryAxisAngle { get; private set; }
-    public float SecondaryAngle { get; private set; }
+    public float SecondOrderAngle { get; private set; }
     public float3 RotationCenter { get; private set; }
 
     public int Resolution { get; set; }
@@ -55,17 +54,8 @@ public struct QSTSFD_Radial
     {
         get
         {
-            return Type == RadialType.SingleRotation ||
-                   Type == RadialType.DoubleRotation;
-        }
-    }
-
-    public bool IsMoveLerp
-    {
-        get
-        {
-            return Type == RadialType.SingleMove || Type == RadialType.SingleMove ||
-                   Type == RadialType.DoubleMove || Type == RadialType.DoubleMove;
+            return Type == RadialType.FirstOrderRotation ||
+                   Type == RadialType.SecondOrderRotation;
         }
     }
 

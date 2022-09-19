@@ -53,6 +53,7 @@ public struct QuadStrip : IDisposable
         float2 doubleLength = float2.zero;
         for (int i = 0; i < QuadsCount; i++)
         {
+            // perhaps separate variable shuold be created.
             doubleLength += DistanceLineSegments(_lineSegments[i], _lineSegments[i + 1]);
         }
         return doubleLength;

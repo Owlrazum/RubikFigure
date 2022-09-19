@@ -20,8 +20,8 @@ namespace Orazum.Meshing
             _vertices = vertices;
             _indices = indices;
             _uv = uv;
-            _prevIndices = new NativeArray<int>();
-            _indexBuffer = new NativeArray<int>();
+            _prevIndices = new NativeArray<int>(0, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            _indexBuffer = new NativeArray<int>(0, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
         }
 
         public void Start(in NativeArray<float3> gridDim, ref MeshBuffersIndexers buffersIndexers)
