@@ -22,7 +22,6 @@ public class WheelMoveState : FigureMoveState
     protected override List<FigureSegmentMove> DetermineMovesFromInput(Vector3 worldPos, Vector3 worldDir)
     {
         _movesToMake.Clear();
-        Debug.Log("Determining");
 
         Vector3 DirToCenter = (_figureCenter - worldPos).normalized;
         float rotateAngleDeg = Mathf.Atan2(DirToCenter.z, DirToCenter.x) * Mathf.Rad2Deg;
@@ -83,7 +82,6 @@ public class WheelMoveState : FigureMoveState
             targetIndex = _wheel.MoveIndexInClockOrder(targetIndex, clockOrder);
         }
 
-        PrintMovesToMakeIndices();
         return _movesToMake;
     }
 

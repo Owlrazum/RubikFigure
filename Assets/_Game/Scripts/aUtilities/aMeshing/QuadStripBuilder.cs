@@ -42,7 +42,6 @@ namespace Orazum.Meshing
         {
             _prevIndices.x = AddVertex(lineSegment[0], ref buffersIndexers);
             _prevIndices.y = AddVertex(lineSegment[1], ref buffersIndexers);
-
         }
 
         public void Continue(in float3x2 lineSegment, ref MeshBuffersIndexers buffersIndexers)

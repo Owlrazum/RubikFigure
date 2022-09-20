@@ -14,11 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   FigureGenParamsSO: {fileID: 11400000, guid: 742513ac5ef65499fb371d4f72c536a9, type: 2}
   SelectMethod: 0
-  ShuffleStepsAmount: 3
+  ShuffleStepsAmount: 0
   ShufflePauseTime: 0.3
   ShuffleLerpSpeed: 2
   MoveLerpSpeed: 2.5
   StartPositionForSegmentsInCompletionPhase: {x: 0, y: -10, z: 0}
   ShouldUsePredefinedEmptyPlaces: 0
   PredefinedEmptyPlaces: []
-  EmptyPlacesCount: 2
+  EmptyPlacesCount: 1

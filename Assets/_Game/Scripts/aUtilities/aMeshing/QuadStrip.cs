@@ -2,6 +2,7 @@ using System;
 using Unity.Mathematics;
 using Unity.Collections;
 
+using UnityEngine;
 using UnityEngine.Assertions;
 
 using Orazum.Math;
@@ -129,5 +130,20 @@ public struct QuadStrip : IDisposable
             end = _lineSegments[LineSegmentsCount - 1];
             start = _lineSegments[LineSegmentsCount - 2];
         }
+    }
+
+    public void DrawDebug(Color color, float duration, float3 offset = default)
+    {
+        float3x2 s1 = _lineSegments[0];
+        float3x2 s2 = _lineSegments[1];
+        Debug.DrawLine(s1[0] + offset, s1[1] + offset, color, duration);
+        for (int i = 0; i < LineSegmentsCount - 1; i++)
+        {
+            s1 = _lineSegments[i];
+            s2 = _lineSegments[i + 1];
+            Debug.DrawLine(s1[0] + offset, s2[0] + offset, color, duration);
+            Debug.DrawLine(s1[1] + offset, s2[1] + offset, color, duration);
+        }
+        Debug.DrawLine(s2[0] + offset, s2[1] + offset, color, duration);
     }
 }

@@ -87,7 +87,6 @@ namespace Orazum.Math
 
         public static float3 RotateAround(in float3 point, in float3 center, in quaternion q)
         {
-            Debug.DrawRay(float3.zero, point, Color.green, 0.1f);
             return math.rotate(q, point - center) + center;
         }
 

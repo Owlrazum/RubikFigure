@@ -16,9 +16,23 @@ public class Wheel : Figure
 
     private Array2D<WheelSegmentTransitions> _transitions;
 
-    public void AssignTransitionDatas(Array2D<WheelSegmentTransitions> transitions)
+    public void AssignTransitionDatas(in Array2D<WheelSegmentTransitions> transitions)
     {
         _transitions = transitions;
+        for (int i = 0; i < transitions.RowCount; i++)
+        {
+            for (int j = 0; j < transitions.ColCount; j++)
+            {
+                bool b1 = transitions[j, i].CW.IsCreated && transitions[j, i].AntiCW.IsCreated;
+                bool b2 = transitions[j, i].Up.IsCreated && transitions[j, i].Down.IsCreated;
+                if (!b1 || !b2)
+                {
+                    Debug.LogWarning($"{j} {i} not created transition");
+                }
+                // Assert.IsTrue(b1, $"{j} {i} not created transition");
+                // Assert.IsTrue(b2, $"{j} {i} not created transition");
+            }
+        }
     }
 
     public override void Initialize(
@@ -76,33 +90,62 @@ public class Wheel : Figure
     {
         int2 from = verticesMove.FromIndex;
         int2 to = verticesMove.ToIndex;
+        Assert.IsTrue(from.x == to.x || from.y == to.y);
         int sideDelta = to.x - from.x;
         int ringDelta = to.y - from.y;
+
         if (sideDelta > 0)
         {
-            verticesMove.Transition = _transitions.GetElementByRef(to).AntiCW;
-            verticesMove.ShouldReorientVertices = true;
+            if (sideDelta == _dims.x - 1)
+            { 
+                verticesMove.Transition = _transitions[to].AntiCW;    
+            }
+            else
+            { 
+                verticesMove.Transition = _transitions[to].CW;
+            }
         }
 
         if (sideDelta < 0)
-        { 
-            verticesMove.Transition = _transitions.GetElementByRef(to).CW;
+        {
+            if (sideDelta == -(_dims.x - 1))
+            {
+                verticesMove.Transition = _transitions[to].CW;
+            }
+            else
+            {
+                verticesMove.Transition = _transitions[to].AntiCW;
+            }
         }
 
         if (ringDelta > 0)
-        { 
-            verticesMove.Transition = _transitions.GetElementByRef(to).Up;
+        {
+            if (ringDelta == _dims.y - 1)
+            { 
+                verticesMove.Transition = _transitions[to].Down;
+            }
+            else
+            { 
+                verticesMove.Transition = _transitions[to].Up;
+            }
         }
 
         if (ringDelta < 0)
-        { 
-            verticesMove.Transition = _transitions.GetElementByRef(to).Down;
+        {
+            if (ringDelta == -(_dims.y - 1))
+            {
+                verticesMove.Transition = _transitions[to].Up;
+            }
+            else
+            { 
+                verticesMove.Transition = _transitions[to].Down;
+            }
         }
     }
 
     [ContextMenu("Print")]
     public void Print()
-    { 
+    {
         Debug.Log(ToString());
     }
 

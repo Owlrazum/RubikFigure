@@ -1,6 +1,7 @@
 using Unity.Mathematics;
 using Unity.Collections;
 
+using UnityEngine;
 using UnityEngine.Assertions;
 
 using Orazum.Math;
@@ -8,85 +9,135 @@ using Orazum.Meshing;
 
 using static Orazum.Constants.Math;
 using static Orazum.Math.LineSegmentUtilities;
+using static Orazum.Collections.IndexUtilities;
 using static QSTS_FillData;
 
 public struct WheelTransitionsBuilder
 {
     private QSTS_RadialBuilder _radialBuilder;
-    private readonly float2 WholeLerpRange;
-    private readonly float WholeLerpLength;
+    private int2 _sidesRingsCount;
 
-    public WheelTransitionsBuilder(int sideCount, int segmentResolution)
+    public WheelTransitionsBuilder(int2 sidesRingsCount, int segmentResolution)
     {
         _radialBuilder = new();
+        _sidesRingsCount = sidesRingsCount;
 
-        WholeLerpRange = new float2(0, 1);
-        WholeLerpLength = 1;
-
-        float2 anglesRad = new float2(TAU / sideCount, TAU / 2);
+        float2 anglesRad = new float2(TAU / sidesRingsCount.x, TAU / 2);
         float3 primaryAxis = math.up();
         _radialBuilder = new QSTS_RadialBuilder(primaryAxis, anglesRad, segmentResolution);
     }
 
-    public void BuildClockOrderTransition(
+    public void BuildVertOrderTransition(
         ref QuadStripsBuffer quadStrips,
-        ref NativeArray<int2> originsTargets,
-        ref NativeArray<QST_Segment> writeBuffer,
-        ClockOrderType clockOrder
+        NativeArray<QST_Segment> downBuffer,
+        NativeArray<QST_Segment> upBuffer,
+        int sideIndex
     )
     {
-        int QSTS_indexer = 0;
-        for (int i = 0; i < originsTargets.Length; i++)
+        int2 down_OT = new int2(0, 1);
+        int2 up_OT = new int2(_sidesRingsCount.y - 1, 0);
+
+        int downIndexer = 0;
+        int upIndexer = 0;
+
+        var parameters = QSTS_RadialBuilder.DefaultParameters();
+        for (int ringIndexing = 0; ringIndexing < _sidesRingsCount.y; ringIndexing++)
         {
-            int2 originTarget = originsTargets[i];
-            QuadStrip origin = quadStrips.GetQuadStrip(originTarget.x);
-            QuadStrip target = quadStrips.GetQuadStrip(originTarget.y);
+            int firstIndex = GetIndex(sideIndex, down_OT.x);
+            int secondIndex = GetIndex(sideIndex, down_OT.y);
+            QuadStrip first = quadStrips.GetQuadStrip(firstIndex);
+            QuadStrip second = quadStrips.GetQuadStrip(secondIndex);
 
-            QSTS_RadialBuilder.Parameters parameters = new()
-            {
-                LerpRange = WholeLerpRange,
-                LerpLength = WholeLerpLength,
-                IsTemporary = false,
-                Construct = ConstructType.New,
-            };
+            parameters.Fill = FillType.FromEnd;
+            _radialBuilder.MoveLerp(first, parameters, out QST_Segment qsts);
+            downBuffer[downIndexer++] = qsts;
 
-            parameters.Fill = clockOrder == ClockOrderType.CW ? FillType.FromStart : FillType.FromEnd;
-            _radialBuilder.SingleRotationLerp(in origin, parameters, out QST_Segment qsts);
-            parameters.Fill = clockOrder == ClockOrderType.CW ? FillType.ToEnd : FillType.ToStart;
-            writeBuffer[QSTS_indexer++] = qsts;
-            _radialBuilder.SingleRotationLerp(in target, parameters, out qsts);
-            writeBuffer[QSTS_indexer++] = qsts;
+            parameters.Fill = FillType.ToStart;
+            _radialBuilder.MoveLerp(second, parameters, out qsts);
+            downBuffer[downIndexer++] = qsts;
+
+            firstIndex = GetIndex(sideIndex, up_OT.x);
+            secondIndex = GetIndex(sideIndex, up_OT.y);
+            first = quadStrips.GetQuadStrip(firstIndex);
+            second = quadStrips.GetQuadStrip(secondIndex);
+
+            parameters.Fill = FillType.ToEnd;
+            _radialBuilder.MoveLerp(first, parameters, out qsts);
+            upBuffer[upIndexer++] = qsts;
+
+            parameters.Fill = FillType.FromStart;
+            _radialBuilder.MoveLerp(second, parameters, out qsts);
+            upBuffer[upIndexer++] = qsts;
+
+            IncreaseRing(ref down_OT.x);
+            IncreaseRing(ref down_OT.y);
+            IncreaseRing(ref up_OT.x);
+            IncreaseRing(ref up_OT.y);
         }
     }
 
-    public void BuildVertOrderTransition(
+    public void BuildClockOrderTransition(
         ref QuadStripsBuffer quadStrips,
-        ref NativeArray<int2> originsTargets,
-        ref NativeArray<QST_Segment> writeBuffer,
-        VertOrderType vertOrder
+        NativeArray<QST_Segment> antiCwBuffer,
+        NativeArray<QST_Segment> cwBuffer,
+        int ringIndex
     )
     {
-        int QSTS_indexer = 0;
+        int2 antiCW_OT = new int2(0, 1);
+        int2 CW_OT = new int2(_sidesRingsCount.x - 1, 0);
 
-        for (int i = 0; i < originsTargets.Length; i++)
+        int antiCwIndexer = 0;
+        int cwIndexer = 0;
+
+        var parameters = QSTS_RadialBuilder.DefaultParameters();
+        for (int sideIndexing = 0; sideIndexing < _sidesRingsCount.x; sideIndexing++)
         {
-            int2 originTarget = originsTargets[i];
-            QuadStrip origin = quadStrips.GetQuadStrip(originTarget.x);
-            QuadStrip target = quadStrips.GetQuadStrip(originTarget.y);
+            int originIndex = GetIndex(antiCW_OT.x, ringIndex);
+            int targetIndex = GetIndex(antiCW_OT.y, ringIndex);
+            QuadStrip origin = quadStrips.GetQuadStrip(originIndex);
+            QuadStrip target = quadStrips.GetQuadStrip(targetIndex);
 
-            QSTS_RadialBuilder.Parameters parameters = new()
-            {
-                LerpRange = WholeLerpRange,
-                LerpLength = WholeLerpLength,
-                IsTemporary = false,
-                Construct = ConstructType.New,
-            };
-            parameters.Fill = vertOrder == VertOrderType.Up ? FillType.ToEnd : FillType.ToStart;
-            _radialBuilder.MoveLerp(origin, parameters, out QST_Segment s1);
-            parameters.Fill = vertOrder == VertOrderType.Up ? FillType.FromStart : FillType.FromEnd;
-            _radialBuilder.MoveLerp(target, parameters, out QST_Segment s2);
-            writeBuffer[QSTS_indexer++] = s1;
-            writeBuffer[QSTS_indexer++] = s2;
+            parameters.Fill = FillType.FromEnd;
+            _radialBuilder.SingleRotationLerp(origin, parameters, out QST_Segment qsts);
+            antiCwBuffer[antiCwIndexer++] = qsts;
+
+            parameters.Fill = FillType.ToStart;
+            _radialBuilder.SingleRotationLerp(target, parameters, out qsts);
+            antiCwBuffer[antiCwIndexer++] = qsts;
+
+
+            originIndex = GetIndex(CW_OT.x, ringIndex);
+            targetIndex = GetIndex(CW_OT.y, ringIndex);
+            origin = quadStrips.GetQuadStrip(originIndex);
+            target = quadStrips.GetQuadStrip(targetIndex);
+
+            parameters.Fill = FillType.ToEnd;
+            _radialBuilder.SingleRotationLerp(origin, parameters, out qsts);
+            cwBuffer[cwIndexer++] = qsts;
+
+            parameters.Fill = FillType.FromStart;
+            _radialBuilder.SingleRotationLerp(target, parameters, out qsts);
+            cwBuffer[cwIndexer++] = qsts;
+
+            IncreaseSide(ref antiCW_OT.x);
+            IncreaseSide(ref antiCW_OT.y);
+            IncreaseSide(ref CW_OT.x);
+            IncreaseSide(ref CW_OT.y);
         }
+    }
+
+    private int GetIndex(int side, int ring)
+    {
+        return XyToIndex(ring, side, _sidesRingsCount.y);
+    }
+
+    private void IncreaseRing(ref int ring)
+    {
+        IncreaseIndex(ref ring, _sidesRingsCount.y);
+    }
+
+    private void IncreaseSide(ref int side)
+    {
+        IncreaseIndex(ref side, _sidesRingsCount.x);
     }
 }

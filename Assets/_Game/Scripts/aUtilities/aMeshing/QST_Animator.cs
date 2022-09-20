@@ -316,11 +316,9 @@ namespace Orazum.Meshing
             if (fillType == FillType.FromEnd || fillType == FillType.ToStart)
             {
                 lerpParam = 1 - lerpParam;
-                Debug.Log(lerpParam);
             }
 
             float3 middle = math.lerp(start[0], start[1], lerpParam);
-            Debug.DrawRay(middle, Vector3.up, Color.red, 1);
             switch (fillType)
             {
                 case FillType.FromStart:

@@ -1,5 +1,7 @@
 using Unity.Mathematics;
 using Unity.Collections;
+
+using UnityEngine;
 using UnityEngine.Assertions;
 
 using Orazum.Collections;
@@ -31,6 +33,11 @@ public struct QS_Transition
         subTransition = new QS_Transition(_transSegs.GetSubArray(indexer.x, indexer.y));
     }
 
+    public QS_Transition GetSubTransition(int2 indexer)
+    {
+        return new QS_Transition(_transSegs.GetSubArray(indexer.x, indexer.y));
+    }
+
     // In current setup transitions are disposed only if they are concatenated
     public void DisposeConcatenation()
     {
@@ -40,16 +47,6 @@ public struct QS_Transition
     public void DisposeConcatenationIfNeeded()
     {
         CollectionUtilities.DisposeIfNeeded(_transSegs);
-    }
-
-    public void DrawDebugRays(float duration)
-    {
-        for (int i = 0; i < _transSegs.Length; i++)
-        {
-            QST_Segment seg = _transSegs[i];
-            DrawLineSegmentWithRaysUp(seg.StartLineSegment, 1, duration);
-            DrawLineSegmentWithRaysUp(seg.EndLineSegment, 1, duration);
-        }
     }
 
     public static QS_Transition Concatenate(
@@ -80,6 +77,27 @@ public struct QS_Transition
     {
         NativeArray<QST_Segment> buffer = new NativeArray<QST_Segment>(t1.Length + t2.Length, allocator);
         return buffer;
+    }
+
+    public void DebugTransition(Color c1, Color c2, float duration, float3 f1 = default, float3 f2 = default)
+    {
+        for (int i = 0; i < Length; i++)
+        {
+            var s = _transSegs[i];
+            float3x2 s1 = s.StartLineSegment;
+            float3x2 s2 = s.EndLineSegment;
+            float3 f;
+            if (i == 0)
+            {
+                f = f1;
+            }
+            else 
+            {
+                f = f2;
+            }
+            Debug.DrawLine(s2[0] + f, s2[1] + f, c2, duration);
+            Debug.DrawLine(s1[0] + f, s1[1] + f, c1, duration);
+        }
     }
 
     public override string ToString()

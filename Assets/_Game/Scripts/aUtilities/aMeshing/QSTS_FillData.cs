@@ -151,10 +151,7 @@ public struct QSTS_FillData
             }
             LerpDelta = LerpLength / resolution;
             DeltaSegsCount = (int)(LerpLength / LerpDelta);
-            UnityEngine.Debug.Log($"{LerpLength} {LerpDelta}");
             SegsCount = DeltaSegsCount + AddStart + AddEnd + _addLerpParam;
-            UnityEngine.Debug.Log($"{DeltaSegsCount} {AddStart} {AddEnd} {_addLerpParam}");
-            Assert.IsTrue(SegsCount > 0);
         }
 
         public override string ToString()
