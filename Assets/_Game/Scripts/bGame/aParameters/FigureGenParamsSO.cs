@@ -4,8 +4,8 @@ using UnityEngine;
 public abstract class FigureGenParamsSO : ScriptableObject
 {
     [SerializeField]
-    private float _height;
-    public float Height { get { return _height; } }
+    private float _segmentPointHeight = 1;
+    public float SegmentPointHeight { get { return _segmentPointHeight; } }
 
     public abstract int2 Dimensions {get;}
 

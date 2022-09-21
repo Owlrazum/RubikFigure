@@ -182,9 +182,4 @@ public abstract class FigureSegmentMover : MonoBehaviour
         // mesh.RecalculateNormals();
         mesh.RecalculateBounds();
     }
-
-    public void Appear()
-    {
-        gameObject.SetActive(true);
-    }
 }

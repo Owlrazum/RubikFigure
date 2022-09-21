@@ -24,8 +24,6 @@ public abstract class Figure : MonoBehaviour
     public int ColCount { get { return _dims.x; } }
     public int RowCount { get { return _dims.y; } }
 
-    protected Vector3 _startTeleportPosition;
-
     private int2 _movesCount;
     public bool IsMakingMoves { get { return _movesCount.x < _movesCount.y; } }
     private Action _movesCompleteAction;
@@ -45,17 +43,34 @@ public abstract class Figure : MonoBehaviour
         _dims.x = _segmentPoints.ColCount;
         _dims.y = _segmentPoints.RowCount;
 
-        _startTeleportPosition = figureParams.StartPositionForSegmentsInCompletionPhase;
-
-        EmptyPoints(figureParams);
         _movedSegmentsBuffer = new FigureSegment[_dims.x * _dims.y];
 
         _statesController.Initialize(this, figureParams);
     }
 
-    public void AssignShuffleTransitions(Array2D<FadeOutInTransitions> transitions)
+
+    public void AssignUniversalTransitions(Array2D<FadeOutInTransitions> transitions)
     {
         _shuffleTransitions = transitions;
+    }
+
+    public FigureSegment[] EmptyAndGetSegments(FigureVerticesMove[] emptyMoves, Action emptyCompletedAction)
+    {
+        _movesCompleteAction = emptyCompletedAction;
+        _movesCount = new int2(0, emptyMoves.Length);
+
+        FigureSegment[] emptiedSegments = new FigureSegment[emptyMoves.Length];
+        for (int i = 0; i < emptyMoves.Length; i++)
+        {
+            int2 index = emptyMoves[i].FromIndex;
+
+            Assert.IsNotNull(_segmentPoints[index].Segment);
+            emptiedSegments[i] = _segmentPoints[index].Segment;
+            _segmentPoints[index].Segment = null;
+
+            MakeUniversalMove(emptiedSegments[i], emptyMoves[i], MoveCompleteAction);
+        }
+        return emptiedSegments;
     }
 
     public void Shuffle(IList<FigureVerticesMove> moves, Action movesCompleteAction)
@@ -74,7 +89,7 @@ public abstract class Figure : MonoBehaviour
                 continue;
             }
 
-            MakeShuffleMove(movedSegment, move, MoveCompleteAction);
+            MakeUniversalMove(movedSegment, move, MoveCompleteAction);
 
             _movedSegmentsBuffer[i] = movedSegment;
             _segmentPoints[move.FromIndex].Segment = null;
@@ -90,21 +105,51 @@ public abstract class Figure : MonoBehaviour
         }
     }
 
-    private void MakeShuffleMove(FigureSegment segment, FigureVerticesMove move, Action moveCompleteAction)
+    public void Complete(IList<FigureVerticesMove> moves, Action movesCompleteAction)
     {
-        Assert.IsTrue(IsValidIndex(move.FromIndex) && IsValidIndex(move.ToIndex));
-        AssignShuffleTransitionData(move);
+       _movesCompleteAction = movesCompleteAction;
+        _movesCount = new int2(0, moves.Count);
+
+        for (int i = 0; i < moves.Count; i++)
+        {
+            FigureVerticesMove move = moves[i];
+            move.CompletionSegment.Appear();
+            MakeUniversalMove(move.CompletionSegment, move, MoveCompleteAction);
+
+            _segmentPoints[move.ToIndex].Segment = move.CompletionSegment;
+        }
+    }
+
+    private void MakeUniversalMove(FigureSegment segment, FigureVerticesMove move, Action moveCompleteAction)
+    {
+        Assert.IsTrue(IsValidIndex(move.FromIndex) || IsValidIndex(move.ToIndex));
+        AssignUniversalTransition(move);
 
         segment.StartMove(move, moveCompleteAction);
     }
 
-    private void AssignShuffleTransitionData(FigureVerticesMove move)
+    private void AssignUniversalTransition(FigureVerticesMove move)
     {
-        QS_Transition fadeOut = _shuffleTransitions[move.FromIndex].FadeOut;
-        QS_Transition fadeIn = _shuffleTransitions[move.ToIndex].FadeIn;
-        var buffer = QS_Transition.PrepareConcatenationBuffer(fadeOut, fadeIn, Allocator.Persistent);
-        QS_Transition concShuffle = QS_Transition.Concatenate(fadeOut, fadeIn, buffer);
-        move.Transition = concShuffle;
+        if (move.FromIndex.x < 0 || move.ToIndex.x < 0)
+        {
+            if (move.FromIndex.x >= 0)
+            {
+                move.Transition = _shuffleTransitions[move.FromIndex].FadeOut;
+            }
+            else
+            {
+                move.Transition = _shuffleTransitions[move.ToIndex].FadeIn;
+            }
+        }
+        else
+        { 
+            QS_Transition fadeOut = _shuffleTransitions[move.FromIndex].FadeOut;
+            QS_Transition fadeIn = _shuffleTransitions[move.ToIndex].FadeIn;
+            var buffer = QS_Transition.PrepareConcatenationBuffer(fadeOut, fadeIn, Allocator.Persistent);
+            QS_Transition concShuffle = QS_Transition.Concatenate(fadeOut, fadeIn, buffer);
+            move.ShouldDisposeTransition = true;
+            move.Transition = concShuffle;
+        }
     }
 
     public void MakeMoves(IList<FigureSegmentMove> moves, Action movesCompleteAction)
@@ -183,57 +228,6 @@ public abstract class Figure : MonoBehaviour
     public bool IsPointEmpty(int2 index)
     {
         return _segmentPoints[index].Segment == null;
-    }
-
-
-    private void EmptyPoints(FigureParamsSO figureParams)
-    {
-        int2[] emptySegmentPointIndices = null;
-
-        if (figureParams.ShouldUsePredefinedEmptyPlaces)
-        {
-            emptySegmentPointIndices = new int2[figureParams.PredefinedEmptyPlaces.Length];
-            figureParams.PredefinedEmptyPlaces.CopyTo(emptySegmentPointIndices, 0);
-        }
-        else
-        {
-            int2 dims = figureParams.FigureGenParamsSO.Dimensions;
-            emptySegmentPointIndices =
-                GenerateRandomEmptyPoints(figureParams.EmptyPlacesCount, dims.x, dims.y);
-        }
-
-        FigureSegment[] emptySegments = new FigureSegment[emptySegmentPointIndices.Length];
-        for (int i = 0; i < emptySegmentPointIndices.Length; i++)
-        {
-            int2 index = emptySegmentPointIndices[i];
-            emptySegments[i] = _segmentPoints[index].Segment;
-            Assert.IsNotNull(emptySegments[i]);
-            _segmentPoints[index].Segment.Dissappear();
-            _segmentPoints[index].Segment = null;
-        }
-        FigureDelegatesContainer.EventSegmentsWereEmptied?.Invoke(emptySegments);
-    }
-    private int2[] GenerateRandomEmptyPoints(int emptyPlacesCount, int colCount, int rowCount)
-    {
-        var randomGenerator = Unity.Mathematics.Random.CreateFromIndex((uint)System.DateTime.Now.Millisecond);
-        int2[] emptySegmentPointIndices = new int2[emptyPlacesCount];
-        Assert.IsTrue(emptySegmentPointIndices.Length <= (colCount * rowCount) / 2);
-        HashSet<int2> _emptiedSet = new HashSet<int2>();
-        for (int i = 0; i < emptySegmentPointIndices.Length; i++)
-        {
-            int2 rndIndex = randomGenerator.
-                NextInt2(int2.zero, new int2(colCount, rowCount));
-            while (_emptiedSet.Contains(rndIndex))
-            {
-                rndIndex = randomGenerator.
-                    NextInt2(int2.zero, new int2(colCount, rowCount));
-            }
-
-            _emptiedSet.Add(rndIndex);
-            emptySegmentPointIndices[i] = rndIndex;
-        }
-
-        return emptySegmentPointIndices;
     }
 
     public static int2 MoveIndexClockOrder(int2 index, ClockOrderType clockOrder, int2 dims)

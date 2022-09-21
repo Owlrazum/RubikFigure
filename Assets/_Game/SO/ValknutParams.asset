@@ -12,15 +12,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dbce5a62c0d3f441fb1902bbabf0ddd4, type: 3}
   m_Name: ValknutParams
   m_EditorClassIdentifier: 
-  FigureGenParamsSO: {fileID: 11400000, guid: ecb6ca1efe9f9484cad85bcc6f45140d, type: 2}
+  GenParams: {fileID: 11400000, guid: ecb6ca1efe9f9484cad85bcc6f45140d, type: 2}
   SelectMethod: 0
+  EmptyLerpSpeed: 1
+  ShouldUsePredefinedEmptyPlaces: 1
+  _emptyPlacesCount: 2
+  PredefinedEmptyPlaces:
+  - x: 2
+    y: 0
   ShuffleStepsAmount: 3
   ShufflePauseTime: 0.1
   ShuffleLerpSpeed: 1
   MoveLerpSpeed: 2
-  StartPositionForSegmentsInCompletionPhase: {x: 0, y: -10, z: 0}
-  ShouldUsePredefinedEmptyPlaces: 1
-  PredefinedEmptyPlaces:
-  - x: 2
-    y: 0
-  EmptyPlacesCount: 1
+  CompleteLerpSpeed: 0
+  RotationAmplitude: 0

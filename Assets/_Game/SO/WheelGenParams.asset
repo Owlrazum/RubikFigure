@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1eeb9d24981c04b148a37e9cbb558e9f, type: 3}
   m_Name: WheelGenParams
   m_EditorClassIdentifier: 
-  _height: 1
+  _segmentPointHeight: 1
   _segmentPrefab: {fileID: 6270584614686746192, guid: c417056fd1f314434bcea4a21b29a82c, type: 3}
   _segmentPointPrefab: {fileID: 1553978324677776507, guid: dfd0e0cf5893b4c2fb5997fd8f7972bf, type: 3}
   _outerRadius: 5

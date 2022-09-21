@@ -9,7 +9,7 @@ using Orazum.Collections;
 using Orazum.Meshing;
 using Orazum.Constants;
 
-public class WheelGeneratorGameObject : FigureGeneratorGameObject
+public class WheelGeneratorGameObject : FigureGenerator
 {
     private int2 _sidesRingsCount;
     private float2 _innerOuterRadii;

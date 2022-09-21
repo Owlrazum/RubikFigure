@@ -10,12 +10,9 @@ using static Orazum.Constants.Math;
 
 public class WheelMoveState : FigureMoveState
 {
-    private Wheel _wheel;
-
     public WheelMoveState(WheelStatesController statesController, Wheel wheel, float moveLerpSpeed)
         : base(statesController, wheel, moveLerpSpeed)
     {
-        _wheel = wheel;
         _movesToMake = new List<FigureSegmentMove>(wheel.SideCount);
     }
 
@@ -49,8 +46,8 @@ public class WheelMoveState : FigureMoveState
     private List<FigureSegmentMove> ConstructVerticesMove(int2 index, VertOrderType vertOrder)
     {
         int2 originIndex = index;
-        int2 targetIndex = _wheel.MoveIndexVertOrder(originIndex, vertOrder);
-        for (int side = 0; side < _wheel.SideCount; side++)
+        int2 targetIndex = _figure.MoveIndexVertOrder(originIndex, vertOrder);
+        for (int side = 0; side < _figure.Dimensions.x; side++)
         {
             FigureVerticesMove verticesMove = new FigureVerticesMove();
             verticesMove.AssignFromIndex(originIndex);
@@ -59,7 +56,7 @@ public class WheelMoveState : FigureMoveState
             _movesToMake.Add(verticesMove);
 
             originIndex = targetIndex;
-            targetIndex = _wheel.MoveIndexVertOrder(targetIndex, vertOrder);
+            targetIndex = _figure.MoveIndexVertOrder(targetIndex, vertOrder);
         }
 
         PrintMovesToMakeIndices();
@@ -69,8 +66,8 @@ public class WheelMoveState : FigureMoveState
     private List<FigureSegmentMove> ConstructVerticesMove(int2 index, ClockOrderType clockOrder)
     {
         int2 originIndex = index;
-        int2 targetIndex = _wheel.MoveIndexInClockOrder(originIndex, clockOrder);
-        for (int side = 0; side < _wheel.SideCount; side++)
+        int2 targetIndex = _figure.MoveIndexInClockOrder(originIndex, clockOrder);
+        for (int side = 0; side < _figure.Dimensions.x; side++)
         {
             FigureVerticesMove verticesMove = new FigureVerticesMove();
             verticesMove.AssignFromIndex(originIndex);
@@ -79,7 +76,7 @@ public class WheelMoveState : FigureMoveState
             _movesToMake.Add(verticesMove);
 
             originIndex = targetIndex;
-            targetIndex = _wheel.MoveIndexInClockOrder(targetIndex, clockOrder);
+            targetIndex = _figure.MoveIndexInClockOrder(targetIndex, clockOrder);
         }
 
         return _movesToMake;
@@ -87,6 +84,6 @@ public class WheelMoveState : FigureMoveState
 
     private void MoveIndexInRotationOrder(ref int2 index, ClockOrderType clockOrder)
     {
-        index = _wheel.MoveIndexInClockOrder(index, clockOrder);
+        index = _figure.MoveIndexInClockOrder(index, clockOrder);
     }
 }

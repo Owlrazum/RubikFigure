@@ -10,7 +10,7 @@ using Orazum.Meshing;
 using Orazum.Collections;
 
 
-public class ValknutGeneratorTransitions : FigureGeneratorTransitions
+public class ValknutTransitionsGenerator : FigureTransitionsGenerator
 {
     private const int TotalRangesCount = (7 + 6) * 3 + (6 + 5) * 3;
     private const int TotalTransitionsCount = 2 * 3 + 2 * 3;
@@ -33,7 +33,6 @@ public class ValknutGeneratorTransitions : FigureGeneratorTransitions
             OutTransitionsCollection = qst_data.TransitionsBuffer
         };
         _jobHandle = transitionDataJob.ScheduleParallel(TotalTransitionsCount, 32, dependency);
-        
     }
 
     private void GenerateDataJobIndexData(ref NativeArray<int2> originTargetIndices, ref NativeArray<int2> buffersIndexers)

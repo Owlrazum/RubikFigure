@@ -11,58 +11,45 @@ using UnityEngine.Assertions;
 using Orazum.Collections;
 using Orazum.Meshing;
 
-public abstract class FigureGeneratorGameObject : MonoBehaviour
+public abstract class FigureGenerator : MonoBehaviour
 {
     [SerializeField]
     private FigureParamsSO _figureParams;
 
     private Figure _figure;
-    private FigureGeneratorTransitions _transitionsGenerator;
+    private FigureTransitionsGenerator _transitionsGenerator;
 
     private void Awake()
     {
+        StartCoroutine(FigureGenerationSequence());
+    }
+
+    private IEnumerator FigureGenerationSequence()
+    { 
         bool isFound = TryGetComponent(out _transitionsGenerator);
         Assert.IsTrue(isFound);
-        StartFigureGeneration();
-        FigureDelegatesContainer.GetFigure += GetFigure;
-        FigureDelegatesContainer.FinishMeshGeneration += FinishFigureGeneration;
-        FigureDelegatesContainer.FinishShuffleTransitionsGeneration += FinishShuffleTransitionsGeneration;
-    }
 
-    private void Unsubscribe()
-    {
-        FigureDelegatesContainer.GetFigure -= GetFigure;
-        FigureDelegatesContainer.FinishMeshGeneration -= FinishFigureGeneration;
-        FigureDelegatesContainer.FinishShuffleTransitionsGeneration -= FinishShuffleTransitionsGeneration;
-    }
-
-    private void StartFigureGeneration()
-    {
-        InitializeParameters(_figureParams.FigureGenParamsSO);
+        InitializeParameters(_figureParams.GenParams);
         StartMeshGeneration();
         _figure = GenerateFigureGameObject();
-    }
-
-    protected abstract void StartMeshGeneration();
-    protected abstract Figure GenerateFigureGameObject();
-
-    private void FinishFigureGeneration()
-    {
+        yield return null;
         CompleteGeneration(_figureParams);
         _transitionsGenerator.StartGeneration(_quadStripsCollection, _figureMeshGenJobHandle);
-    }
-
-    protected abstract void CompleteGeneration(FigureParamsSO figureParams);
-
-    private void FinishShuffleTransitionsGeneration()
-    {
+        yield return null;
         _transitionsGenerator.FinishGeneration(_figure);
+        FigureDelegatesContainer.EventFigureGenerationCompleted?.Invoke(_figure);
     }
 
-    private Figure GetFigure()
-    {
-        return _figure;
+    protected virtual void InitializeParameters(FigureGenParamsSO figureGenParams)
+    { 
+        _segmentPointHeight = figureGenParams.SegmentPointHeight;
+
+        _segmentPrefab = figureGenParams.SegmentPrefab;
+        _segmentPointPrefab = figureGenParams.SegmentPointPrefab;
     }
+    protected abstract void StartMeshGeneration();
+    protected abstract Figure GenerateFigureGameObject();
+    protected abstract void CompleteGeneration(FigureParamsSO figureParams);
 
     protected const MeshUpdateFlags GenerationMeshUpdateFlags = MeshUpdateFlags.Default;
 
@@ -82,14 +69,6 @@ public abstract class FigureGeneratorGameObject : MonoBehaviour
     protected NativeArray<short> _pointsColliderIndices;
 
     protected QuadStripsBuffer _quadStripsCollection;
-
-    protected virtual void InitializeParameters(FigureGenParamsSO figureGenParams)
-    { 
-        _segmentPointHeight = figureGenParams.Height;
-
-        _segmentPrefab = figureGenParams.SegmentPrefab;
-        _segmentPointPrefab = figureGenParams.SegmentPointPrefab;
-    }
 
     protected void UpdateSegment(FigureSegment segment, in MeshBuffersIndexers indexers, int2 meshResPuzzleIndex)
     {
@@ -157,11 +136,8 @@ public abstract class FigureGeneratorGameObject : MonoBehaviour
 
         return segmentPointMesh;
     }
-
     protected virtual void OnDestroy()
     {
-        Unsubscribe();
-
         _quadStripsCollection.DisposeIfNeeded();
 
         CollectionUtilities.DisposeIfNeeded(_figureVertices);

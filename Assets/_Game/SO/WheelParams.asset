@@ -12,13 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dbce5a62c0d3f441fb1902bbabf0ddd4, type: 3}
   m_Name: WheelParams
   m_EditorClassIdentifier: 
-  FigureGenParamsSO: {fileID: 11400000, guid: 742513ac5ef65499fb371d4f72c536a9, type: 2}
+  GenParams: {fileID: 11400000, guid: 742513ac5ef65499fb371d4f72c536a9, type: 2}
   SelectMethod: 0
-  ShuffleStepsAmount: 0
+  EmptyLerpSpeed: 1.5
+  ShouldUsePredefinedEmptyPlaces: 0
+  _emptyPlacesCount: 2
+  PredefinedEmptyPlaces: []
+  ShuffleStepsAmount: 2
   ShufflePauseTime: 0.3
   ShuffleLerpSpeed: 2
   MoveLerpSpeed: 2.5
-  StartPositionForSegmentsInCompletionPhase: {x: 0, y: -10, z: 0}
-  ShouldUsePredefinedEmptyPlaces: 0
-  PredefinedEmptyPlaces: []
-  EmptyPlacesCount: 1
+  CompleteLerpSpeed: 1
+  RotationAmplitude: 7

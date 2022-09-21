@@ -11,7 +11,7 @@ using UnityEngine.Rendering;
 using Orazum.Collections;
 using Orazum.Meshing;
 
-public abstract class FigureGeneratorTransitions : MonoBehaviour
+public abstract class FigureTransitionsGenerator : MonoBehaviour
 {
     protected struct QST_NativeData : IDisposable
     {
@@ -52,7 +52,7 @@ public abstract class FigureGeneratorTransitions : MonoBehaviour
         NativeArray<int2> bufferIndexers = new NativeArray<int2>(quadStripCollection.QuadStripsCount * 2, Allocator.Persistent);
         _shuffleTransitionsCollection = new QS_TransitionsBuffer(buffer, bufferIndexers);
 
-        FigureGenJobShuffleTrans job = new FigureGenJobShuffleTrans()
+        FigureUniversalTransitionsGenJob job = new FigureUniversalTransitionsGenJob()
         {
             InputQuadStripsCollection = quadStripCollection,
             InputQSTransitionsBufferIndexers = _fadeInOutTransitionsBufferIndexers,
@@ -95,7 +95,7 @@ public abstract class FigureGeneratorTransitions : MonoBehaviour
             }
             // print($"transData {FigureShuffleTransition.FadeOut(ref transData)} {FigureShuffleTransition.FadeIn(ref transData)}");
         }
-        figure.AssignShuffleTransitions(shuffleTransitions);
+        figure.AssignUniversalTransitions(shuffleTransitions);
     }
 
 

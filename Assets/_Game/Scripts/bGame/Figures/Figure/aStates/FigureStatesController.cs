@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 public abstract class FigureStatesController : MonoBehaviour
 { 
@@ -9,13 +10,23 @@ public abstract class FigureStatesController : MonoBehaviour
     public FigureMoveState MoveState { get; protected set; }
     public FigureShuffleState ShuffleState { get; protected set; }
 
+    private IEnumerator _stateSwitchSequence;
     public abstract void Initialize(Figure figure, FigureParamsSO figureParams);
     public void StartUpdating()
     { 
         _currentState = ShuffleState;
         _currentState.OnEnter();
 
-        StartCoroutine(StateSwitchSequence());
+        Assert.IsTrue(_stateSwitchSequence == null);
+        _stateSwitchSequence = StateSwitchSequence();
+        StartCoroutine(_stateSwitchSequence);
+    }
+
+    public void StopUpdating()
+    {
+        Assert.IsTrue(_stateSwitchSequence != null);
+        StopCoroutine(_stateSwitchSequence);
+        _stateSwitchSequence = null;
     }
 
     private IEnumerator StateSwitchSequence()

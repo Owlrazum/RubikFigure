@@ -38,7 +38,7 @@ public class FigureShuffleState : FigureState
 
         _shuffleTimer = new float2(0, 1 / _shuffleLerpSpeed + figureParams.ShufflePauseTime);
         _shuffleStep = new int2(0, figureParams.ShuffleStepsAmount);
-        _dims = figureParams.FigureGenParamsSO.Dimensions;
+        _dims = figureParams.GenParams.Dimensions;
 
         _shuffleIndices = new Array2D<int2>(_dims);
         for (int row = 0; row < _dims.y; row++)
@@ -118,8 +118,6 @@ public class FigureShuffleState : FigureState
                 shuffleMove.AssignFromIndex(fromIndex);
                 shuffleMove.AssignToIndex(toIndex);
                 shuffleMove.AssignLerpSpeed(lerpSpeed);
-                shuffleMove.ShouldDisposeTransition = true;
-
                 moves[moveIndex++] = shuffleMove;
             }
         }

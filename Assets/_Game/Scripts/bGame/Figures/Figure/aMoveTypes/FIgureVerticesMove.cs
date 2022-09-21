@@ -13,7 +13,12 @@ public class FigureVerticesMove : FigureSegmentMove
         FromIndex = move.FromIndex;
         ToIndex = move.ToIndex;
         LerpSpeed = move.LerpSpeed;
-        Mover = move.Mover;
+    }
+
+    public FigureSegment CompletionSegment { get; private set; }
+    public void AssignCompletionSegment(FigureSegment completionSegment)
+    {
+        CompletionSegment = completionSegment;
     }
 
     private QS_Transition _transition;

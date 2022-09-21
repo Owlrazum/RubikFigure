@@ -50,6 +50,11 @@ public abstract class FigureSegment : MonoBehaviour
         _renderer.Default();
     }
 
+    public void Appear()
+    {
+        gameObject.SetActive(true);
+    }
+
     public void Dissappear()
     {
         gameObject.SetActive(false);

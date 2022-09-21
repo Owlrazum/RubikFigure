@@ -894,7 +894,7 @@ GameObject:
   - component: {fileID: 1841937294}
   - component: {fileID: 1841937295}
   m_Layer: 0
-  m_Name: WheelCompleter
+  m_Name: FigurePuzzler
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -924,12 +924,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 1841937293}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6853cfaaa51794cdda1dba0b3419c7f2, type: 3}
+  m_Script: {fileID: 11500000, guid: 58634898b91ff493eae2de5e715f0979, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _maxEmptyPlacesCount: 2
-  s_amplitude: 7
-  _teleportLerpSpeed: 0.5
+  _figureParams: {fileID: 11400000, guid: 92feb075f86ac46618b359a0c37f8dd4, type: 2}
+  puzzleType: 0
 --- !u!1 &1938759843
 GameObject:
   m_ObjectHideFlags: 0

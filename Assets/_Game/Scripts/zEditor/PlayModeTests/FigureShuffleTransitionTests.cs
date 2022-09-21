@@ -80,7 +80,7 @@ public class FigureShuffleTranstionTests
         data.TransitionsIndexers = new(bufferIndexers.Length, Allocator.Persistent);
         QS_TransitionsBuffer transitionsBuffer = new QS_TransitionsBuffer(data.TransitionSegmentsBuffer, data.TransitionsIndexers);
 
-        FigureGenJobShuffleTrans jobShuffleTrans = new FigureGenJobShuffleTrans()
+        FigureUniversalTransitionsGenJob jobShuffleTrans = new FigureUniversalTransitionsGenJob()
         {
             InputQuadStripsCollection = quadStripsBuffer,
             InputQSTransitionsBufferIndexers = bufferIndexers,

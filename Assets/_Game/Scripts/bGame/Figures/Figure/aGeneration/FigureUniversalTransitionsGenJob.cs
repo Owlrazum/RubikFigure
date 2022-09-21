@@ -8,7 +8,7 @@ using UnityEngine;
 using Orazum.Meshing;
 
 // [BurstCompile]
-public struct FigureGenJobShuffleTrans : IJobFor
+public struct FigureUniversalTransitionsGenJob : IJobFor
 {
     [ReadOnly]
     public QuadStripsBuffer InputQuadStripsCollection;

@@ -14,7 +14,7 @@ using static Orazum.Meshing.BufferUtils;
 
 // OT - origin target
 // QSTS - quad strip transition segment
-public class WheelGeneratorTransitions : FigureGeneratorTransitions
+public class WheelGeneratorTransitions : FigureTransitionsGenerator
 {
     private const int ClockOrderTransSegCount = 2;
     private const int VerticalTransSegCount = 2;

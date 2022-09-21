@@ -9,7 +9,9 @@ using Orazum.Constants;
 using Orazum.Meshing;
 using Orazum.Collections;
 
-public class ValknutGeneratorGameObject : FigureGeneratorGameObject
+using static Orazum.Math.LineSegmentUtilities;
+
+public class ValknutGenerator : FigureGenerator
 {
     #region Constants
     private const int SegmentsCount = Valknut.TrianglesCount * Valknut.PartsCount; // three outer and three inner;
@@ -165,9 +167,9 @@ public class ValknutGeneratorGameObject : FigureGeneratorGameObject
 
         int2 tasSegmentBuffersCount = new int2(SegmentVertexCountTAS, SegmentIndexCountTAS);
         int2 oasSegmentBuffersCount = new int2(SegmentVertexCountOAS, SegmentIndexCountOAS);
-        MeshBuffersIndexers buffersData = new MeshBuffersIndexers();
-        buffersData.Start = int2.zero;
-        buffersData.Count = tasSegmentBuffersCount;
+        MeshBuffersIndexers buffersIndexers = new MeshBuffersIndexers();
+        buffersIndexers.Start = int2.zero;
+        buffersIndexers.Count = tasSegmentBuffersCount;
 
         int2 tasPointRendererBuffersCount = new int2(PointRendererVertexCountTAS, PointRendererIndexCountTAS);
         int2 oasPointRendererBuffersCount = new int2(PointRendererVertexCountOAS, PointRendererIndexCountOAS);
@@ -181,28 +183,34 @@ public class ValknutGeneratorGameObject : FigureGeneratorGameObject
         multiMeshBuffersData.Start = int2.zero;
         multiMeshBuffersData.Count = new int2(CubeVertexCount, CubeIndexCount);
 
+        int quadStripIndexer = 0;
         for (int triangle = 0; triangle < _dims.x; triangle++)
         {
             for (int part = 0; part < _dims.y; part++)
             {
                 int2 index = new int2(triangle, part);
 
-                UpdateSegment(_segments[index], buffersData, meshResPuzzleIndex: new int2(1, 0));
+                UpdateSegment(_segments[index], buffersIndexers, meshResPuzzleIndex: new int2(1, 0));
+                QuadStrip segmentStrip = _quadStripsCollection.GetQuadStrip(quadStripIndexer++);
+                float3 cwStart = GetLineSegmentCenter(segmentStrip[0]);
+                float3 cwEnd = GetLineSegmentCenter(segmentStrip[segmentStrip.LineSegmentsCount - 1]);
+                _segments[index].AssignEndPoints(cwStart, cwEnd);
+
                 Mesh[] multiMesh = CreateColliderMultiMesh(ref multiMeshBuffersData, part == 0);
                 Mesh renderMesh = CreateSegmentPointRenderMesh(in pointBuffersData);
                 _segmentPoints[index].InitializeWithMultiMesh(renderMesh, multiMesh);
                 if (part == 0)
                 {
-                    buffersData.Start += tasSegmentBuffersCount;
-                    buffersData.Count = oasSegmentBuffersCount;
+                    buffersIndexers.Start += tasSegmentBuffersCount;
+                    buffersIndexers.Count = oasSegmentBuffersCount;
 
                     pointBuffersData.Start += tasPointRendererBuffersCount;
                     pointBuffersData.Count = oasPointRendererBuffersCount;
                 }
                 else
                 {
-                    buffersData.Start += oasSegmentBuffersCount;
-                    buffersData.Count = tasSegmentBuffersCount;
+                    buffersIndexers.Start += oasSegmentBuffersCount;
+                    buffersIndexers.Count = tasSegmentBuffersCount;
 
                     pointBuffersData.Start += oasPointRendererBuffersCount;
                     pointBuffersData.Count = tasPointRendererBuffersCount;
