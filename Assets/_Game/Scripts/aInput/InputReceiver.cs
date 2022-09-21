@@ -9,6 +9,8 @@ public abstract class InputReceiver : MonoBehaviour
     [Range(0, 0.5f)]
     protected float _swipeThreshold;
 
+    protected HashSet<Selectable> _registeredSelectables;
+    
     protected Camera _inputCamera;
 
     protected float3 _pressPos;
@@ -17,10 +19,19 @@ public abstract class InputReceiver : MonoBehaviour
     protected abstract void CheckPointerDown();
     protected abstract void CheckPointer();
     protected abstract void CheckPointerUp();
+    protected void CheckSwipeCommand()
+    {
+        float3 viewStartPos = _inputCamera.ScreenToViewportPoint(_pressPos);
+        float3 viewEndPos = _inputCamera.ScreenToViewportPoint(_lastPos);
+
+        float3 delta = viewEndPos - viewStartPos;
+        if (math.lengthsq(delta) >= _swipeThreshold * _swipeThreshold)
+        {
+            InputDelegatesContainer.SwipeCommand?.Invoke(new SwipeCommand(viewStartPos.xy, viewEndPos.xy));
+        }
+    }
 
     private bool _shouldUpdate;
-
-    protected HashSet<Selectable> _registeredSelectables;
 
     private void Awake()
     {

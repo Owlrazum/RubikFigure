@@ -1,4 +1,3 @@
-using Unity.Mathematics;
 using UnityEngine;
 
 public class InputReceiverEditor : InputReceiver
@@ -34,18 +33,6 @@ public class InputReceiverEditor : InputReceiver
             {
                 s.CheckDeselectionOnPointerUp(ray);
             }
-        }
-    }
-
-    private void CheckSwipeCommand()
-    {
-        float3 viewStartPos = _inputCamera.ScreenToViewportPoint(_pressPos);
-        float3 viewEndPos = _inputCamera.ScreenToViewportPoint(_lastPos);
-
-        float3 delta = viewEndPos - viewStartPos;
-        if (math.lengthsq(delta) >= _swipeThreshold * _swipeThreshold)
-        {
-            InputDelegatesContainer.SwipeCommand?.Invoke(new SwipeCommand(viewStartPos.xy, viewEndPos.xy));
         }
     }
 }

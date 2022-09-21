@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   GenParams: {fileID: 11400000, guid: 742513ac5ef65499fb371d4f72c536a9, type: 2}
   SelectMethod: 0
-  EmptyLerpSpeed: 1.5
+  EmptyLerpSpeed: 2
+  BeforeEmptyTime: 2
   ShouldUsePredefinedEmptyPlaces: 0
   _emptyPlacesCount: 2
   PredefinedEmptyPlaces: []

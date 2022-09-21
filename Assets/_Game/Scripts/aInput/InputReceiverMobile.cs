@@ -6,7 +6,7 @@ public class InputReceiverMobile : InputReceiver
     private bool _isTouching;
     protected override void CheckPointerDown()
     {
-        if (Input.touchCount == 1)
+        if (Input.touchCount == 1 && !_isTouching)
         {
             _isTouching = true;
             _pressPos = new float3(Input.GetTouch(0).position, 0);
@@ -20,7 +20,7 @@ public class InputReceiverMobile : InputReceiver
     }
     protected override void CheckPointer()
     {
-        if (Input.touchCount == 1)
+        if (Input.touchCount == 1 && _isTouching)
         {
             _lastPos = new float3(Input.GetTouch(0).position, 0);
         }
@@ -29,6 +29,7 @@ public class InputReceiverMobile : InputReceiver
     {
         if (_isTouching && Input.touchCount == 0)
         { 
+            _isTouching = false;
             CheckSwipeCommand();
 
             Ray ray = _inputCamera.ScreenPointToRay(_lastPos);
@@ -36,18 +37,6 @@ public class InputReceiverMobile : InputReceiver
             {
                 s.CheckDeselectionOnPointerUp(ray);
             }
-        }
-    }
-
-    private void CheckSwipeCommand()
-    {
-        float3 viewStartPos = _inputCamera.ScreenToViewportPoint(_pressPos);
-        float3 viewEndPos = _inputCamera.ScreenToViewportPoint(_lastPos);
-
-        float3 delta = viewEndPos - viewStartPos;
-        if (math.lengthsq(delta) >= _swipeThreshold * _swipeThreshold)
-        {
-            InputDelegatesContainer.SwipeCommand?.Invoke(new SwipeCommand(viewStartPos.xy, viewEndPos.xy));
         }
     }
 }
