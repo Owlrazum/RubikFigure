@@ -14,7 +14,7 @@ public class FigureParamsSO : ScriptableObject
 
     [Header("Emptying")]
     public float EmptyLerpSpeed = 1;
-    public float BeforeEmptyTime = 3;
+    public float BeforeEmptyTime = 1;
 
     public bool ShouldUsePredefinedEmptyPlaces = false;
     [SerializeField]

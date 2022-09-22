@@ -172,8 +172,12 @@ public class FigurePuzzler : MonoBehaviour
                     return;
                 }
             }
-            if (_targetIndicesBuffer.Count > 0)
+            if (puzzleIndex < 0 || _assembleIndicesByPuzzleIndex.ContainsKey(puzzleIndex))
             { 
+                return;
+            }
+            if (_targetIndicesBuffer.Count > 0)
+            {
                 _assembleIndicesByPuzzleIndex.Add(puzzleIndex, _targetIndicesBuffer);
                 _targetIndicesBuffer = new List<int2>(_emptyPlacesCount);
             }

@@ -1,0 +1,111 @@
+
+    #region DoubleRotationLerp
+    private void Construct_DRL(
+        in QSTS_FillData fillData,
+        in float3x2 start,
+        in float3x2 end,
+        in float lerpParamInput,
+        ref MeshBuffersIndexers buffersIndexers
+    )
+    {
+        QuadStrip quadStrip = GetRadialQuadStrip(fillData.Radial, start);
+        // _quadStripBuilder.Build(quadStrip, ref buffersIndexers);
+
+        float lerpParam = lerpParamInput;
+        var lerpConstruct = new FillTypeLerpConstruct(fillData, fillData.Radial.MaxLerpLength, ref lerpParam);
+
+        QSTSFD_Radial radial = fillData.Radial;
+        float lerpDelta = radial.MaxLerpLength / radial.Resolution;
+        if (fillData.IsTemporary)
+        {
+            lerpDelta += radial.MaxLerpLength / radial.Resolution;
+        }
+        NativeArray<float3> lerpPoints = new NativeArray<float3>(lerpConstruct.SegsCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+
+        UpdateLerpedPoints_DRL(
+            radial,
+            quadStrip[0],
+            lerpConstruct,
+            lerpDelta, lerpParam,
+            ref lerpPoints,
+            out int indexer
+        );
+
+        NativeArray<float3> gridDim = lerpPoints.GetSubArray(0, indexer);
+        // DrawGridDim(dim, 10);
+
+        _gridBuilder.Start(gridDim, ref buffersIndexers);
+        for (int i = 1; i < quadStrip.LineSegmentsCount; i++)
+        {
+            UpdateLerpedPoints_DRL(
+                radial,
+                quadStrip[i],
+                lerpConstruct,
+                lerpDelta, lerpParam,
+                ref lerpPoints,
+                out indexer
+            );
+            // DrawGridDim(dim, 10);
+
+            _gridBuilder.Continue(gridDim, ref buffersIndexers);
+        }
+    }
+
+    private void UpdateLerpedPoints_DRL(
+        in QSTSFD_Radial radial,
+        in float3x2 lineSegment,
+        in FillTypeLerpConstruct lerpConstruct,
+        in float lerpDelta,
+        in float lerpParam,
+        ref NativeArray<float3> lerpPoints,
+        out int indexer
+    )
+    {
+        float3 start = lineSegment[0];
+        float3 end = lineSegment[1];
+        quaternion perp = quaternion.AxisAngle(math.up(), TAU / 4);
+        float3 axis = GetDirection(perp, lineSegment);
+        float3 center = GetLineSegmentCenter(lineSegment);
+        indexer = 0;
+        if (lerpConstruct.AddStart > 0)
+        {
+            lerpPoints[indexer++] = start;
+        }
+
+        float angle = radial.SecondOrderAngle * lerpParam;
+        Debug.Log(angle);
+        quaternion q = quaternion.AxisAngle(axis, angle);
+
+        float3 lerpPoint = RotateAround(start, center, q);
+        if (lerpConstruct.AddLerpAtStart)
+        {
+            lerpPoints[indexer++] = lerpPoint;
+        }
+
+        float2 lerpOffset = lerpConstruct.LerpOffset;
+        for (int i = 0; i < lerpConstruct.DeltaSegsCount; i++)
+        {
+            lerpOffset.x += lerpDelta;
+            if (lerpOffset.x >= 1)
+            {
+                break;
+            }
+            if (lerpOffset.x < lerpOffset.y)
+            {
+                angle = radial.SecondOrderAngle * lerpOffset.x;
+                q = quaternion.AxisAngle(axis, angle);
+                lerpPoints[indexer++] = RotateAround(start, center, q);
+            }
+        }
+
+        if (lerpConstruct.AddLerpAtEnd)
+        {
+            lerpPoints[indexer++] = lerpPoint;
+        }
+
+        if (lerpConstruct.AddEnd > 0)
+        {
+            lerpPoints[indexer++] = end;
+        }
+    }
+    #endregion

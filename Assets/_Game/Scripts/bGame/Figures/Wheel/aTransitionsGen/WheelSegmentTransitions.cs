@@ -1,11 +1,5 @@
 using UnityEngine;
-
-[RequireComponent(typeof(MeshFilter))]
-public class WheelSegmentMover : FigureSegmentMover
-{
-    protected override int MaxVertexCount => 2 * (MeshResolution + 1) * 2 + 10;
-    protected override int MaxIndexCount => 6 * MeshResolution * 2 + 30;
-}
+using Orazum.Meshing;
 
 public struct WheelSegmentTransitions
 {

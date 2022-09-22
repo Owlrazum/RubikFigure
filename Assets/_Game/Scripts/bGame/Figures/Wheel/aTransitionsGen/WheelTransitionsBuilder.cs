@@ -10,7 +10,7 @@ using Orazum.Meshing;
 using static Orazum.Constants.Math;
 using static Orazum.Math.LineSegmentUtilities;
 using static Orazum.Collections.IndexUtilities;
-using static QSTS_FillData;
+using static Orazum.Meshing.QSTS_FillData;
 
 public struct WheelTransitionsBuilder
 {

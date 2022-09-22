@@ -70,7 +70,7 @@ public abstract class FigureGenerator : MonoBehaviour
 
     protected QuadStripsBuffer _quadStripsCollection;
 
-    protected void UpdateSegment(FigureSegment segment, in MeshBuffersIndexers indexers, int2 meshResPuzzleIndex)
+    protected void UpdateSegment(FigureSegment segment, in MeshBuffersIndexers indexers, int puzzleIndex, int2 meshBuffersMaxCount)
     {
         Mesh mesh = segment.MeshContainer.mesh;
         mesh.MarkDynamic();
@@ -90,7 +90,7 @@ public abstract class FigureGenerator : MonoBehaviour
 
         mesh.RecalculateBounds();
 
-        segment.Initialize(_figureVertices[indexers.Start.x].uv, meshResPuzzleIndex.x, meshResPuzzleIndex.y);
+        segment.Initialize(_figureVertices[indexers.Start.x].uv, puzzleIndex, meshBuffersMaxCount);
     }
     protected Mesh CreateSegmentPointRenderMesh(in MeshBuffersIndexers buffersData)
     {

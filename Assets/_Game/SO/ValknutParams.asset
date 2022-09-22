@@ -14,15 +14,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   GenParams: {fileID: 11400000, guid: ecb6ca1efe9f9484cad85bcc6f45140d, type: 2}
   SelectMethod: 0
-  EmptyLerpSpeed: 1
+  EmptyLerpSpeed: 2
+  BeforeEmptyTime: 1
   ShouldUsePredefinedEmptyPlaces: 1
   _emptyPlacesCount: 2
   PredefinedEmptyPlaces:
   - x: 2
     y: 0
-  ShuffleStepsAmount: 3
+  ShuffleStepsAmount: 1
   ShufflePauseTime: 0.1
-  ShuffleLerpSpeed: 1
+  ShuffleLerpSpeed: 2
   MoveLerpSpeed: 2
   CompleteLerpSpeed: 0
   RotationAmplitude: 0

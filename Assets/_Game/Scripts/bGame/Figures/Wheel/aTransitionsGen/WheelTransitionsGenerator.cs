@@ -8,13 +8,14 @@ using Unity.Collections;
 using UnityEngine;
 using UnityEngine.Assertions;
 
+using Orazum.Meshing;
 using Orazum.Collections;
 
 using static Orazum.Meshing.BufferUtils;
 
 // OT - origin target
 // QSTS - quad strip transition segment
-public class WheelGeneratorTransitions : FigureTransitionsGenerator
+public class WheelTransitionsGenerator : FigureTransitionsGenerator
 {
     private const int ClockOrderTransSegCount = 2;
     private const int VerticalTransSegCount = 2;

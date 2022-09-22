@@ -9,9 +9,9 @@ using UnityEngine.Assertions;
 using static Orazum.Constants.Math;
 using static Orazum.Math.LineSegmentUtilities;
 using static Orazum.Math.MathUtils;
-using static QST_Segment;
-using static QSTS_FillData;
-using static QSTSFD_Radial;
+using static Orazum.Meshing.QST_Segment;
+using static Orazum.Meshing.QSTS_FillData;
+using static Orazum.Meshing.QSTSFD_Radial;
 
 namespace Orazum.Meshing
 {

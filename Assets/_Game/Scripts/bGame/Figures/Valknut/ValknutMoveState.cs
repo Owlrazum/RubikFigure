@@ -8,9 +8,11 @@ using static Orazum.Math.LineSegmentUtilities;
 
 public class ValknutMoveState : FigureMoveState
 {
+    private Valknut _valknut;
     public ValknutMoveState(ValknutStatesController statesController, Valknut valknut, float moveLerpSpeed) :
         base(statesController, valknut, moveLerpSpeed)
     {
+        _valknut = valknut;
         _movesToMake = new List<FigureSegmentMove>(1);
     }
 

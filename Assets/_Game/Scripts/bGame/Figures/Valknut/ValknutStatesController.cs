@@ -12,6 +12,10 @@ public class ValknutStatesController : FigureStatesController
             RaycastSelectable raycastSelectable = new RaycastSelectable(SegmentPointsLayerMask);
             IdleState = new FigureIdleState(raycastSelectable, this, valknut);
         }
+        else
+        {
+            throw new System.NotSupportedException("Unknown Select method");
+        }
         MoveState = new ValknutMoveState(this, valknut, figureParams.MoveLerpSpeed);
         ShuffleState = new FigureShuffleState(this, valknut, figureParams);
     }

@@ -5,8 +5,8 @@ using UnityEngine;
 using UnityEngine.Assertions;
 
 using static Orazum.Math.LineSegmentUtilities;
-using static QST_Segment;
-using static QSTS_FillData;
+using static Orazum.Meshing.QST_Segment;
+using static Orazum.Meshing.QSTS_FillData;
 
 // TODO: Write tests?
 namespace Orazum.Meshing

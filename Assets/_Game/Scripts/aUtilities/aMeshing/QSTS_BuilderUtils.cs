@@ -5,9 +5,9 @@ using UnityEngine.Assertions;
 
 using Orazum.Math;
 using static Orazum.Math.LineSegmentUtilities;
-using static QST_Segment;
-using static QSTSFD_Radial;
-using static QSTS_FillData;
+using static Orazum.Meshing.QST_Segment;
+using static Orazum.Meshing.QSTSFD_Radial;
+using static Orazum.Meshing.QSTS_FillData;
 
 namespace Orazum.Meshing
 { 

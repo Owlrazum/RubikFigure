@@ -14,12 +14,8 @@ using Orazum.Collections;
 using static Orazum.Math.EasingUtilities;
 
 [RequireComponent(typeof(MeshFilter))]
-public abstract class FigureSegmentMover : MonoBehaviour
+public class FigureSegmentMover : MonoBehaviour
 {
-    protected int MeshResolution { get; private set; }
-    protected abstract int MaxVertexCount { get; }
-    protected abstract int MaxIndexCount { get; }
-
     private const float ClockMoveBufferLerpValue = 0.4f;
     private const MeshUpdateFlags MoveMeshUpdateFlags = MeshUpdateFlags.Default;
 
@@ -45,11 +41,10 @@ public abstract class FigureSegmentMover : MonoBehaviour
     private bool _shouldDispose;
     private QS_Transition toDispose; 
 
-    public void Initialize(float2 uv, int meshResolution)
+    public void Initialize(float2 uv, int2 meshBuffersMaxCount)
     {
-        MeshResolution = meshResolution;
-        _vertices = new NativeArray<VertexData>(MaxVertexCount, Allocator.Persistent);
-        _indices = new NativeArray<short>(MaxIndexCount, Allocator.Persistent);
+        _vertices = new NativeArray<VertexData>(meshBuffersMaxCount.x, Allocator.Persistent);
+        _indices = new NativeArray<short>(meshBuffersMaxCount.y, Allocator.Persistent);
         _indexersForJob = new MeshBuffersIndexersForJob(new MeshBuffersIndexers());
         
         float3x2 normalUV = new float3x2(math.up(), new float3(uv, 0));

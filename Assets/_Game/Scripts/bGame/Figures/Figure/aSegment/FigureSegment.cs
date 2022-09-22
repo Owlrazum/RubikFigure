@@ -5,11 +5,7 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Assertions;
 
-/// <summary>
-/// Segment of the Wheel
-/// </summary>
-[RequireComponent(typeof(FigureSegmentRenderer))]
-public abstract class FigureSegment : MonoBehaviour
+public class FigureSegment : MonoBehaviour
 {
     protected FigureSegmentMover _mover;
     protected FigureSegmentRenderer _renderer;
@@ -21,16 +17,15 @@ public abstract class FigureSegment : MonoBehaviour
 
     private void Awake()
     {
-        InitializeMover();
-        Assert.IsNotNull(_mover);
-        TryGetComponent(out _renderer);
+        _mover = gameObject.AddComponent<FigureSegmentMover>();
+        bool isFound = TryGetComponent<FigureSegmentRenderer>(out _renderer);
+        Assert.IsTrue(isFound);
     }
-    protected abstract void InitializeMover();
-    
-    public virtual void Initialize(float2 uv, int meshResolution, int puzzleIndexArg)
+
+    public virtual void Initialize(float2 uv, int puzzleIndex, int2 meshBuffersMaxCount)
     { 
-        _mover.Initialize(uv, meshResolution);
-        _puzzleIndex = puzzleIndexArg;
+        _mover.Initialize(uv, meshBuffersMaxCount);
+        _puzzleIndex = puzzleIndex;
     }
 
     public void StartMove(

@@ -10,11 +10,11 @@ using Unity.Collections;
 
 using Orazum.Meshing;
 using Orazum.Math;
+using static Orazum.Constants.Math;
 using static Orazum.Math.LineSegmentUtilities;
-using static QSTS_FillData;
 using static Orazum.Math.EasingUtilities;
 using static Orazum.Math.MathUtils;
-using static Orazum.Constants.Math;
+using static Orazum.Meshing.QSTS_FillData;
 
 public class QSTS_RadialBuilderTests
 {

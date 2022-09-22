@@ -7,8 +7,8 @@ using Orazum.Math;
 using Orazum.Meshing;
 using static Orazum.Math.RaysUtilities;
 using static Orazum.Math.MathUtils;
-using static QST_Segment;
-using static QSTS_FillData;
+using static Orazum.Meshing.QST_Segment;
+using static Orazum.Meshing.QSTS_FillData;
 
 public struct ValknutTransitionsBuilder
 {

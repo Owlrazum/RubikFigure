@@ -9,7 +9,7 @@ using Orazum.Collections;
 using Orazum.Meshing;
 using Orazum.Constants;
 
-public class WheelGeneratorGameObject : FigureGenerator
+public class WheelGenerator : FigureGenerator
 {
     private int2 _sidesRingsCount;
     private float2 _innerOuterRadii;
@@ -23,18 +23,25 @@ public class WheelGeneratorGameObject : FigureGenerator
 
     private Wheel _wheel;
 
-    private Array2D<WheelSegment> _segments;
+    private Array2D<FigureSegment> _segments;
     private Array2D<FigureSegmentPoint> _segmentPoints;
+
+    private int2 MeshBuffersMaxCount;
 
     protected override void InitializeParameters(FigureGenParamsSO figureGenParams)
     {
         base.InitializeParameters(figureGenParams);
 
-        WheelGenParamsSO generationParams = figureGenParams as WheelGenParamsSO;
-        _sidesRingsCount = new int2(generationParams.SideCount, generationParams.RingCount);
+        WheelGenParamsSO genParams = figureGenParams as WheelGenParamsSO;
+
+        MeshBuffersMaxCount = new int2(
+            2 * (genParams.SegmentResolution + 1) * 2 + 10,
+            6 * genParams.SegmentResolution * 2 + 30
+        );
+        _sidesRingsCount = new int2(genParams.SideCount, genParams.RingCount);
 
         _segmentCount = _sidesRingsCount.x * _sidesRingsCount.y;
-        _segmentResolution = generationParams.SegmentResolution;
+        _segmentResolution = genParams.SegmentResolution;
 
         _segmentBuffersData = new MeshBuffersIndexers();
         _segmentBuffersData.Count = new int2(
@@ -51,7 +58,7 @@ public class WheelGeneratorGameObject : FigureGenerator
         _quadStripCollectionData.x = (_segmentResolution + 1) * _segmentCount;
         _quadStripCollectionData.y = _segmentCount;
 
-        _innerOuterRadii = new float2(generationParams.InnerRadius, generationParams.OuterRadius);
+        _innerOuterRadii = new float2(genParams.InnerRadius, genParams.OuterRadius);
     }
 
     protected override void StartMeshGeneration()
@@ -115,7 +122,7 @@ public class WheelGeneratorGameObject : FigureGenerator
         segmentsParent.SetSiblingIndex(1);
 
         _segmentPoints = new Array2D<FigureSegmentPoint>(_sidesRingsCount.x, _sidesRingsCount.y);
-        _segments = new Array2D<WheelSegment>(_sidesRingsCount.x, _sidesRingsCount.y);
+        _segments = new Array2D<FigureSegment>(_sidesRingsCount.x, _sidesRingsCount.y);
 
         for (int ring = 0; ring < _sidesRingsCount.y; ring++)
         {
@@ -125,7 +132,7 @@ public class WheelGeneratorGameObject : FigureGenerator
 
                 GameObject segmentGb = Instantiate(_segmentPrefab);
                 segmentGb.transform.parent = segmentsParent;
-                WheelSegment segment = segmentGb.AddComponent<WheelSegment>();
+                FigureSegment segment = segmentGb.AddComponent<FigureSegment>();
                 _segments[index] = segment;
 
                 GameObject segmentPointGb = Instantiate(_segmentPointPrefab);
@@ -157,7 +164,7 @@ public class WheelGeneratorGameObject : FigureGenerator
         {
             for (int ring = 0; ring < _sidesRingsCount.y; ring++)
             {
-                UpdateSegment(_segments[side, ring], _segmentBuffersData, new int2(_segmentResolution, side));
+                UpdateSegment(_segments[side, ring], _segmentBuffersData, puzzleIndex: side, MeshBuffersMaxCount);
 
                 FigureSegmentPoint currentPoint = _segmentPoints[side, ring];
                 currentPoint.InitializeWithSingleMesh(segmentPointMeshes[ring]);

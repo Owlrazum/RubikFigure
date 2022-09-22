@@ -44,6 +44,11 @@ public class ValknutGenerator : FigureGenerator
     private const int PointColliderIndexCountTAS = SegmentQuadsCountTAS * CubeIndexCount;
     private const int PointColliderIndexCountOAS = SegmentQuadsCountOAS * CubeIndexCount;
     private const int PointColliderTotalIndexCount = (PointColliderIndexCountTAS + PointColliderIndexCountOAS) * 3;
+
+
+    private const int MaxRangesCountForOneSegment = 7;
+    private const int MaxVertexCount = (MaxRangesCountForOneSegment + 2) * 2;
+    private const int MaxIndexCount = MaxRangesCountForOneSegment * 6;
     #endregion
 
     private float _innerTriangleRadius;
@@ -190,11 +195,11 @@ public class ValknutGenerator : FigureGenerator
             {
                 int2 index = new int2(triangle, part);
 
-                UpdateSegment(_segments[index], buffersIndexers, meshResPuzzleIndex: new int2(1, 0));
+                UpdateSegment(_segments[index], buffersIndexers, puzzleIndex: triangle, new int2(MaxVertexCount, MaxIndexCount));
                 QuadStrip segmentStrip = _quadStripsCollection.GetQuadStrip(quadStripIndexer++);
                 float3 cwStart = GetLineSegmentCenter(segmentStrip[0]);
                 float3 cwEnd = GetLineSegmentCenter(segmentStrip[segmentStrip.LineSegmentsCount - 1]);
-                _segments[index].AssignEndPoints(cwStart, cwEnd);
+                _segments[index].AssignEndPoints(cwEnd, cwStart);
 
                 Mesh[] multiMesh = CreateColliderMultiMesh(ref multiMeshBuffersData, part == 0);
                 Mesh renderMesh = CreateSegmentPointRenderMesh(in pointBuffersData);

@@ -5,7 +5,7 @@ using Unity.Collections;
 
 using static Orazum.Collections.IndexUtilities;
 
-using Orazum.Math;
+using Orazum.Meshing;
 
 // [BurstCompile]
 public struct WheelGenJobTransData : IJobFor
