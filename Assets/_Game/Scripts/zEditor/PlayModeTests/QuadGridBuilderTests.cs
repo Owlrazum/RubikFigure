@@ -53,9 +53,12 @@ public class QuadGridBuilderTests
         }
 
         PlayModeTestsUtils.CreateMeshDummy(out MeshFilter mesh);
-        PlayModeTestsUtils.ApplyMeshBuffers(vertices, indices, mesh, buffersIndexers);
+        MeshGenUtils.ApplyMeshBuffers(vertices, indices, mesh, buffersIndexers);
         PlayModeTestsUtils.CreateLight(new float3(0, -1, 1), math.forward());
         PlayModeTestsUtils.CreateCamera(new float3(0, 10, 0), new float3(0, -1, 0), new float3(0, 0, 1));
+
+
         yield return new WaitUntil(() => Input.GetKeyDown(KeyCode.F));
+        GameObject.Destroy(mesh.gameObject);
     }
 }

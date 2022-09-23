@@ -19,8 +19,8 @@ namespace Orazum.Meshing
             _vertices = vertices;
             _indices = indices;
             _uv = uv;
-            _prevIndices = new NativeArray<int>(0, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-            _indexBuffer = new NativeArray<int>(0, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            _prevIndices = new NativeArray<int>(0, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            _indexBuffer = new NativeArray<int>(0, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
         }
 
         public void Start(in NativeArray<float3> gridDim, ref MeshBuffersIndexers buffersIndexers)
@@ -78,6 +78,7 @@ namespace Orazum.Meshing
         public void DisposeTempIndexing()
         {
             _prevIndices.Dispose();
+            _indexBuffer.Dispose();
         }
 
         private void AddQuadIndices(in int4 quadIndices, ref MeshBuffersIndexers buffersIndexers)

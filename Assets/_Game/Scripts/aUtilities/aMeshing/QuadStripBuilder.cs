@@ -3,6 +3,7 @@ using Unity.Collections;
 
 using UnityEngine;
 using Orazum.Collections;
+using Orazum.Math;
 
 namespace Orazum.Meshing
 {
@@ -13,12 +14,15 @@ namespace Orazum.Meshing
         private float3x2 _normalAndUV;
 
         private int2 _prevIndices;
+        private float3x4 _currentQuad;
         public QuadStripBuilder(in NativeArray<VertexData> vertices, in NativeArray<short> indices, in float3x2 normalAndUV)
         {
             _vertices = vertices;
             _indices = indices;
             _normalAndUV = normalAndUV;
             _prevIndices = int2.zero;
+            
+            _currentQuad = float3x4.zero;
         }
 
         public void ReorientVertices(int bufferLength)
@@ -42,6 +46,9 @@ namespace Orazum.Meshing
         {
             _prevIndices.x = AddVertex(lineSegment[0], ref buffersIndexers);
             _prevIndices.y = AddVertex(lineSegment[1], ref buffersIndexers);
+
+            _currentQuad[2] = lineSegment[0];
+            _currentQuad[3] = lineSegment[1];
         }
 
         public void Continue(in float3x2 lineSegment, ref MeshBuffersIndexers buffersIndexers)
@@ -49,6 +56,11 @@ namespace Orazum.Meshing
             int2 newIndices = int2.zero;
             newIndices.x = AddVertex(lineSegment[0], ref buffersIndexers);
             newIndices.y = AddVertex(lineSegment[1], ref buffersIndexers);
+
+            _currentQuad[0] = _currentQuad[2];
+            _currentQuad[1] = _currentQuad[3];
+            _currentQuad[2] = lineSegment[0];
+            _currentQuad[3] = lineSegment[1];
 
             int4 quadIndices = new int4(_prevIndices, newIndices.yx);
             AddQuadIndices(quadIndices, ref buffersIndexers);
@@ -69,14 +81,47 @@ namespace Orazum.Meshing
             }
         }
 
-        private void AddQuadIndices(int4 quadIndices, ref MeshBuffersIndexers buffersIndexers)
+        private void AddQuadIndices(int4 quadIndicesToCheck, ref MeshBuffersIndexers buffersIndexers)
         {
+            int4 quadIndices = quadIndicesToCheck;
+            CheckClockOrder(quadIndicesToCheck, out quadIndices);
             AddIndex(quadIndices.x, ref buffersIndexers);
             AddIndex(quadIndices.y, ref buffersIndexers);
             AddIndex(quadIndices.z, ref buffersIndexers);
             AddIndex(quadIndices.x, ref buffersIndexers);
             AddIndex(quadIndices.z, ref buffersIndexers);
             AddIndex(quadIndices.w, ref buffersIndexers);
+        }
+
+        private void CheckClockOrder(int4 quadIndices, out int4 correctedQuadIndices)
+        {
+            float3x3 t = new float3x3(
+                 _currentQuad[0],
+                 _currentQuad[1],
+                 _currentQuad[2]
+            );
+            ClockOrderType c1 = MathUtils.GetTriangleClockOrder(t);
+            
+            t = new float3x3(
+                 _currentQuad[0],
+                 _currentQuad[2],
+                 _currentQuad[3]
+            );
+            ClockOrderType c2 = MathUtils.GetTriangleClockOrder(t);
+            if (c1 != c2)
+            {
+                Debug.LogWarning("triangles are in different orders");
+            }
+            if (c1 == ClockOrderType.AntiCW)
+            {
+                correctedQuadIndices = quadIndices.wzyx;
+                Debug.Log($"corrected {quadIndices} to {correctedQuadIndices}");
+            }
+            else
+            {
+                correctedQuadIndices = quadIndices;
+                Debug.Log($"no correction needed");
+            }
         }
 
         private short AddVertex(float3 pos, ref MeshBuffersIndexers buffersIndexers)

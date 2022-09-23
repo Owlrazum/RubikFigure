@@ -32,6 +32,8 @@ public struct ValknutTransitionsBuilder
     private int2 _transSegmentsIndexer;
     private float _emptyZoneLength;
 
+    public bool IsValid;
+
     public ValknutTransitionsBuilder(
         in QuadStrip origin,
         in QuadStrip target
@@ -48,6 +50,7 @@ public struct ValknutTransitionsBuilder
         _inFillDistances = new NativeArray<float>(_target.QuadsCount, Allocator.Temp);
 
         _emptyZoneLength = 0;
+        IsValid = true;
 
         if (_origin.QuadsCount == 3)
         {
@@ -85,6 +88,10 @@ public struct ValknutTransitionsBuilder
         ComputeDistancesAndSegs(
             out float2 fillInOutTotalDistances
         );
+        if (!IsValid)
+        {
+            return;
+        }
         BuildFillOutData(in fillInOutTotalDistances.y, out QST_Segment lastSegment);
         BuildFillInData(in fillInOutTotalDistances.x, ref lastSegment);
     }
@@ -113,6 +120,16 @@ public struct ValknutTransitionsBuilder
 
         GetIndexEmptyZone(_origin.LineSegmentsCount, out int emptyIndex);
         ComputeDistsPosInEmptyZone(in emptyIndex, ref fillInOutTotalDistances);
+        if (!IsValid)
+        {
+            return;
+        }
+
+        int4 indexer = new int4(0, 1, 0, 1);
+        if (_transitionType == TransitionType.OasToOas || _transitionType == TransitionType.TasToOas)
+        {
+            indexer = indexer.xywz;
+        }
 
         int inDistancesIndexer = 0;
         GetIndexTarget(_target.LineSegmentsCount, out index);
@@ -120,7 +137,8 @@ public struct ValknutTransitionsBuilder
         {
             float2x2 startSeg = new float2x2(_target[i][0].xz, _target[i][1].xz);
             float2x2 endSeg = new float2x2(_target[i + index.y][0].xz, _target[i + index.y][1].xz);
-            _startEndSegs[_transSegmentsIndexer.x++] = new float2x4(startSeg[0], startSeg[1], endSeg[0], endSeg[1]);
+            _startEndSegs[_transSegmentsIndexer.x++] = 
+                new float2x4(startSeg[indexer.x], startSeg[indexer.y], endSeg[indexer.z], endSeg[indexer.w]);
 
             float3x2 delta = _target[i + index.y] - _target[i];
             _inFillDistances[inDistancesIndexer] = math.length(delta[0]);
@@ -136,7 +154,16 @@ public struct ValknutTransitionsBuilder
         float3x2 r1 = new float3x2(originSegmentRays[0], originSegmentRays[1]);
         float3x2 r2 = new float3x2(originSegmentRays[2], originSegmentRays[3]);
         bool intersect = IntersectSegmentToRay2D(r1, r2, targetRay, out float3x2 intersectSegment);
-        Assert.IsTrue(intersect, $"{_transitionType} is not intersected");
+        DrawRay(r1, 1, 10);
+        DrawRay(r2, 1, 10);
+        DrawRay(targetRay, 10, 10);
+        if (!intersect)
+        {
+            IsValid = false;
+            UnityEngine.Debug.LogError($"{_transitionType} is not intersected");
+            return;
+        }
+        // Assert.IsTrue(intersect, $"{_transitionType} is not intersected");
 
         float2x2 startSeg = new float2x2(_origin[emptyIndex][0].xz, _origin[emptyIndex][1].xz);
         float2x2 endSeg = new float2x2(intersectSegment[0].xz, intersectSegment[1].xz);
@@ -320,7 +347,7 @@ public struct ValknutTransitionsBuilder
                     fillDataLength: 2, out QST_Segment firstFillInSegment);
 
                 QSTS_FillData fillInState = new QSTS_FillData(
-                    ConstructType.Continue,
+                    ConstructType.New,
                     FillType.FromStart,
                     new float2(dr.x, dr.y)
                 );

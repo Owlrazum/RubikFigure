@@ -9,7 +9,8 @@
         "aAssemblyCollections",
         "aAssemblyMath",
         "aAssemblyFigure",
-        "aAssemblyConstContainers"
+        "aAssemblyConstContainers",
+        "aAssemblyValknut"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

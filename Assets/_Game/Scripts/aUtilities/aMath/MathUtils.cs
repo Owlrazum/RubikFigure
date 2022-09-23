@@ -17,6 +17,16 @@ namespace Orazum.Math
             return new float3x2(x0z(xy[0]), x0z(xy[1]));
         }
 
+        public static ClockOrderType GetTriangleClockOrder(float3x3 triangle)
+        {
+            return GetTriangleClockOrder(triangle[0], triangle[1], triangle[2]);
+        }
+        public static ClockOrderType GetTriangleClockOrder(float3 p1, float3 p2, float3 p3)
+        {
+            float val = (p2.y - p1.y) * (p3.x - p2.x) - (p2.x - p1.x) * (p3.y - p2.y);
+            return (val >= 0) ? ClockOrderType.CW : ClockOrderType.AntiCW;
+        }
+
         // 2D cross product
         public static float Determinant(float2 lhs, float2 rhs)
         {
@@ -96,7 +106,7 @@ namespace Orazum.Math
         /// <see href="https://gist.github.com/FreyaHolmer/f7fdf72e9037f4cf7d10f232aedb97b0">Github page where she said it.</see>
         private static int t;
         #region FreyaHolmer
-        
+
         public static float Frac(float x) => x - Mathf.Floor(x);
         public static float Smooth01(float x) => x * x * (3 - 2 * x);
         public static float InverseLerpUnclamped(float a, float b, float value) => (value - a) / (b - a);

@@ -1,7 +1,5 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
-using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 
@@ -12,45 +10,19 @@ using Orazum.Meshing;
 using static Orazum.Math.EasingUtilities;
 using static Orazum.Math.MathUtils;
 
+
+// TODO: tidy up and refactor previous tests, currently invalid tests
 public class QSTS_QuadBulderTests
 {
-    private static float LerpSpeed = 1f;
-
-    private struct NativeData : IDisposable
-    { 
-        public NativeArray<float3x2> LineSegments;
-        public NativeArray<VertexData> Vertices;
-        public NativeArray<short> Indices;
-        public NativeArray<QST_Segment> FadeOutSegments;
-        public NativeArray<QST_Segment> FadeInSegments;
-
-        public NativeData(int lineSegmentsCount)
-        { 
-            LineSegments = new NativeArray<float3x2>(lineSegmentsCount, Allocator.Persistent);
-            Vertices = new NativeArray<VertexData>(lineSegmentsCount * 2, Allocator.Persistent);
-            Indices = new NativeArray<short>((lineSegmentsCount - 1) * 6, Allocator.Persistent);
-            FadeOutSegments = new NativeArray<QST_Segment>(lineSegmentsCount - 1, Allocator.Persistent);
-            FadeInSegments = new NativeArray<QST_Segment>(lineSegmentsCount - 1, Allocator.Persistent);
-        }
-
-        public void Dispose()
-        { 
-            LineSegments.Dispose();
-            Vertices.Dispose();
-            Indices.Dispose();
-            FadeOutSegments.Dispose();
-            FadeInSegments.Dispose();
-        }
-    }
-
     [UnityTest]
     public IEnumerator OneQuadStrip()
     {
-        NativeData data = new NativeData(10);
+        int lineSegmentsCount = 10;
+        MeshDataLineSegmets data = new MeshDataLineSegmets(lineSegmentsCount);
 
         float3x2 start = new float3x2(new float3(-2, 0, -1), new float3(-2, 0, 1));
         float3x2 delta = new float3x2(new float3(1, 0, 0), new float3(1, 0, 0));
-        QuadStrip qs = GenerateSimpleQuadStrip(ref data, start, delta);
+        QuadStrip qs = MeshGenUtils.GenerateSimpleQuadStrip(ref data, start, delta);
 
         MeshBuffersIndexers buffersIndexers = new MeshBuffersIndexers();
         float3x2 normalUV = new float3x2(new float3(0, 1, 0), float3.zero);
@@ -60,13 +32,15 @@ public class QSTS_QuadBulderTests
         PlayModeTestsUtils.CreateMeshDummy(out MeshFilter meshContainer);
         PlayModeTestsUtils.CreateCamera(new float3(2.5f, 10, 0), new float3(0, -1, 0), new float3(1, 0, 0));
         PlayModeTestsUtils.CreateLight(new float3(0, -1, 1), math.forward());
-        PlayModeTestsUtils.ApplyMeshBuffers(data.Vertices, data.Indices, meshContainer, buffersIndexers);
+        MeshGenUtils.ApplyMeshBuffers(data.Vertices, data.Indices, meshContainer, buffersIndexers);
 
         QSTS_QuadBuilder transitionBuilder = new QSTS_QuadBuilder();
-        transitionBuilder.BuildFadeOutTransition(qs, ref data.FadeOutSegments);
-        transitionBuilder.BuildFadeInTransition(qs, ref data.FadeInSegments);
-        QS_Transition fadeOutTransition = new QS_Transition(data.FadeOutSegments);
-        QS_Transition fadeInTransition = new QS_Transition(data.FadeInSegments);
+        NativeArray<QST_Segment> FadeOut_QSTS = new NativeArray<QST_Segment>(lineSegmentsCount - 1, Allocator.Persistent);
+        NativeArray<QST_Segment> FadeIn_QSTS = new NativeArray<QST_Segment>(lineSegmentsCount - 1, Allocator.Persistent);
+        transitionBuilder.BuildFadeOutTransition(qs, ref FadeOut_QSTS);
+        transitionBuilder.BuildFadeInTransition(qs, ref FadeIn_QSTS);
+        QS_Transition fadeOutTransition = new QS_Transition(FadeOut_QSTS);
+        QS_Transition fadeInTransition = new QS_Transition(FadeIn_QSTS);
 
         yield return new WaitForSeconds(1);
         QST_Animator animator = new QST_Animator(data.Vertices, data.Indices, normalUV);
@@ -75,10 +49,10 @@ public class QSTS_QuadBulderTests
         buffersIndexers.Reset();
         while (lerpParam < 1)
         {
-            lerpParam += LerpSpeed * Time.deltaTime;
+            lerpParam += PlayModeTestsParams.FastLerpSpeed * Time.deltaTime;
             ClampToOne(ref lerpParam);
             animator.UpdateWithLerpPos(EaseOut(lerpParam), shouldReorientVertices: false, ref buffersIndexers);
-            PlayModeTestsUtils.ApplyMeshBuffers(data.Vertices, data.Indices, meshContainer, buffersIndexers);
+            MeshGenUtils.ApplyMeshBuffers(data.Vertices, data.Indices, meshContainer, buffersIndexers);
             buffersIndexers.Reset();
             yield return null;
         }
@@ -87,10 +61,10 @@ public class QSTS_QuadBulderTests
         lerpParam = 0;
         while (lerpParam < 1)
         {
-            lerpParam += LerpSpeed * Time.deltaTime;
+            lerpParam += PlayModeTestsParams.FastLerpSpeed * Time.deltaTime;
             ClampToOne(ref lerpParam);
             animator.UpdateWithLerpPos(EaseOut(lerpParam), shouldReorientVertices: false, ref buffersIndexers);
-            PlayModeTestsUtils.ApplyMeshBuffers(data.Vertices, data.Indices, meshContainer, buffersIndexers);
+            MeshGenUtils.ApplyMeshBuffers(data.Vertices, data.Indices, meshContainer, buffersIndexers);
             buffersIndexers.Reset();
             yield return null;
         }
@@ -106,8 +80,8 @@ public class QSTS_QuadBulderTests
     public IEnumerator TwoQuadStrips()
     {
         int lineSegmentsCount = 10;
-        NativeData dataLeft_ = new NativeData(lineSegmentsCount);
-        NativeData dataRight = new NativeData(lineSegmentsCount);
+        MeshDataLineSegmets dataLeft_ = new MeshDataLineSegmets(lineSegmentsCount);
+        MeshDataLineSegmets dataRight = new MeshDataLineSegmets(lineSegmentsCount);
 
         float3x2 startLeft_ = new float3x2(new float3(-2, 0, -1), new float3(-2, 0, -0.25f));
         float3x2 deltaLeft_ = new float3x2(new float3( 1, 0, 0), new float3( 1, 0, 0));
@@ -115,8 +89,8 @@ public class QSTS_QuadBulderTests
         // float rightStartX = -2 + (lineSegmentsCount - 1) * deltaLeft_[0].x;
         float3x2 startRight = new float3x2(new float3(-2, 0, 0.25f), new float3(-2, 0, 1));
         // float3x2 deltaRight = new float3x2(new float3(-1, 0, 0), new float3(-1, 0, 0));
-        QuadStrip qsLeft_ = GenerateSimpleQuadStrip(ref dataLeft_, startLeft_, deltaLeft_);
-        QuadStrip qsRight = GenerateSimpleQuadStrip(ref dataRight, startRight, deltaLeft_);
+        QuadStrip qsLeft_ = MeshGenUtils.GenerateSimpleQuadStrip(ref dataLeft_, startLeft_, deltaLeft_);
+        QuadStrip qsRight = MeshGenUtils.GenerateSimpleQuadStrip(ref dataRight, startRight, deltaLeft_);
 
         MeshBuffersIndexers biLeft_ = new MeshBuffersIndexers();
         MeshBuffersIndexers biRight = new MeshBuffersIndexers();
@@ -131,14 +105,17 @@ public class QSTS_QuadBulderTests
         PlayModeTestsUtils.CreateMeshDummy(out MeshFilter meshRight);
         PlayModeTestsUtils.CreateLight(new float3(0, -1, 1), math.forward());
         PlayModeTestsUtils.CreateCamera(new float3(2.5f, 10, 0), new float3(0, -1, 0), new float3(1, 0, 0));
-        PlayModeTestsUtils.ApplyMeshBuffers(dataLeft_.Vertices, dataLeft_.Indices, meshLeft_, biLeft_);
-        PlayModeTestsUtils.ApplyMeshBuffers(dataRight.Vertices, dataRight.Indices, meshRight, biRight);
+        MeshGenUtils.ApplyMeshBuffers(dataLeft_.Vertices, dataLeft_.Indices, meshLeft_, biLeft_);
+        MeshGenUtils.ApplyMeshBuffers(dataRight.Vertices, dataRight.Indices, meshRight, biRight);
 
         QSTS_QuadBuilder transitionBuilder = new QSTS_QuadBuilder();
-        transitionBuilder.BuildFadeOutTransition(qsLeft_, ref dataLeft_.FadeOutSegments);
-        transitionBuilder.BuildFadeInTransition(qsRight, ref dataRight.FadeInSegments);
-        QS_Transition fadeOutTransition = new QS_Transition(dataLeft_.FadeOutSegments);
-        QS_Transition fadeInTransition = new QS_Transition(dataRight.FadeInSegments);
+        NativeArray<QST_Segment> LeftFadeOut_QSTS = new NativeArray<QST_Segment>(lineSegmentsCount - 1, Allocator.Persistent);
+        NativeArray<QST_Segment> RightFadeIn_QSTS = new NativeArray<QST_Segment>(lineSegmentsCount - 1, Allocator.Persistent);
+
+        transitionBuilder.BuildFadeOutTransition(qsLeft_, ref LeftFadeOut_QSTS);
+        transitionBuilder.BuildFadeInTransition(qsRight, ref RightFadeIn_QSTS);
+        QS_Transition fadeOutTransition = new QS_Transition(LeftFadeOut_QSTS);
+        QS_Transition fadeInTransition = new QS_Transition(RightFadeIn_QSTS);
 
         yield return new WaitForSeconds(1);
         QST_Animator animLeft_ = new QST_Animator(dataLeft_.Vertices, dataLeft_.Indices, normalUV);
@@ -151,13 +128,13 @@ public class QSTS_QuadBulderTests
         biRight.Reset();
         while (lerpParam < 1)
         {
-            lerpParam += LerpSpeed * Time.deltaTime;
+            lerpParam += PlayModeTestsParams.FastLerpSpeed * Time.deltaTime;
             ClampToOne(ref lerpParam);
             float easedLerp = EaseOut(lerpParam);
             animLeft_.UpdateWithLerpPos(easedLerp, shouldReorientVertices: false, ref biLeft_);
             animRight.UpdateWithLerpPos(easedLerp, shouldReorientVertices: false, ref biRight);
-            PlayModeTestsUtils.ApplyMeshBuffers(dataLeft_.Vertices, dataLeft_.Indices, meshLeft_, biLeft_);
-            PlayModeTestsUtils.ApplyMeshBuffers(dataRight.Vertices, dataRight.Indices, meshRight, biRight);
+            MeshGenUtils.ApplyMeshBuffers(dataLeft_.Vertices, dataLeft_.Indices, meshLeft_, biLeft_);
+            MeshGenUtils.ApplyMeshBuffers(dataRight.Vertices, dataRight.Indices, meshRight, biRight);
             biLeft_.Reset();
             biRight.Reset();
             yield return null;
@@ -176,8 +153,8 @@ public class QSTS_QuadBulderTests
     public IEnumerator TransitionConcaternation()
     { 
         int lineSegmentsCount = 10;
-        NativeData dataLeft_ = new NativeData(lineSegmentsCount);
-        NativeData dataRight = new NativeData(lineSegmentsCount);
+        MeshDataLineSegmets meshDataLeft_ = new MeshDataLineSegmets(lineSegmentsCount);
+        MeshDataLineSegmets meshDataRight = new MeshDataLineSegmets(lineSegmentsCount);
 
         float3x2 startLeft_ = new float3x2(new float3(-2, 0, -1), new float3(-2, 0, -0.25f));
         float3x2 deltaLeft_ = new float3x2(new float3( 1, 0, 0), new float3( 1, 0, 0));
@@ -185,15 +162,15 @@ public class QSTS_QuadBulderTests
         // float rightStartX = -2 + (lineSegmentsCount - 1) * deltaLeft_[0].x;
         float3x2 startRight = new float3x2(new float3(-2, 0, 0.25f), new float3(-2, 0, 1));
         // float3x2 deltaRight = new float3x2(new float3(-1, 0, 0), new float3(-1, 0, 0));
-        QuadStrip qsLeft_ = GenerateSimpleQuadStrip(ref dataLeft_, startLeft_, deltaLeft_);
-        QuadStrip qsRight = GenerateSimpleQuadStrip(ref dataRight, startRight, deltaLeft_);
+        QuadStrip qsLeft_ = MeshGenUtils.GenerateSimpleQuadStrip(ref meshDataLeft_, startLeft_, deltaLeft_);
+        QuadStrip qsRight = MeshGenUtils.GenerateSimpleQuadStrip(ref meshDataRight, startRight, deltaLeft_);
 
         MeshBuffersIndexers biLeft_ = new MeshBuffersIndexers();
         MeshBuffersIndexers biRight = new MeshBuffersIndexers();
 
         float3x2 normalUV = new float3x2(new float3(0, 1, 0), float3.zero);
-        QuadStripBuilder builderLeft_ = new QuadStripBuilder(dataLeft_.Vertices, dataLeft_.Indices, normalUV);
-        QuadStripBuilder builderRight = new QuadStripBuilder(dataRight.Vertices, dataRight.Indices, normalUV);
+        QuadStripBuilder builderLeft_ = new QuadStripBuilder(meshDataLeft_.Vertices, meshDataLeft_.Indices, normalUV);
+        QuadStripBuilder builderRight = new QuadStripBuilder(meshDataRight.Vertices, meshDataRight.Indices, normalUV);
         builderLeft_.Build(qsLeft_, ref biLeft_);
         builderRight.Build(qsRight, ref biRight);
 
@@ -201,56 +178,48 @@ public class QSTS_QuadBulderTests
         PlayModeTestsUtils.CreateMeshDummy(out MeshFilter meshRight);
         PlayModeTestsUtils.CreateLight(new float3(0, -1, 1), math.forward());
         PlayModeTestsUtils.CreateCamera(new float3(2.5f, 10, 0), new float3(0, -1, 0), new float3(1, 0, 0));
-        PlayModeTestsUtils.ApplyMeshBuffers(dataLeft_.Vertices, dataLeft_.Indices, meshLeft_, biLeft_);
-        PlayModeTestsUtils.ApplyMeshBuffers(dataRight.Vertices, dataRight.Indices, meshRight, biRight);
+        MeshGenUtils.ApplyMeshBuffers(meshDataLeft_.Vertices, meshDataLeft_.Indices, meshLeft_, biLeft_);
+        MeshGenUtils.ApplyMeshBuffers(meshDataRight.Vertices, meshDataRight.Indices, meshRight, biRight);
 
         QSTS_QuadBuilder transitionBuilder = new QSTS_QuadBuilder();
-        transitionBuilder.BuildFadeOutTransition(qsLeft_, ref dataLeft_.FadeOutSegments);
-        transitionBuilder.BuildFadeInTransition(qsRight, ref dataRight.FadeInSegments);
-        QS_Transition fadeOutTransition = new QS_Transition(dataLeft_.FadeOutSegments);
-        QS_Transition fadeInTransition = new QS_Transition(dataRight.FadeInSegments);
+        NativeArray<QST_Segment> LeftFadeOut_QSTS = new(lineSegmentsCount - 1, Allocator.Persistent);
+        NativeArray<QST_Segment> RightFadeIn_QSTS = new(lineSegmentsCount - 1, Allocator.Persistent);
+        transitionBuilder.BuildFadeOutTransition(qsLeft_, ref LeftFadeOut_QSTS);
+        transitionBuilder.BuildFadeInTransition(qsRight, ref RightFadeIn_QSTS);
+        QS_Transition fadeOutTransition = new QS_Transition(LeftFadeOut_QSTS);
+        QS_Transition fadeInTransition = new QS_Transition(RightFadeIn_QSTS);
 
         var transBuffer = QS_Transition.PrepareConcatenationBuffer(fadeOutTransition, fadeInTransition, Allocator.Persistent);
         var transConc = QS_Transition.Concatenate(fadeOutTransition, fadeInTransition, transBuffer);
-        NativeData dataConc = new NativeData(lineSegmentsCount * 2);
+        MeshDataLineSegmets meshDataConc = new MeshDataLineSegmets(lineSegmentsCount * 2);
+        NativeArray<QST_Segment> dataConc = new(lineSegmentsCount * 2 - 1, Allocator.Persistent);
 
         yield return new WaitForSeconds(1);
         GameObject.Destroy(meshRight.gameObject);
-        QST_Animator animConc = new QST_Animator(dataConc.Vertices, dataConc.Indices, normalUV);
+        QST_Animator animConc = new QST_Animator(meshDataConc.Vertices, meshDataConc.Indices, normalUV);
 
         animConc.AssignTransition(transConc);
         float lerpParam = 0;
         MeshBuffersIndexers biConc = new MeshBuffersIndexers();
         while (lerpParam < 1)
         {
-            lerpParam += LerpSpeed * Time.deltaTime;
+            lerpParam += PlayModeTestsParams.FastLerpSpeed * Time.deltaTime;
             ClampToOne(ref lerpParam);
             float easedLerp = EaseOut(lerpParam);
             animConc.UpdateWithLerpPos(easedLerp, shouldReorientVertices: false, ref biConc);
-            PlayModeTestsUtils.ApplyMeshBuffers(dataConc.Vertices, dataConc.Indices, meshLeft_, biConc);
+            MeshGenUtils.ApplyMeshBuffers(meshDataConc.Vertices, meshDataConc.Indices, meshLeft_, biConc);
             biConc.Reset();
             yield return null;
         }
 
-        dataLeft_.Dispose();
-        dataRight.Dispose();
+        meshDataLeft_.Dispose();
+        meshDataRight.Dispose();
+        meshDataConc.Dispose();
         dataConc.Dispose();
         transConc.DisposeConcatenation();
         yield return new WaitForSeconds(0.5f);
 
         yield return new WaitUntil(() => Input.GetKeyDown(KeyCode.F));
         GameObject.Destroy(meshLeft_.gameObject);
-    }
-
-    private QuadStrip GenerateSimpleQuadStrip(ref NativeData data, in float3x2 start, in float3x2 delta)
-    { 
-        data.LineSegments[0] = start;
-        float3x2 current = start + delta;
-        for (int i = 1; i < data.LineSegments.Length; i++)
-        {
-            data.LineSegments[i] = current;
-            current += delta;
-        }
-        return new QuadStrip(data.LineSegments);
     }
 }
