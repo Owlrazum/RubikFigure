@@ -3,7 +3,10 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Collections;
 
+using UnityEngine;
+
 using Orazum.Meshing;
+using static Orazum.Collections.IndexUtilities;
 
 // [BurstCompile]
 public struct ValknutGenJobTransData : IJobFor
@@ -11,14 +14,29 @@ public struct ValknutGenJobTransData : IJobFor
     [ReadOnly]
     public QuadStripsBuffer InQuadStripsCollection;
 
-    [ReadOnly]
-    public NativeArray<int2> InOriginTargetIndices;
-
     public QS_TransitionsBuffer OutTransitionsCollection;
-    
-    public void Execute(int i)
+
+    private const int PartsCount = 2;
+    private const int TrianglesCount = 3;
+
+    public void Execute(int transitionIndex)
     {
-        int2 originTarget = InOriginTargetIndices[i];
+        int targetTriangle = transitionIndex / 4;
+        int originTriangle = DecreaseIndex(targetTriangle, TrianglesCount);
+
+        int transitionType = transitionIndex % 4;
+        int originPart = transitionType % 2;
+        if (transitionType > 1)
+        {
+            originPart = transitionType == 2 ? 1 : 0;
+        }
+        int targetPart = transitionType / 2;
+
+        int2 originTarget = new int2(
+            XyToIndex(originPart, originTriangle, PartsCount),
+            XyToIndex(targetPart, targetTriangle, PartsCount)
+        );
+
         QuadStrip origin = InQuadStripsCollection.GetQuadStrip(originTarget.x);
         QuadStrip target = InQuadStripsCollection.GetQuadStrip(originTarget.y);
 
@@ -27,8 +45,8 @@ public struct ValknutGenJobTransData : IJobFor
             target
         );
 
-        NativeArray<QST_Segment> writeBuffer = 
-            OutTransitionsCollection.GetBufferSegment(i);
+        NativeArray<QST_Segment> writeBuffer =
+            OutTransitionsCollection.GetBufferSegment(transitionIndex);
 
         dataBuilder.BuildTransition(ref writeBuffer);
     }

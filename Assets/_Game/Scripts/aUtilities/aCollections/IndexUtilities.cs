@@ -92,6 +92,18 @@ namespace Orazum.Collections
             }
         }
 
+        public static int IncreaseIndex(int index, int count)
+        { 
+            if (index + 1 >= count)
+            {
+                return 0;
+            }
+            else
+            {
+                return index + 1;
+            }
+        }
+
         public static void DecreaseIndex(ref int index, int count)
         {
             if (index - 1 < 0)
@@ -101,6 +113,18 @@ namespace Orazum.Collections
             else
             {
                 index--;
+            }
+        }
+
+        public static int DecreaseIndex(int index, int count)
+        { 
+            if (index - 1 < 0)
+            {
+                return count - 1;
+            }
+            else
+            {
+                return index - 1;
             }
         }
     }

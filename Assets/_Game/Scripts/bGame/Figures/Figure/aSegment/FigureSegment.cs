@@ -18,14 +18,20 @@ public class FigureSegment : MonoBehaviour
     private void Awake()
     {
         _mover = gameObject.AddComponent<FigureSegmentMover>();
-        bool isFound = TryGetComponent<FigureSegmentRenderer>(out _renderer);
-        Assert.IsTrue(isFound);
+        _renderer = gameObject.AddComponent<FigureSegmentRenderer>();
     }
 
-    public virtual void Initialize(float2 uv, int puzzleIndex, int2 meshBuffersMaxCount)
+    public void AssignPuzzleIndex(int puzzleIndex)
+    { 
+        _puzzleIndex = puzzleIndex;
+    }
+    public void PrepareMover(float2 uv, int2 meshBuffersMaxCount)
     { 
         _mover.Initialize(uv, meshBuffersMaxCount);
-        _puzzleIndex = puzzleIndex;
+    }
+    public void PrepareRenderer(Material defaultMaterial, Material highlightMaterial)
+    {
+        _renderer.Initialize(defaultMaterial, highlightMaterial);
     }
 
     public void StartMove(

@@ -10,11 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1eeb9d24981c04b148a37e9cbb558e9f, type: 3}
-  m_Name: WheelGenParams
+  m_Name: Gen_O
   m_EditorClassIdentifier: 
   _segmentPointHeight: 1
   _segmentPrefab: {fileID: 6270584614686746192, guid: c417056fd1f314434bcea4a21b29a82c, type: 3}
   _segmentPointPrefab: {fileID: 1553978324677776507, guid: dfd0e0cf5893b4c2fb5997fd8f7972bf, type: 3}
+  _defaultMaterial: {fileID: 2100000, guid: a0e7b8218640c4ce8a7b698683b844f9, type: 2}
+  _highlightMaterial: {fileID: 2100000, guid: 054c82d6e0a504693892c693f9890ae9, type: 2}
   _outerRadius: 5
   _innerRadius: 0.6
   _sideCount: 3

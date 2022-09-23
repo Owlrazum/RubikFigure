@@ -28,11 +28,11 @@ public class WheelTransitionsGenerator : FigureTransitionsGenerator
 
     protected override void StartTransitionsGeneration(in QuadStripsBuffer quadStripsCollection, JobHandle dependency)
     {
-        // StartCoroutine(DebugQuadStrips(quadStripsCollection));
-        InitializeCounts(quadStripsCollection.Dims);
-        PrepareNativeData();
-
+        _sidesRingsCount = quadStripsCollection.Dims;
+        doubleTransitionsCount = _sidesRingsCount.x + _sidesRingsCount.y;
         _resolution = quadStripsCollection.GetQuadStrip(0).QuadsCount;
+
+        PrepareNativeData();
 
         WheelGenJobTransData transitionDataJob = new WheelGenJobTransData()
         {
@@ -44,13 +44,6 @@ public class WheelTransitionsGenerator : FigureTransitionsGenerator
             OutTransitionsBuffer = qst_data.TransitionsBuffer
         };
         _jobHandle = transitionDataJob.ScheduleParallel(doubleTransitionsCount, 32, dependency);
-    }
-
-    private void InitializeCounts(int2 sidesRingsCount)
-    {
-        _sidesRingsCount = sidesRingsCount;
-
-        doubleTransitionsCount = _sidesRingsCount.x + _sidesRingsCount.y;
     }
 
     private void PrepareNativeData()

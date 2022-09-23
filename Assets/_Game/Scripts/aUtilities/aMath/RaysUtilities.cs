@@ -113,12 +113,22 @@ namespace Orazum.Math
 
         public static void DrawRay(float4 ray, float length, float duration)
         {
-            Debug.DrawRay(x0z(ray.xy), x0z(ray.zw) * length, Color.red, duration);
+            DrawRay(ray.xy, ray.zw, length, duration);
         }
 
         public static void DrawRay(float2 start, float2 dir, float length, float duration)
         {
-            DrawRay(new float4(start, dir), length, duration);
+            DrawRay(x0z(start), x0z(dir), length, duration);
+        }
+
+        public static void DrawRay(float3x2 ray, float length, float duration)
+        {
+            DrawRay(ray[0], ray[1], length, duration);
+        }
+
+        public static void DrawRay(float3 start, float3 dir, float length, float duration)
+        { 
+            Debug.DrawRay(start, dir * length, Color.red, duration);
         }
     }
 }

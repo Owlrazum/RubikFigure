@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dbce5a62c0d3f441fb1902bbabf0ddd4, type: 3}
-  m_Name: ValknutParams
+  m_Name: Params_V
   m_EditorClassIdentifier: 
   GenParams: {fileID: 11400000, guid: ecb6ca1efe9f9484cad85bcc6f45140d, type: 2}
   SelectMethod: 0
@@ -24,6 +24,6 @@ MonoBehaviour:
   ShuffleStepsAmount: 1
   ShufflePauseTime: 0.1
   ShuffleLerpSpeed: 2
-  MoveLerpSpeed: 2
+  MoveLerpSpeed: 0.5
   CompleteLerpSpeed: 0
   RotationAmplitude: 0

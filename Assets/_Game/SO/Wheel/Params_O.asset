@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dbce5a62c0d3f441fb1902bbabf0ddd4, type: 3}
-  m_Name: WheelParams
+  m_Name: Params_O
   m_EditorClassIdentifier: 
   GenParams: {fileID: 11400000, guid: 742513ac5ef65499fb371d4f72c536a9, type: 2}
   SelectMethod: 0

@@ -2,6 +2,8 @@ using UnityEngine;
 using Unity.Mathematics;
 using Unity.Collections;
 
+using static Orazum.Math.MathUtils;
+
 namespace Orazum.Math
 {
     public static class LineSegmentUtilities
@@ -86,6 +88,17 @@ namespace Orazum.Math
             Debug.DrawLine(lineSegment[0], lineSegment[1], Color.green, duration);
             Debug.DrawRay(lineSegment[0], Vector3.up * length, Color.red, duration);
             Debug.DrawRay(lineSegment[1], Vector3.up * length, Color.red, duration);
+        }
+
+        public static void DrawLineSegmentWithRaysUp(float3 start, float3 end, float length, float duration)
+        {
+            DrawLineSegmentWithRaysUp(new float3x2(start, end), length, duration);
+        }
+
+        public static void DrawLineSegmentWithRaysUp(float2x2 lineSegment, float length, float duration)
+        {
+            float3x2 seg = new float3x2(x0z(lineSegment[0]), x0z(lineSegment[1]));
+            DrawLineSegmentWithRaysUp(seg, length, duration);
         }
 
         public static void DrawGridDim(in NativeArray<float3> gridDim, float duration)

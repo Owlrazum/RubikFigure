@@ -57,15 +57,8 @@ public class ValknutGenerator : FigureGenerator
 
     private Valknut _valknut;
 
-    private int2 _dims;
-
-    private Array2D<ValknutSegment> _segments;
-    private Array2D<FigureSegmentPoint> _segmentPoints;
-
     protected override void InitializeParameters(FigureGenParamsSO figureGenParams)
     {
-        base.InitializeParameters(figureGenParams);
-
         ValknutGenParamsSO generationParams = figureGenParams as ValknutGenParamsSO;
 
         _innerTriangleRadius = generationParams.InnerTriangleRadius;
@@ -107,7 +100,7 @@ public class ValknutGenerator : FigureGenerator
             P_InnerTriangleRadius = _innerTriangleRadius,
             P_Width = _width,
             P_GapSize = _gapSize,
-            P_Height = _segmentPointHeight,
+            P_Height = SegmentPointHeight,
 
             OutCollidersVertices = _pointsColliderVertices,
             OutCollidersIndices = _pointsColliderIndices,
@@ -119,50 +112,18 @@ public class ValknutGenerator : FigureGenerator
         JobHandle.ScheduleBatchedJobs();
     }
 
-    protected override Figure GenerateFigureGameObject()
+    protected override string FigureName => "Valknut";
+    protected override GameObject GenerateFigureGb()
     {
-        GameObject valknutGb = new GameObject("Valknut", typeof(Valknut), typeof(ValknutStatesController));
-        valknutGb.layer = Layers.FigureLayer;
-        Transform parentWheel = valknutGb.transform;
-
-        GameObject segmentPointsParentGb = new GameObject("SegmentPoints");
-        Transform segmentPointsParent = segmentPointsParentGb.transform;
-        segmentPointsParent.parent = parentWheel;
-        segmentPointsParent.SetSiblingIndex(0);
-
-        GameObject segmentsParentGb = new GameObject("Segments");
-        Transform segmentsParent = segmentsParentGb.transform;
-        segmentsParent.parent = parentWheel;
-        segmentsParent.SetSiblingIndex(1);
-
-        _segments = new Array2D<ValknutSegment>(_dims);
-        _segmentPoints = new Array2D<FigureSegmentPoint>(_dims);
-
-        for (int triangle = 0; triangle < _dims.x; triangle++)
-        {
-            for (int part = 0; part < _dims.y; part++)
-            {
-                int2 index = new int2(triangle, part);
-
-                GameObject segmentGb = Instantiate(_segmentPrefab);
-                segmentGb.transform.parent = segmentsParent;
-                ValknutSegment segment = segmentGb.AddComponent<ValknutSegment>();
-                _segments[index] = segment;
-
-                GameObject segmentPointGb = Instantiate(_segmentPointPrefab);
-                segmentPointGb.layer = Layers.SegmentPointsLayer;
-                segmentGb.name = "Segment";
-                segmentPointGb.transform.parent = segmentPointsParent;
-                FigureSegmentPoint segmentPoint = segmentPointGb.GetComponent<FigureSegmentPoint>();
-                Assert.IsNotNull(segmentPoint);
-                segmentPoint.Segment = segment;
-                segmentPoint.AssignIndex(index);
-                _segmentPoints[index] = segmentPoint;
-            }
-        }
-
-        _valknut = valknutGb.GetComponent<Valknut>();
-        return _valknut;
+        return new GameObject(FigureName, typeof(Valknut), typeof(ValknutStatesController));
+    }
+    protected override FigureSegment AddSegmentComponent(GameObject segmentGb)
+    {
+        return segmentGb.AddComponent<FigureSegment>();
+    }
+    protected override FigureSegmentPoint AddSegmentPointComponent(GameObject segmentPointGb)
+    {
+        return segmentPointGb.AddComponent<ValknutSegmentPoint>();
     }
 
     protected override void CompleteGeneration(FigureParamsSO figureParams)
@@ -197,9 +158,11 @@ public class ValknutGenerator : FigureGenerator
 
                 UpdateSegment(_segments[index], buffersIndexers, puzzleIndex: triangle, new int2(MaxVertexCount, MaxIndexCount));
                 QuadStrip segmentStrip = _quadStripsCollection.GetQuadStrip(quadStripIndexer++);
-                float3 cwStart = GetLineSegmentCenter(segmentStrip[0]);
-                float3 cwEnd = GetLineSegmentCenter(segmentStrip[segmentStrip.LineSegmentsCount - 1]);
-                _segments[index].AssignEndPoints(cwEnd, cwStart);
+                float3 start = GetLineSegmentCenter(segmentStrip[0]);
+                Debug.DrawRay(start, math.up() * 1, Color.red, 10);
+                float3 end = GetLineSegmentCenter(segmentStrip[segmentStrip.LineSegmentsCount - 1]);
+                ValknutSegmentPoint valknutSegmentPoint = _segmentPoints[index] as ValknutSegmentPoint;
+                valknutSegmentPoint.AssignEndPoints(start, end);
 
                 Mesh[] multiMesh = CreateColliderMultiMesh(ref multiMeshBuffersData, part == 0);
                 Mesh renderMesh = CreateSegmentPointRenderMesh(in pointBuffersData);
@@ -223,7 +186,7 @@ public class ValknutGenerator : FigureGenerator
             }
         }
 
-        _valknut.Initialize(
+        _figure.Initialize(
             _segmentPoints,
             figureParams
         );

@@ -3,6 +3,7 @@ using UnityEngine;
 
 public abstract class FigureGenParamsSO : ScriptableObject
 {
+    [Header("General")]
     [SerializeField]
     private float _segmentPointHeight = 1;
     public float SegmentPointHeight { get { return _segmentPointHeight; } }
@@ -10,10 +11,10 @@ public abstract class FigureGenParamsSO : ScriptableObject
     public abstract int2 Dimensions {get;}
 
     [SerializeField]
-    private GameObject _segmentPrefab;
-    public GameObject SegmentPrefab { get { return _segmentPrefab; } }
+    private Material _defaultMaterial;
+    public Material DefaultMaterial { get { return _defaultMaterial; } }
 
     [SerializeField]
-    private GameObject _segmentPointPrefab;
-    public GameObject SegmentPointPrefab { get { return _segmentPointPrefab; } }
+    private Material _highlightMaterial;
+    public Material HighlightMaterial { get { return _highlightMaterial; } }
 }

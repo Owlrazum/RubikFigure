@@ -42,10 +42,12 @@ public class Valknut : Figure
             from.y == 1 && to.y == 1
         )
         {
+            Debug.Log($"VT: CW {from} {to}");
             verticesMove.Transition = _transitions.GetElementByRef(to).CW;
         }
         else
         { 
+            Debug.Log($"VT: AntiCW {from} {to}");
             verticesMove.Transition = _transitions.GetElementByRef(to).AntiCW;
         }
     }

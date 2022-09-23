@@ -11,7 +11,6 @@ using Orazum.Constants;
 
 public class WheelGenerator : FigureGenerator
 {
-    private int2 _sidesRingsCount;
     private float2 _innerOuterRadii;
 
     private int _segmentCount;
@@ -21,27 +20,20 @@ public class WheelGenerator : FigureGenerator
     private MeshBuffersIndexers _segmentPointBuffersData;
     private int2 _quadStripCollectionData;
 
-    private Wheel _wheel;
-
-    private Array2D<FigureSegment> _segments;
-    private Array2D<FigureSegmentPoint> _segmentPoints;
-
     private int2 MeshBuffersMaxCount;
 
     protected override void InitializeParameters(FigureGenParamsSO figureGenParams)
     {
-        base.InitializeParameters(figureGenParams);
-
         WheelGenParamsSO genParams = figureGenParams as WheelGenParamsSO;
 
-        MeshBuffersMaxCount = new int2(
-            2 * (genParams.SegmentResolution + 1) * 2 + 10,
-            6 * genParams.SegmentResolution * 2 + 30
-        );
-        _sidesRingsCount = new int2(genParams.SideCount, genParams.RingCount);
-
-        _segmentCount = _sidesRingsCount.x * _sidesRingsCount.y;
+        _dims = new int2(genParams.SideCount, genParams.RingCount);
+        _segmentCount = _dims.x * _dims.y;
         _segmentResolution = genParams.SegmentResolution;
+
+        MeshBuffersMaxCount = new int2(
+            2 * (_segmentResolution + 1) * 2 + 10,
+            6 * _segmentResolution * 2 + 30
+        );
 
         _segmentBuffersData = new MeshBuffersIndexers();
         _segmentBuffersData.Count = new int2(
@@ -69,12 +61,12 @@ public class WheelGenerator : FigureGenerator
         NativeArray<float3x2> lineSegments = new NativeArray<float3x2>(_quadStripCollectionData.x, Allocator.Persistent);
         NativeArray<int2> quadStripsIndexers = new NativeArray<int2>(_quadStripCollectionData.y, Allocator.Persistent);
         _quadStripsCollection = new QuadStripsBuffer(lineSegments, quadStripsIndexers);
-        _quadStripsCollection.Dims = _sidesRingsCount;
+        _quadStripsCollection.Dims = _dims;
 
         WheelGenJob wheelMeshGenJob = new WheelGenJob()
         {
-            P_SideCount = _sidesRingsCount.x,
-            P_RingCount = _sidesRingsCount.y,
+            P_SideCount = _dims.x,
+            P_RingCount = _dims.y,
             P_SegmentResolution = _segmentResolution,
             P_InnerCircleRadius = _innerOuterRadii.x,
             P_OuterCircleRadius = _innerOuterRadii.y,
@@ -85,17 +77,17 @@ public class WheelGenerator : FigureGenerator
         };
         _figureMeshGenJobHandle = wheelMeshGenJob.Schedule();
 
-        _pointsRenderVertices = new NativeArray<float3>(_segmentPointBuffersData.Count.x * _sidesRingsCount.y, Allocator.TempJob);
-        _pointsRenderIndices = new NativeArray<short>(_segmentPointBuffersData.Count.y * _sidesRingsCount.y, Allocator.TempJob);
+        _pointsRenderVertices = new NativeArray<float3>(_segmentPointBuffersData.Count.x * _dims.y, Allocator.TempJob);
+        _pointsRenderIndices = new NativeArray<short>(_segmentPointBuffersData.Count.y * _dims.y, Allocator.TempJob);
 
         WheelGenJobSPM segmentPointMeshGenJob = new WheelGenJobSPM()
         {
-            P_SideCount = _sidesRingsCount.x,
-            P_RingCount = _sidesRingsCount.y,
+            P_SideCount = _dims.x,
+            P_RingCount = _dims.y,
             P_SegmentResolution = _segmentResolution,
             P_InnerCircleRadius = _innerOuterRadii.x,
             P_OuterCircleRadius = _innerOuterRadii.y,
-            P_Height = _segmentPointHeight,
+            P_Height = SegmentPointHeight,
 
             OutputVertices = _pointsRenderVertices,
             OutputIndices = _pointsRenderIndices
@@ -105,50 +97,18 @@ public class WheelGenerator : FigureGenerator
         JobHandle.ScheduleBatchedJobs();
     }
 
-    protected override Figure GenerateFigureGameObject()
+    protected override string FigureName => "Wheel";
+    protected override GameObject GenerateFigureGb()
     {
-        GameObject wheelGb = new GameObject("Wheel", typeof(WheelStatesController), typeof(Wheel));
-        wheelGb.layer = Layers.FigureLayer;
-        Transform parentWheel = wheelGb.transform;
-
-        GameObject segmentPointsParentGb = new GameObject("SegmentPoints");
-        Transform segmentPointsParent = segmentPointsParentGb.transform;
-        segmentPointsParent.parent = parentWheel;
-        segmentPointsParent.SetSiblingIndex(0);
-
-        GameObject segmentsParentGb = new GameObject("Segments");
-        Transform segmentsParent = segmentsParentGb.transform;
-        segmentsParent.parent = parentWheel;
-        segmentsParent.SetSiblingIndex(1);
-
-        _segmentPoints = new Array2D<FigureSegmentPoint>(_sidesRingsCount.x, _sidesRingsCount.y);
-        _segments = new Array2D<FigureSegment>(_sidesRingsCount.x, _sidesRingsCount.y);
-
-        for (int ring = 0; ring < _sidesRingsCount.y; ring++)
-        {
-            for (int side = 0; side < _sidesRingsCount.x; side++)
-            {
-                int2 index = new int2(side, ring);
-
-                GameObject segmentGb = Instantiate(_segmentPrefab);
-                segmentGb.transform.parent = segmentsParent;
-                FigureSegment segment = segmentGb.AddComponent<FigureSegment>();
-                _segments[index] = segment;
-
-                GameObject segmentPointGb = Instantiate(_segmentPointPrefab);
-                segmentPointGb.layer = Layers.SegmentPointsLayer;
-                segmentPointGb.name = "Point[" + side + "," + ring + "]";
-                segmentPointGb.transform.parent = segmentPointsParent;
-                FigureSegmentPoint segmentPoint = segmentPointGb.GetComponent<FigureSegmentPoint>();
-                Assert.IsNotNull(segmentPoint);
-                segmentPoint.Segment = segment;
-                segmentPoint.AssignIndex(index);
-                _segmentPoints[index] = segmentPoint;
-            }
-        }
-
-        _wheel = wheelGb.GetComponent<Wheel>();
-        return _wheel;
+        return new GameObject(FigureName, typeof(WheelStatesController), typeof(Wheel));
+    }
+    protected override FigureSegment AddSegmentComponent(GameObject segmentGb)
+    {
+        return segmentGb.AddComponent<FigureSegment>();
+    }
+    protected override FigureSegmentPoint AddSegmentPointComponent(GameObject segmentPointGb)
+    {
+        return segmentPointGb.AddComponent<FigureSegmentPoint>();
     }
 
     protected override void CompleteGeneration(FigureParamsSO figureParams)
@@ -160,9 +120,9 @@ public class WheelGenerator : FigureGenerator
 
         _segmentBuffersData.Start = int2.zero;
 
-        for (int side = 0; side < _sidesRingsCount.x; side++)
+        for (int side = 0; side < _dims.x; side++)
         {
-            for (int ring = 0; ring < _sidesRingsCount.y; ring++)
+            for (int ring = 0; ring < _dims.y; ring++)
             {
                 UpdateSegment(_segments[side, ring], _segmentBuffersData, puzzleIndex: side, MeshBuffersMaxCount);
 
@@ -173,7 +133,7 @@ public class WheelGenerator : FigureGenerator
             }
         }
 
-        _wheel.Initialize(
+        _figure.Initialize(
             _segmentPoints,
             figureParams
         );
@@ -184,10 +144,9 @@ public class WheelGenerator : FigureGenerator
         _pointsRenderVertices.Dispose();
         _pointsRenderIndices.Dispose();
     }
-
     private Mesh[] CreateSegmentPointMeshes()
     {
-        Mesh[] meshes = new Mesh[_sidesRingsCount.y];
+        Mesh[] meshes = new Mesh[_dims.y];
 
         _segmentPointBuffersData.Start = int2.zero;
 
@@ -200,10 +159,5 @@ public class WheelGenerator : FigureGenerator
         }
 
         return meshes;
-    }
-
-    protected override void OnDestroy()
-    {
-        base.OnDestroy();
     }
 }

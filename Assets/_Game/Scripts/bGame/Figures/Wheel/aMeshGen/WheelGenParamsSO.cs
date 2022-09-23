@@ -5,6 +5,7 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "WheelGenParams", menuName = "Figure/WheelGenParams", order = 1)]
 public class WheelGenParamsSO : FigureGenParamsSO
 {
+    [Header("Wheel")]
     [SerializeField]
     private float _outerRadius;
     public float OuterRadius { get { return _outerRadius; } }

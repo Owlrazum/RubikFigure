@@ -5,6 +5,7 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "ValknutGenParams", menuName = "Figure/ValknutGenParams", order = 1)]
 public class ValknutGenParamsSO : FigureGenParamsSO
 {
+    [Header("Valknut")]
     [SerializeField]
     private float _innerTriangleRadius = 1;
     public float InnerTriangleRadius { get { return _innerTriangleRadius; } }

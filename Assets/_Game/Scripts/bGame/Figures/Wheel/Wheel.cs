@@ -18,20 +18,6 @@ public class Wheel : Figure
     public void AssignTransitionDatas(in Array2D<WheelSegmentTransitions> transitions)
     {
         _transitions = transitions;
-        for (int i = 0; i < transitions.RowCount; i++)
-        {
-            for (int j = 0; j < transitions.ColCount; j++)
-            {
-                bool b1 = transitions[j, i].CW.IsCreated && transitions[j, i].AntiCW.IsCreated;
-                bool b2 = transitions[j, i].Up.IsCreated && transitions[j, i].Down.IsCreated;
-                if (!b1 || !b2)
-                {
-                    Debug.LogWarning($"{j} {i} not created transition");
-                }
-                // Assert.IsTrue(b1, $"{j} {i} not created transition");
-                // Assert.IsTrue(b2, $"{j} {i} not created transition");
-            }
-        }
     }
 
     public override void Initialize(

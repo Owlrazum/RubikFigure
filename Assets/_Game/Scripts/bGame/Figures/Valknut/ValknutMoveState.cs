@@ -19,27 +19,35 @@ public class ValknutMoveState : FigureMoveState
     protected override List<FigureSegmentMove> DetermineMovesFromInput(Vector3 worldPos, Vector3 worldDir)
     {
         _movesToMake.Clear();
-        ValknutSegment v = _currentSelectedPoint.Segment as ValknutSegment;
-        float cwDist = DistanceLineSegment(v.EndPointCW, worldPos);
-        float antiCwDist = DistanceLineSegment(v.EndPointAntiCW, worldPos);
-        if (cwDist >= antiCwDist)
+        ValknutSegmentPoint valknutPoint = _currentSelectedPoint as ValknutSegmentPoint;
+        float startDist = DistanceLineSegment(valknutPoint.Start, worldPos);
+        float endDist = DistanceLineSegment(valknutPoint.End, worldPos);
+        DrawLineSegmentWithRaysUp(valknutPoint.Start, worldPos, 1, 10);
+
+        if (startDist <= endDist)
         {
-            return ConstructVerticesMove(_currentSelectedPoint.Index, ClockOrderType.CW);
+            return ConstructVerticesMove(_currentSelectedPoint.Index, LineEndType.Start);
         }
         else
         {
-            return ConstructVerticesMove(_currentSelectedPoint.Index, ClockOrderType.AntiCW);
+            return ConstructVerticesMove(_currentSelectedPoint.Index, LineEndType.End);
         }
     }
 
-    private List<FigureSegmentMove> ConstructVerticesMove(int2 index, ClockOrderType clockOrder)
+    private List<FigureSegmentMove> ConstructVerticesMove(int2 index, LineEndType segmentEndPoint)
     {
         int2 originIndex = index;
         int2 targetIndex = index;
         IncreaseIndex(ref targetIndex.x, 3);
-        if (clockOrder == ClockOrderType.AntiCW)
-        {
+        if (segmentEndPoint == LineEndType.Start)
+        { 
             IncreaseIndex(ref targetIndex.y, 2);
+        }
+
+        if (!_valknut.IsPointEmpty(targetIndex))
+        {
+            Debug.Log($"{targetIndex} is not empty\n{index} {segmentEndPoint}");
+            return null;
         }
 
         FigureVerticesMove verticesMove = new FigureVerticesMove();

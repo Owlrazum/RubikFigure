@@ -3,16 +3,16 @@ using UnityEngine;
 [RequireComponent(typeof(MeshRenderer))]
 public class FigureSegmentRenderer : MonoBehaviour
 {
-    [SerializeField]
     private Material _defaultMaterial;
-    
-    [SerializeField]
     private Material _highlightMaterial;
 
     private MeshRenderer _meshRenderer;
 
-    private void Awake()
+    public void Initialize(Material defaultMaterial, Material highlightMaterial)
     {
+        _defaultMaterial = defaultMaterial;
+        _highlightMaterial = highlightMaterial;
+
         TryGetComponent(out _meshRenderer);
         _meshRenderer.material = _defaultMaterial;
     }

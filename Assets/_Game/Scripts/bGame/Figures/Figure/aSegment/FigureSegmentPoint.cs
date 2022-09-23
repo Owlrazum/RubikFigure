@@ -9,15 +9,11 @@ public class FigureSegmentPoint : MonoBehaviour
     private MeshFilter _meshFilter;
     private MeshRenderer _meshRenderer;
 
-    [SerializeField]
-    private Material _emptyMaterial;
-
     private void Awake()
     {
         TryGetComponent(out _meshFilter);
         TryGetComponent(out _meshRenderer);
-
-        _meshRenderer.sharedMaterial = _emptyMaterial;
+        _meshRenderer.enabled = false;
     }
 
     public int2 Index { get; private set; }
