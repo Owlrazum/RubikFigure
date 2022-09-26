@@ -5,6 +5,7 @@ using Unity.Collections;
 
 using UnityEngine;
 
+using Orazum.Math;
 using Orazum.Meshing;
 using static Orazum.Collections.IndexUtilities;
 
@@ -45,9 +46,51 @@ public struct ValknutGenJobTransData : IJobFor
             target
         );
 
+
         NativeArray<QST_Segment> writeBuffer =
             OutTransitionsCollection.GetBufferSegment(transitionIndex);
 
-        dataBuilder.BuildTransition(ref writeBuffer);
+
+        bool samePart = originPart == targetPart;
+        LineEndDirectionType originDirection = samePart ? LineEndDirectionType.StartToEnd : LineEndDirectionType.EndToStart;
+        dataBuilder.InitializeOriginRays(
+            samePart ? LineEndType.End : LineEndType.Start,
+            samePart ? LineEndDirectionType.StartToEnd : LineEndDirectionType.EndToStart
+        );
+
+        LineEndDirectionType targetDirection = LineEndDirectionType.StartToEnd;
+        if (originPart == 0 && targetPart == 0)
+        { 
+            dataBuilder.InitializeTargetRay(LineEndType.Start, LineEndDirectionType.EndToStart, LineEndType.End);
+        }
+        else if (originPart == 0 && targetPart == 1)
+        { 
+            dataBuilder.InitializeTargetRay(LineEndType.End, LineEndDirectionType.StartToEnd, LineEndType.End);
+        }
+        else if (originPart == 1 && targetPart == 0)
+        { 
+            dataBuilder.InitializeTargetRay(LineEndType.Start, LineEndDirectionType.EndToStart, LineEndType.Start);
+        }
+        else
+        { 
+            dataBuilder.InitializeTargetRay(LineEndType.End, LineEndDirectionType.StartToEnd, LineEndType.Start);
+        }
+
+        dataBuilder.BuildTransition(originDirection, targetDirection, ref writeBuffer);
     }
 }
+
+/*
+    TasToTas
+        originRays = _origin.GetRays(LineEndType.End, LineEndDirectionType.StartToEnd);
+        targetRay = _target.GetRay(LineEndType.Start, LineEndType.End, LineEndDirectionType.EndToStart);
+    TasToOas:
+        originRays = _origin.GetRays(LineEndType.Start, LineEndDirectionType.EndToStart);
+        targetRay = _target.GetRay(LineEndType.End, LineEndType.End, LineEndDirectionType.StartToEnd);
+    OasToTas:
+        originRays = _origin.GetRays(LineEndType.Start, LineEndDirectionType.EndToStart);
+        targetRay = _target.GetRay(LineEndType.Start, LineEndType.Start, LineEndDirectionType.EndToStart);
+    OasToOas:
+        originRays = _origin.GetRays(LineEndType.End, LineEndDirectionType.StartToEnd);
+        targetRay = _target.GetRay(LineEndType.End, LineEndType.Start, LineEndDirectionType.StartToEnd);
+*/

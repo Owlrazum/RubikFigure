@@ -44,7 +44,7 @@ namespace Orazum.Meshing
 
         public void Start(in float3x2 lineSegment, ref MeshBuffersIndexers buffersIndexers)
         {
-            _prevIndices.x = AddVertex(lineSegment[0], ref buffersIndexers);
+            _prevIndices.x = AddVertex(lineSegment[0], ref buffersIndexers, new float2(0, 0.44f));
             _prevIndices.y = AddVertex(lineSegment[1], ref buffersIndexers);
 
             _currentQuad[2] = lineSegment[0];
@@ -54,7 +54,7 @@ namespace Orazum.Meshing
         public void Continue(in float3x2 lineSegment, ref MeshBuffersIndexers buffersIndexers)
         {
             int2 newIndices = int2.zero;
-            newIndices.x = AddVertex(lineSegment[0], ref buffersIndexers);
+            newIndices.x = AddVertex(lineSegment[0], ref buffersIndexers, new float2(0, 0.44f));
             newIndices.y = AddVertex(lineSegment[1], ref buffersIndexers);
 
             _currentQuad[0] = _currentQuad[2];
@@ -84,7 +84,7 @@ namespace Orazum.Meshing
         private void AddQuadIndices(int4 quadIndicesToCheck, ref MeshBuffersIndexers buffersIndexers)
         {
             int4 quadIndices = quadIndicesToCheck;
-            CheckClockOrder(quadIndicesToCheck, out quadIndices);
+            // CheckClockOrder(quadIndicesToCheck, out quadIndices);
             AddIndex(quadIndices.x, ref buffersIndexers);
             AddIndex(quadIndices.y, ref buffersIndexers);
             AddIndex(quadIndices.z, ref buffersIndexers);
@@ -130,6 +130,20 @@ namespace Orazum.Meshing
             vertex.position = pos;
             vertex.normal = _normalAndUV[0];
             vertex.uv = _normalAndUV[1].xy;
+            
+            _vertices[buffersIndexers.Count.x++] = vertex;
+            short addedVertexIndex = (short)buffersIndexers.LocalCount.x;
+            buffersIndexers.LocalCount.x++;
+
+            return addedVertexIndex;
+        }
+
+        private short AddVertex(float3 pos, ref MeshBuffersIndexers buffersIndexers, float2 uv)
+        { 
+            VertexData vertex = new VertexData();
+            vertex.position = pos;
+            vertex.normal = _normalAndUV[0];
+            vertex.uv = uv;
             
             _vertices[buffersIndexers.Count.x++] = vertex;
             short addedVertexIndex = (short)buffersIndexers.LocalCount.x;

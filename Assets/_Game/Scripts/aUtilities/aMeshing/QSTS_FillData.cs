@@ -22,6 +22,10 @@ namespace Orazum.Meshing
             ToEnd
         }
         public FillType Fill { get; private set; }
+        public void AssignFill(FillType fill)
+        {
+            Fill = fill;
+        }
 
         public bool IsTemporary { get; set; }
         // SegmentType is assigned when segment receives fillData.

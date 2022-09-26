@@ -6,33 +6,25 @@ using UnityEngine.Assertions;
 using Orazum.Math;
 using Orazum.Meshing;
 using static Orazum.Math.RaysUtilities;
-using static Orazum.Math.MathUtils;
+using static Orazum.Math.LineSegmentUtilities;
 using static Orazum.Meshing.QST_Segment;
 using static Orazum.Meshing.QSTS_FillData;
 
 public struct ValknutTransitionsBuilder
 {
-    private enum TransitionType
-    {
-        TasToTas,
-        TasToOas,
-        OasToTas,
-        OasToOas
-    }
-    private TransitionType _transitionType;
-
     private QuadStrip _origin;
     private QuadStrip _target;
 
-    private NativeArray<QST_Segment> _writeBuffer;
-    private NativeArray<float2x4> _startEndSegs;
-    private NativeArray<float> _outFillDistances;
-    private NativeArray<float> _inFillDistances;
+    private float3x4 _originRays;
+    private float3x2 _targetRay;
 
-    private int2 _transSegmentsIndexer;
+    private NativeArray<float> _originDistancesRatios;
+    private NativeArray<float> _targetDistancesRatios;
+
     private float _emptyZoneLength;
+    private float3x2 _intersectionSegment;
 
-    public bool IsValid;
+    private NativeArray<QST_Segment> _writeBuffer;
 
     public ValknutTransitionsBuilder(
         in QuadStrip origin,
@@ -41,365 +33,343 @@ public struct ValknutTransitionsBuilder
     {
         _origin = origin;
         _target = target;
-        _writeBuffer = new NativeArray<QST_Segment>();
 
-        _transSegmentsIndexer = new int2(0, _origin.QuadsCount + 1 + _target.QuadsCount);
+        _originRays = float3x4.zero;
+        _targetRay = float3x2.zero;
 
-        _startEndSegs = new NativeArray<float2x4>(_transSegmentsIndexer.y, Allocator.Temp);
-        _outFillDistances = new NativeArray<float>(_origin.QuadsCount, Allocator.Temp);
-        _inFillDistances = new NativeArray<float>(_target.QuadsCount, Allocator.Temp);
+        _originDistancesRatios = new NativeArray<float>(_origin.LineSegmentsCount, Allocator.Temp);
+        _targetDistancesRatios = new NativeArray<float>(_target.QuadsCount, Allocator.Temp);
 
         _emptyZoneLength = 0;
-        IsValid = true;
+        _intersectionSegment = float3x2.zero;
 
-        if (_origin.QuadsCount == 3)
-        {
-            if (target.QuadsCount == 3)
-            {
-                _transitionType = TransitionType.TasToTas;
-                return;
-            }
-            else if (target.QuadsCount == 2)
-            {
-                _transitionType = TransitionType.TasToOas;
-                return;
-            }
-        }
-        else if (_origin.QuadsCount == 2)
-        {
-            if (target.QuadsCount == 3)
-            {
-                _transitionType = TransitionType.OasToTas;
-                return;
-            }
-            else if (target.QuadsCount == 2)
-            {
-                _transitionType = TransitionType.OasToOas;
-                return;
-            }
-        }
-
-        throw new System.ArgumentOutOfRangeException("QuadStrips quadsCount should be in [2, 3]");
+        _writeBuffer = new NativeArray<QST_Segment>();
     }
 
-    public void BuildTransition(ref NativeArray<QST_Segment> writeBuffer)
+    public void InitializeOriginRays(LineEndType quadStripEnd, LineEndDirectionType raysDirection)
     {
-        _writeBuffer = writeBuffer;
-        ComputeDistancesAndSegs(
-            out float2 fillInOutTotalDistances
-        );
-        if (!IsValid)
-        {
-            return;
-        }
-        BuildFillOutData(in fillInOutTotalDistances.y, out QST_Segment lastSegment);
-        BuildFillInData(in fillInOutTotalDistances.x, ref lastSegment);
+        _originRays = _origin.GetRays(quadStripEnd, raysDirection);
+        // DrawRay(_originRays[0], _originRays[1], 10, 10);
+        // DrawRay(_originRays[2], _originRays[3], 10, 10);
+    }
+    public void InitializeTargetRay(LineEndType quadStripEnd, LineEndDirectionType raysDirection, LineEndType lineSegmentEnd)
+    {
+        _targetRay = _target.GetRay(quadStripEnd, raysDirection, lineSegmentEnd);
+        // DrawRay(_targetRay, 10, 10);
     }
 
-    private void ComputeDistancesAndSegs(
-        out float2 fillInOutTotalDistances
+    public bool BuildTransition(
+        LineEndDirectionType originDirection,
+        LineEndDirectionType targetDirection,
+        ref NativeArray<QST_Segment> writeBuffer)
+    {
+        Assert.IsTrue(writeBuffer.Length == _origin.QuadsCount + 1 + _target.QuadsCount);
+        _writeBuffer = writeBuffer;
+        bool areIntersecting = ComputeDistancesRatios(
+            originDirection,
+            targetDirection,
+            out float fillInTotalDistance
+        );
+        if (!areIntersecting)
+        {
+            return false;
+        }
+
+        PrepareSegments(originDirection, targetDirection);
+        BuildFillOutData(originDirection);
+        BuildFillInData(originDirection, targetDirection, fillInTotalDistance);
+
+        return true;
+    }
+
+    private bool ComputeDistancesRatios(
+        LineEndDirectionType originDirection,
+        LineEndDirectionType targetDirection,
+        out float fillInTotalDistance
     )
     {
-        fillInOutTotalDistances = float2.zero;
+        float fillOutTotalDistance = 0;
+        fillInTotalDistance = 0;
 
-        int outDistancesIndexer = 0;
-
-        int3 index = int3.zero;
-        GetIndexOrigin(_origin.LineSegmentsCount, out index);
-        for (int i = index.x; index.y > 0 ? i < index.z : i >= index.z; i += index.y)
+        int indexer = 0;
+        if (targetDirection == LineEndDirectionType.StartToEnd)
         {
-            float2x2 startSeg = new float2x2(_origin[i][0].xz, _origin[i][1].xz);
-            float2x2 endSeg = new float2x2(_origin[i + index.y][0].xz, _origin[i + index.y][1].xz);
-            _startEndSegs[_transSegmentsIndexer.x++] = new float2x4(startSeg[0], startSeg[1], endSeg[0], endSeg[1]);
-
-            float3x2 delta = _origin[i + index.y] - _origin[i];
-            _outFillDistances[outDistancesIndexer] = math.length(delta[0]);
-            fillInOutTotalDistances.y += _outFillDistances[outDistancesIndexer];
-            outDistancesIndexer++;
+            for (int i = 0; i < _target.LineSegmentsCount - 1; i++)
+            {
+                float length = DistanceLineSegment(_target[i][0], _target[i + 1][0]);
+                _targetDistancesRatios[indexer++] = length;
+                fillOutTotalDistance += length;
+            }
+        }
+        else
+        {
+            for (int i = _target.LineSegmentsCount - 1; i >= 1; i--)
+            {
+                float length = DistanceLineSegment(_target[i][0], _target[i - 1][0]);
+                _targetDistancesRatios[indexer++] = length;
+                fillOutTotalDistance += length;
+            }
         }
 
-        GetIndexEmptyZone(_origin.LineSegmentsCount, out int emptyIndex);
-        ComputeDistsPosInEmptyZone(in emptyIndex, ref fillInOutTotalDistances);
-        if (!IsValid)
+        indexer = 0;
+        if (originDirection == LineEndDirectionType.StartToEnd)
         {
-            return;
+            for (int i = 0; i < _origin.LineSegmentsCount - 1; i++)
+            {
+                float length = DistanceLineSegment(_origin[i][0], _origin[i + 1][0]);
+                _originDistancesRatios[indexer++] = length;
+                fillInTotalDistance += length;
+            }
+        }
+        else
+        {
+            for (int i = _origin.LineSegmentsCount - 1; i >= 1; i--)
+            {
+                float length = DistanceLineSegment(_origin[i][0], _origin[i - 1][0]);
+                _originDistancesRatios[indexer++] = length;
+                fillInTotalDistance += length;
+            }
         }
 
-        int4 indexer = new int4(0, 1, 0, 1);
-        if (_transitionType == TransitionType.OasToOas || _transitionType == TransitionType.TasToOas)
+        int originEndIndex = originDirection == LineEndDirectionType.StartToEnd ? _origin.LineSegmentsCount - 1 : 0;
+        Intersect(originEndIndex, out _emptyZoneLength);
+        if (_emptyZoneLength < 0)
         {
-            indexer = indexer.xywz;
+            return false;
+        }
+        _originDistancesRatios[indexer++] = _emptyZoneLength;
+
+        fillOutTotalDistance += _emptyZoneLength;
+        fillInTotalDistance += _emptyZoneLength;
+
+        float distance = 0;
+        for (int i = 0; i < _originDistancesRatios.Length; i++)
+        {
+            distance += _originDistancesRatios[i];
+            _originDistancesRatios[i] = distance / fillOutTotalDistance;
         }
 
-        int inDistancesIndexer = 0;
-        GetIndexTarget(_target.LineSegmentsCount, out index);
-        for (int i = index.x; index.y > 0 ? i < index.z : i >= index.z; i += index.y)
+        distance = 0;
+        for (int i = 0; i < _targetDistancesRatios.Length; i++)
         {
-            float2x2 startSeg = new float2x2(_target[i][0].xz, _target[i][1].xz);
-            float2x2 endSeg = new float2x2(_target[i + index.y][0].xz, _target[i + index.y][1].xz);
-            _startEndSegs[_transSegmentsIndexer.x++] = 
-                new float2x4(startSeg[indexer.x], startSeg[indexer.y], endSeg[indexer.z], endSeg[indexer.w]);
-
-            float3x2 delta = _target[i + index.y] - _target[i];
-            _inFillDistances[inDistancesIndexer] = math.length(delta[0]);
-            fillInOutTotalDistances.x += _inFillDistances[inDistancesIndexer];
-            inDistancesIndexer++;
+            distance += _targetDistancesRatios[i];
+            _targetDistancesRatios[i] = distance / fillInTotalDistance;
         }
 
-        _transSegmentsIndexer.x = 0;
+        return true;
     }
-    private void ComputeDistsPosInEmptyZone(in int emptyIndex, ref float2 fillInOutTotalDistances)
+    private void Intersect(int originEndIndex, out float emptyZoneLength)
     {
-        GetIntersectionRays(out float3x4 originSegmentRays, out float3x2 targetRay);
-        float3x2 r1 = new float3x2(originSegmentRays[0], originSegmentRays[1]);
-        float3x2 r2 = new float3x2(originSegmentRays[2], originSegmentRays[3]);
-        bool intersect = IntersectSegmentToRay2D(r1, r2, targetRay, out float3x2 intersectSegment);
-        DrawRay(r1, 1, 10);
-        DrawRay(r2, 1, 10);
-        DrawRay(targetRay, 10, 10);
+        float3x2 r1 = new float3x2(_originRays[0], _originRays[1]);
+        float3x2 r2 = new float3x2(_originRays[2], _originRays[3]);
+        bool intersect = IntersectSegmentToRay2D(r1, r2, _targetRay, out _intersectionSegment);
         if (!intersect)
         {
-            IsValid = false;
-            UnityEngine.Debug.LogError($"{_transitionType} is not intersected");
+            DrawRay(r1, 10, 10);
+            DrawRay(r2, 10, 10);
+            DrawRay(_targetRay, 10, 10);
+            UnityEngine.Debug.LogError($"No intersection");
+            emptyZoneLength = -1;
             return;
         }
-        // Assert.IsTrue(intersect, $"{_transitionType} is not intersected");
 
-        float2x2 startSeg = new float2x2(_origin[emptyIndex][0].xz, _origin[emptyIndex][1].xz);
-        float2x2 endSeg = new float2x2(intersectSegment[0].xz, intersectSegment[1].xz);
-        _startEndSegs[_transSegmentsIndexer.x++] = new float2x4(startSeg[0], startSeg[1], endSeg[0], endSeg[1]);
-
-        float3x2 delta = intersectSegment - _origin[emptyIndex];
-        _emptyZoneLength = math.length(delta[0]);
-        fillInOutTotalDistances.x += _emptyZoneLength;
-        fillInOutTotalDistances.y += _emptyZoneLength;
+        float3x2 delta = _intersectionSegment - _origin[originEndIndex];
+        emptyZoneLength = DistanceLineSegment(_intersectionSegment[0], _origin[originEndIndex][0]);
     }
-    private void GetIntersectionRays(out float3x4 originRays, out float3x2 targetRay)
-    {
-        switch (_transitionType)
-        {
-            case TransitionType.TasToTas:
-                originRays = _origin.GetRays(LineEndType.End, LineEndDirectionType.StartToEnd);
-                targetRay = _target.GetRay(LineEndType.Start, LineEndType.End, LineEndDirectionType.EndToStart);
-                return;
-            case TransitionType.TasToOas:
-                originRays = _origin.GetRays(LineEndType.Start, LineEndDirectionType.EndToStart);
-                targetRay = _target.GetRay(LineEndType.End, LineEndType.End, LineEndDirectionType.StartToEnd);
-                return;
-            case TransitionType.OasToTas:
-                originRays = _origin.GetRays(LineEndType.Start, LineEndDirectionType.EndToStart);
-                targetRay = _target.GetRay(LineEndType.Start, LineEndType.Start, LineEndDirectionType.EndToStart);
-                return;
-            case TransitionType.OasToOas:
-                originRays = _origin.GetRays(LineEndType.End, LineEndDirectionType.StartToEnd);
-                targetRay = _target.GetRay(LineEndType.End, LineEndType.Start, LineEndDirectionType.StartToEnd);
-                return;
-        }
 
-        throw new System.Exception();
-    }
-    private void GetIndexOrigin(int upperBound, out int3 index)
+    private void PrepareSegments(LineEndDirectionType originDirection, LineEndDirectionType targetDirection)
     {
-        if (_transitionType == TransitionType.TasToTas || _transitionType == TransitionType.OasToOas)
+        QST_Segment segment;
+        int writeIndexer = 0;
+        if (originDirection == LineEndDirectionType.StartToEnd)
         {
-            index.x = 0;
-            index.y = 1;
-            index.z = upperBound - 1;
+            for (int i = 0; i < _origin.QuadsCount; i++)
+            {
+                QSTS_BuilderUtils.PrepareSegment(_origin[i], _origin[i + 1], QSTS_Type.Quad,
+                    fillDataLength: 0, out segment);
+
+                _writeBuffer[writeIndexer++] = segment;
+            }
         }
         else
         {
-            index.x = upperBound - 1;
-            index.y = -1;
-            index.z = 1;
+            for (int i = _origin.QuadsCount; i >= 1; i--)
+            {
+                QSTS_BuilderUtils.PrepareSegment(_origin[i - 1], _origin[i], QSTS_Type.Quad,
+                    fillDataLength: 0, out segment);
+
+                _writeBuffer[writeIndexer++] = segment;
+            }
         }
-    }
-    private void GetIndexEmptyZone(int upperBound, out int index)
-    {
-        if (_transitionType == TransitionType.TasToTas || _transitionType == TransitionType.OasToOas)
+
+        if (targetDirection == LineEndDirectionType.StartToEnd)
         {
-            index = upperBound - 1;
+            for (int i = 0; i < _target.QuadsCount; i++)
+            {
+                QSTS_BuilderUtils.PrepareSegment(_target[i], _target[i + 1], QSTS_Type.Quad,
+                    fillDataLength: 0, out segment);
+
+                _writeBuffer[writeIndexer++] = segment;
+            }
         }
         else
         {
-            index = 0;
+            for (int i = _target.QuadsCount; i >= 1; i--)
+            {
+                QSTS_BuilderUtils.PrepareSegment(_target[i - 1], _target[i], QSTS_Type.Quad,
+                    fillDataLength: 0, out segment);
+
+                _writeBuffer[writeIndexer++] = segment;
+            }
         }
-    }
-    private void GetIndexTarget(int upperBound, out int3 index)
-    {
-        if (_transitionType == TransitionType.TasToTas || _transitionType == TransitionType.OasToTas)
+
+        float3x2 start = float3x2.zero;
+        float3x2 end = float3x2.zero;
+        if (originDirection == LineEndDirectionType.StartToEnd)
         {
-            index.x = 0;
-            index.y = 1;
-            index.z = upperBound - 1;
+            start = _origin[_origin.QuadsCount];
+            end = _intersectionSegment;
         }
         else
         {
-            index.x = upperBound - 1;
-            index.y = -1;
-            index.z = 1;
+            start = _intersectionSegment;
+            end = _origin[0];
         }
+
+        QSTS_BuilderUtils.PrepareSegment(start, end, QSTS_Type.Quad,
+            fillDataLength: 3, out segment);
+        _writeBuffer[writeIndexer++] = segment;
     }
 
-    private void BuildFillOutData(
-        in float outFillTotalDistance,
-        out QST_Segment lastFillOutSegment
-    )
-    {
-        _transSegmentsIndexer.x = 0;
-        // prev current distance ratios
-        float2 dr = new float2(-1, _outFillDistances[_transSegmentsIndexer.x] / outFillTotalDistance);
 
+    private void BuildFillOutData(LineEndDirectionType originDirection)
+    {
+        QST_Segment current = new();
+        QST_Segment next = new();
+
+        float2 filledLerpRange = new float2(0, 0);
+        float2 fillOutLerpRange = new float2(0, 0);
+
+        bool isStartToEnd = originDirection == LineEndDirectionType.StartToEnd;
+        FillType fillOutType = isStartToEnd ? FillType.ToEnd : FillType.ToStart;
         for (int i = 0; i < _origin.QuadsCount; i++)
         {
-            float2x4 startEndSeg = _startEndSegs[_transSegmentsIndexer.x];
-            float2x2 startLineSeg = new float2x2(startEndSeg[0], startEndSeg[1]);
-            float2x2 endLineSeg = new float2x2(startEndSeg[2], startEndSeg[3]);
-
             if (i == 0)
             {
-                QSTS_BuilderUtils.PrepareSegment(x0z(startLineSeg), x0z(endLineSeg), QSTS_Type.Quad, 
-                    fillDataLength: 1, out QST_Segment firstSegment);
-                QSTS_FillData fillOutState = new QSTS_FillData(
-                    ConstructType.New,
-                    FillType.ToEnd,
-                    new float2(0, dr.y)
-                );
-                firstSegment[0] = fillOutState;
-                _writeBuffer[_transSegmentsIndexer.x++] = firstSegment;
+                current = _writeBuffer[i];
+                QSTS_BuilderUtils.UpdateFillDataLength(ref current, 1);
             }
             else
             {
-                QSTS_BuilderUtils.PrepareSegment(x0z(startLineSeg), x0z(endLineSeg), QSTS_Type.Quad, 
-                    fillDataLength: 2, out QST_Segment segment);
-                QSTS_FillData filledState = new QSTS_FillData(
-                    ConstructType.Continue,
-                    FillType.StartToEnd,
-                    new float2(0, dr.x)
-                );
-
-                QSTS_FillData fillingOutState = new QSTS_FillData(
-                    ConstructType.New,
-                    FillType.ToEnd,
-                    new float2(dr.x, dr.y)
-                );
-
-                segment[0] = filledState;
-                segment[1] = fillingOutState;
-                _writeBuffer[_transSegmentsIndexer.x++] = segment;
+                current = next;
             }
 
-            dr.x = dr.y;
-            if (_transSegmentsIndexer.x < _origin.QuadsCount)
+            MoveLerprange(ref fillOutLerpRange, _originDistancesRatios[i]);
+            QSTS_FillData fillOut = new QSTS_FillData(
+                ConstructType.New,
+                fillOutType,
+                fillOutLerpRange
+            );
+            current[0] = fillOut;
+            _writeBuffer[i] = current;
+
+            int nextIndex = i + 1;
+            if (nextIndex < _origin.QuadsCount)
             {
-                dr.y += _outFillDistances[_transSegmentsIndexer.x] / outFillTotalDistance;
+                next = _writeBuffer[nextIndex];
+                QSTS_BuilderUtils.UpdateFillDataLength(ref next, 2);
+                MoveLerprange(ref filledLerpRange, _originDistancesRatios[i]);
+
+                QSTS_FillData filledState = new QSTS_FillData(
+                    ConstructType.New,
+                    FillType.StartToEnd,
+                    filledLerpRange
+                );
+                next[1] = filledState;
             }
         }
 
-        float2x4 lastStartEndSeg = _startEndSegs[_transSegmentsIndexer.x];
-        float2x2 lastStartLineSeg = new float2x2(lastStartEndSeg[0], lastStartEndSeg[1]);
-        float2x2 lastEndLineSeg = new float2x2(lastStartEndSeg[2], lastStartEndSeg[3]);
-        
-        QSTS_BuilderUtils.PrepareSegment(x0z(lastStartLineSeg), x0z(lastEndLineSeg), QSTS_Type.Quad, 
-                    fillDataLength: 3, out lastFillOutSegment);
-        QSTS_FillData lastSegFilledState = new QSTS_FillData(
-            ConstructType.Continue,
-            FillType.StartToEnd,            
-            new float2(0, dr.x)
-        );
-
-        QSTS_FillData lastSegFillingOutState = new QSTS_FillData(
+        QST_Segment lastFillOutSegment = _writeBuffer[_writeBuffer.Length - 1];
+        FillType fillType = originDirection == LineEndDirectionType.StartToEnd ? FillType.ToEnd : FillType.ToStart;
+        QSTS_FillData lastFillOut = new QSTS_FillData(
             ConstructType.New,
-            FillType.ToEnd,
-            new float2(dr.x, 1)
+            fillType,
+            new float2(_originDistancesRatios[_origin.QuadsCount], 1)
         );
-
-        lastFillOutSegment[1] = lastSegFilledState;
-        lastFillOutSegment[2] = lastSegFillingOutState;
-        _writeBuffer[_transSegmentsIndexer.x++] = lastFillOutSegment;
+        
+        lastFillOutSegment[2] = lastFillOut;
+        _writeBuffer[_writeBuffer.Length - 1] = lastFillOutSegment;
     }
 
-    private void BuildFillInData(in float inFillTotalDistance, ref QST_Segment lastFillOutSegment)
+    private void BuildFillInData(LineEndDirectionType originDirection, LineEndDirectionType targetDirection, float inFillTotalDistance)
     {
-        float lerpOffset = _emptyZoneLength / inFillTotalDistance;
-        QSTS_FillData firstSegFillInData = new QSTS_FillData(
-            ConstructType.Continue,
-            FillType.FromStart,
-            new float2(0, lerpOffset)
+        QST_Segment current = _writeBuffer[_writeBuffer.Length - 1];
+
+        FillType fillInType = originDirection == LineEndDirectionType.StartToEnd ? FillType.FromEnd : FillType.FromStart;
+
+        float2 fillInLerpRange = new float2(0, 0);
+        float emptyZoneDistanceRatio = _emptyZoneLength / inFillTotalDistance;
+        MoveLerprange(ref fillInLerpRange, emptyZoneDistanceRatio);
+
+        current[0] = new QSTS_FillData(
+            ConstructType.New,
+            fillInType,
+            fillInLerpRange
         );
-        lastFillOutSegment[0] = firstSegFillInData;
-        QSTS_FillData lastFilledState = lastFillOutSegment[1];
-        lastFilledState.LerpRange = new float2(lerpOffset, lastFillOutSegment[1].LerpRange.y);
-        lastFillOutSegment[1] = lastFilledState;
-        _writeBuffer[_transSegmentsIndexer.x - 1] = lastFillOutSegment;
 
-        int inFillDistancesIndexer = 0;
-        float2 dr = new float2(lerpOffset, _inFillDistances[inFillDistancesIndexer++] / inFillTotalDistance + lerpOffset);
+        float2 filledLerpRange = new float2(emptyZoneDistanceRatio, _originDistancesRatios[_origin.QuadsCount]);
+        current[1] = new QSTS_FillData(
+            ConstructType.New,
+            FillType.StartToEnd,
+            filledLerpRange
+        );
 
+        _writeBuffer[_writeBuffer.Length - 1] = current;
+
+        filledLerpRange.y = 1;
+        int writeIndexer = _origin.QuadsCount;
+        FillType fillType = targetDirection == LineEndDirectionType.StartToEnd ? FillType.FromStart: FillType.FromEnd;
         for (int i = 0; i < _target.QuadsCount; i++)
         {
-            float2x4 startEndSeg = _startEndSegs[_transSegmentsIndexer.x];
-            float2x2 startLineSeg = new float2x2(startEndSeg[0], startEndSeg[1]);
-            float2x2 endLineSeg = new float2x2(startEndSeg[2], startEndSeg[3]);
+            if (i != _target.QuadsCount - 1)
+            { 
+                current = _writeBuffer[writeIndexer];
+                QSTS_BuilderUtils.UpdateFillDataLength(ref current, 2);
 
-            if (i == 0)
-            {
-                QSTS_BuilderUtils.PrepareSegment(x0z(startLineSeg), x0z(endLineSeg), QSTS_Type.Quad, 
-                    fillDataLength: 2, out QST_Segment firstFillInSegment);
-
-                QSTS_FillData fillInState = new QSTS_FillData(
+                MoveLerprange(ref fillInLerpRange, _targetDistancesRatios[i]);
+                current[0] = new QSTS_FillData(
                     ConstructType.New,
-                    FillType.FromStart,
-                    new float2(dr.x, dr.y)
+                    fillType,
+                    fillInLerpRange
                 );
 
-                QSTS_FillData filledState = new QSTS_FillData(
-                    ConstructType.New,
+                filledLerpRange.x = _targetDistancesRatios[i];
+                current[1] = new QSTS_FillData(
+                    ConstructType.New, 
                     FillType.StartToEnd,
-                    new float2(dr.y, 1)
+                    filledLerpRange
                 );
-
-                firstFillInSegment[0] = fillInState;
-                firstFillInSegment[1] = filledState;
-
-                _writeBuffer[_transSegmentsIndexer.x++] = firstFillInSegment;
-            }
-            else if (i < _target.QuadsCount - 1)
-            {
-                QSTS_BuilderUtils.PrepareSegment(x0z(startLineSeg), x0z(endLineSeg), QSTS_Type.Quad, 
-                    fillDataLength: 2, out QST_Segment segment);
-                QSTS_FillData fillInState = new QSTS_FillData(
-                    ConstructType.Continue,
-                    FillType.FromStart,
-                    new float2(dr.x, dr.y)
-                );
-                QSTS_FillData filledState = new QSTS_FillData(
-                    ConstructType.New,
-                    FillType.StartToEnd,
-                    new float2(dr.y, 1)
-                );
-                segment[0] = fillInState;
-                segment[1] = filledState;
-                _writeBuffer[_transSegmentsIndexer.x++] = segment;
+                _writeBuffer[writeIndexer++] = current;
             }
             else
             {
-                QSTS_BuilderUtils.PrepareSegment(x0z(startLineSeg), x0z(endLineSeg), QSTS_Type.Quad, 
-                    fillDataLength: 1, out QST_Segment lastFillInSegment);
-                QSTS_FillData fillInState = new QSTS_FillData(
-                    ConstructType.Continue,
-                    FillType.FromStart,
-                    new float2(dr.x, 1)
-                );
-                lastFillInSegment[0] = fillInState;
-                _writeBuffer[_transSegmentsIndexer.x] = lastFillInSegment;
-                break;
-            }
+                current = _writeBuffer[writeIndexer];
+                QSTS_BuilderUtils.UpdateFillDataLength(ref current, 1);
 
-            dr.x = dr.y;
-            if (inFillDistancesIndexer < _target.QuadsCount)
-            {
-                dr.y += _inFillDistances[inFillDistancesIndexer++] / inFillTotalDistance;
+                MoveLerprange(ref fillInLerpRange, _targetDistancesRatios[i]);
+                current[0] = new QSTS_FillData(
+                    ConstructType.New,
+                    fillType,
+                    fillInLerpRange
+                );
+                _writeBuffer[writeIndexer++] = current;
             }
         }
+    }
+ 
+    private void MoveLerprange(ref float2 lerpRange, float newValue)
+    {
+        lerpRange.x = lerpRange.y;
+        lerpRange.y = newValue;
     }
 }

@@ -13,7 +13,7 @@ namespace Orazum.Meshing
 
         public float3x2 StartLineSegment { get; private set; }
         public float3x2 EndLineSegment { get; private set; }
-        public int FillDataLength { get; private set; }
+        public int FillDataLength { get; internal set; }
         
         private QSTS_FillData _f1;
         private QSTS_FillData _f2;

@@ -26,6 +26,11 @@ namespace Orazum.Meshing
             qsts = new QST_Segment(type, start, end, fillDataLength);
         }
 
+        public static void UpdateFillDataLength(ref QST_Segment qsts, int fillDataLength)
+        {
+            qsts.FillDataLength = fillDataLength;
+        }
+
         public static void PrepareSegment(
             in float3x2 start, 
             in float3x2 end, 

@@ -8,6 +8,7 @@ using UnityEngine.TestTools;
 using Unity.Mathematics;
 using Unity.Collections;
 
+using Orazum.Math;
 using Orazum.Meshing;
 using static Orazum.Math.EasingUtilities;
 using static Orazum.Math.MathUtils;
@@ -32,7 +33,13 @@ public class ValknutTransitionsTests
         targetMeshData.LineSegments[3] = new float3x2(new float3(2, 0, -1), new float3(3, 0, -1));
 
         PlayModeTestsUtils.CreateCamera(new float3(0, 10, 0), math.down(), math.forward());
-        yield return Test(originMeshData, targetMeshData);
+        yield return Test(originMeshData, targetMeshData, TasToTasInitializer);
+    }
+
+    private void TasToTasInitializer(ref ValknutTransitionsBuilder builder)
+    {
+        builder.InitializeOriginRays(LineEndType.End, LineEndDirectionType.StartToEnd);
+        builder.InitializeTargetRay(LineEndType.Start, LineEndDirectionType.EndToStart, LineEndType.End);
     }
 
     [UnityTest]
@@ -52,10 +59,16 @@ public class ValknutTransitionsTests
         targetMeshData.LineSegments[2] = new float3x2(new float3(2, 0, 0), new float3(1, 0, 0));
 
         PlayModeTestsUtils.CreateCamera(new float3(0, 10, 0), math.down(), math.forward());
-        yield return Test(originMeshData, targetMeshData);
+        yield return Test(originMeshData, targetMeshData, TasToOasInitializer);
     }
 
-    private IEnumerator Test(MeshDataLineSegmets originData, MeshDataLineSegmets targetData)
+    private void TasToOasInitializer(ref ValknutTransitionsBuilder builder)
+    { 
+
+    }
+
+    private delegate void RayInitializerDelegate(ref ValknutTransitionsBuilder builder);
+    private IEnumerator Test(MeshDataLineSegmets originData, MeshDataLineSegmets targetData, RayInitializerDelegate Initializer)
     {
         QuadStrip originQs = new QuadStrip(originData.LineSegments);
         QuadStrip targetQs = new QuadStrip(targetData.LineSegments);
@@ -79,8 +92,9 @@ public class ValknutTransitionsTests
 
         ValknutTransitionsBuilder transitionsBuilder = new ValknutTransitionsBuilder(originQs, targetQs);
         NativeArray<QST_Segment> writeBuffer = new NativeArray<QST_Segment>(7, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-        transitionsBuilder.BuildTransition(ref writeBuffer);
-        if (!transitionsBuilder.IsValid)
+        Initializer.Invoke(ref transitionsBuilder);
+        bool isSuccess = transitionsBuilder.BuildTransition(LineEndDirectionType.StartToEnd, LineEndDirectionType.StartToEnd, ref writeBuffer);
+        if (!isSuccess)
         {
             originData.Dispose();
             targetData.Dispose();
@@ -102,7 +116,7 @@ public class ValknutTransitionsTests
         buffersIndexers.Reset();
         while (lerpParam < 1)
         {
-            lerpParam += PlayModeTestsParams.LerpSpeed * Time.deltaTime;
+            lerpParam += PlayModeTestsParams.ExtraSlowLerpSpeed * Time.deltaTime;
             ClampToOne(ref lerpParam);
             animator.UpdateWithLerpPos(EaseOut(lerpParam), shouldReorientVertices: false, ref buffersIndexers);
             MeshGenUtils.ApplyMeshBuffers(meshData.Vertices, meshData.Indices, mesh, buffersIndexers);

@@ -79,7 +79,7 @@ namespace Orazum.Meshing
             return RaysUtilities.GetSegmentRays(in startSegment, in endSegment);
         }
 
-        public float3x2 GetRay(LineEndType quadStripEnd, LineEndType lineSegmentEnd, LineEndDirectionType rayDirection)
+        public float3x2 GetRay(LineEndType quadStripEnd, LineEndDirectionType rayDirection, LineEndType lineSegmentEnd)
         {
             float3x2 startSegment, endSegment;
 

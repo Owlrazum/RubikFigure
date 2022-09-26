@@ -29,6 +29,7 @@ public static class PlayModeTestsUtils
         Light light = gb.GetComponent<Light>();
         light.type = LightType.Directional;
         light.intensity = 2;
+        gb.transform.position = new float3(0, -10, 0);
         gb.transform.rotation = quaternion.LookRotationSafe(forward, up);
     }
 

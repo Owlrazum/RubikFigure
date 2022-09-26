@@ -127,8 +127,9 @@ namespace Orazum.Math
         }
 
         public static void DrawRay(float3 start, float3 dir, float length, float duration)
-        { 
-            Debug.DrawRay(start, dir * length, Color.red, duration);
+        {
+            Debug.Log("Draw");
+            Debug.DrawRay(start, dir * length, Color.white, duration);
         }
     }
 }

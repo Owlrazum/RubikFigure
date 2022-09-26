@@ -250,7 +250,6 @@ public struct ValknutGenJob : IJob
         QuadStripBuilder quadStripBuilder = 
             new QuadStripBuilder(OutVertices, OutIndices, _normalAndUV);
         quadStripBuilder.Start(x0z(oas.s1), ref _buffersData);
-        DrawLineSegmentWithRaysUp(oas.s1, 1, 10);
         quadStripBuilder.Continue(x0z(oas.s2), ref _buffersData);
         quadStripBuilder.Continue(x0z(oas.s3), ref _buffersData);
 

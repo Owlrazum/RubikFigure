@@ -159,7 +159,6 @@ public class ValknutGenerator : FigureGenerator
                 UpdateSegment(_segments[index], buffersIndexers, puzzleIndex: triangle, new int2(MaxVertexCount, MaxIndexCount));
                 QuadStrip segmentStrip = _quadStripsCollection.GetQuadStrip(quadStripIndexer++);
                 float3 start = GetLineSegmentCenter(segmentStrip[0]);
-                Debug.DrawRay(start, math.up() * 1, Color.red, 10);
                 float3 end = GetLineSegmentCenter(segmentStrip[segmentStrip.LineSegmentsCount - 1]);
                 ValknutSegmentPoint valknutSegmentPoint = _segmentPoints[index] as ValknutSegmentPoint;
                 valknutSegmentPoint.AssignEndPoints(start, end);
