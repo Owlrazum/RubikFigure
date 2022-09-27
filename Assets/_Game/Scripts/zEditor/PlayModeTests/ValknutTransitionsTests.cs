@@ -107,7 +107,7 @@ public class ValknutTransitionsTests
         GameObject.Destroy(targetMesh);
 
         QS_Transition transition = new QS_Transition(writeBuffer);
-        MeshData meshData = new MeshData(10);
+        MeshData meshData = new MeshData(15);
         QST_Animator animator = new QST_Animator(meshData.Vertices, meshData.Indices, normalUV);
         animator.AssignTransition(transition);
 

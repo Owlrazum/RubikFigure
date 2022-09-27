@@ -1,6 +1,7 @@
 using Unity.Mathematics;
 using Unity.Collections;
 
+using UnityEngine;
 using UnityEngine.Assertions;
 
 using Orazum.Math;
@@ -9,6 +10,7 @@ using static Orazum.Math.RaysUtilities;
 using static Orazum.Math.LineSegmentUtilities;
 using static Orazum.Meshing.QST_Segment;
 using static Orazum.Meshing.QSTS_FillData;
+
 
 public struct ValknutTransitionsBuilder
 {
@@ -21,7 +23,7 @@ public struct ValknutTransitionsBuilder
     private NativeArray<float> _originDistancesRatios;
     private NativeArray<float> _targetDistancesRatios;
 
-    private float _emptyZoneLength;
+    private float _emptyFillInDistanceRatio;
     private float3x2 _intersectionSegment;
 
     private NativeArray<QST_Segment> _writeBuffer;
@@ -37,10 +39,10 @@ public struct ValknutTransitionsBuilder
         _originRays = float3x4.zero;
         _targetRay = float3x2.zero;
 
-        _originDistancesRatios = new NativeArray<float>(_origin.LineSegmentsCount, Allocator.Temp);
+        _originDistancesRatios = new NativeArray<float>(_origin.QuadsCount, Allocator.Temp);
         _targetDistancesRatios = new NativeArray<float>(_target.QuadsCount, Allocator.Temp);
 
-        _emptyZoneLength = 0;
+        _emptyFillInDistanceRatio = 0;
         _intersectionSegment = float3x2.zero;
 
         _writeBuffer = new NativeArray<QST_Segment>();
@@ -67,8 +69,7 @@ public struct ValknutTransitionsBuilder
         _writeBuffer = writeBuffer;
         bool areIntersecting = ComputeDistancesRatios(
             originDirection,
-            targetDirection,
-            out float fillInTotalDistance
+            targetDirection
         );
         if (!areIntersecting)
         {
@@ -77,20 +78,17 @@ public struct ValknutTransitionsBuilder
 
         PrepareSegments(originDirection, targetDirection);
         BuildFillOutData(originDirection);
-        BuildFillInData(originDirection, targetDirection, fillInTotalDistance);
+        BuildFillInData(originDirection, targetDirection);
 
         return true;
     }
 
     private bool ComputeDistancesRatios(
         LineEndDirectionType originDirection,
-        LineEndDirectionType targetDirection,
-        out float fillInTotalDistance
+        LineEndDirectionType targetDirection
     )
     {
-        float fillOutTotalDistance = 0;
-        fillInTotalDistance = 0;
-
+        float fillInTotalDistance = 0;
         int indexer = 0;
         if (targetDirection == LineEndDirectionType.StartToEnd)
         {
@@ -98,7 +96,7 @@ public struct ValknutTransitionsBuilder
             {
                 float length = DistanceLineSegment(_target[i][0], _target[i + 1][0]);
                 _targetDistancesRatios[indexer++] = length;
-                fillOutTotalDistance += length;
+                fillInTotalDistance += length;
             }
         }
         else
@@ -107,10 +105,11 @@ public struct ValknutTransitionsBuilder
             {
                 float length = DistanceLineSegment(_target[i][0], _target[i - 1][0]);
                 _targetDistancesRatios[indexer++] = length;
-                fillOutTotalDistance += length;
+                fillInTotalDistance += length;
             }
         }
 
+        float fillOutTotalDistance = 0;
         indexer = 0;
         if (originDirection == LineEndDirectionType.StartToEnd)
         {
@@ -118,7 +117,7 @@ public struct ValknutTransitionsBuilder
             {
                 float length = DistanceLineSegment(_origin[i][0], _origin[i + 1][0]);
                 _originDistancesRatios[indexer++] = length;
-                fillInTotalDistance += length;
+                fillOutTotalDistance += length;
             }
         }
         else
@@ -127,20 +126,21 @@ public struct ValknutTransitionsBuilder
             {
                 float length = DistanceLineSegment(_origin[i][0], _origin[i - 1][0]);
                 _originDistancesRatios[indexer++] = length;
-                fillInTotalDistance += length;
+                fillOutTotalDistance += length;
             }
         }
 
         int originEndIndex = originDirection == LineEndDirectionType.StartToEnd ? _origin.LineSegmentsCount - 1 : 0;
-        Intersect(originEndIndex, out _emptyZoneLength);
-        if (_emptyZoneLength < 0)
+        Intersect(originEndIndex, out float emptyZoneLength);
+        if (emptyZoneLength < 0)
         {
             return false;
         }
-        _originDistancesRatios[indexer++] = _emptyZoneLength;
 
-        fillOutTotalDistance += _emptyZoneLength;
-        fillInTotalDistance += _emptyZoneLength;
+        fillOutTotalDistance += emptyZoneLength;
+        fillInTotalDistance += emptyZoneLength;
+
+        _emptyFillInDistanceRatio = emptyZoneLength / fillInTotalDistance;
 
         float distance = 0;
         for (int i = 0; i < _originDistancesRatios.Length; i++)
@@ -149,7 +149,7 @@ public struct ValknutTransitionsBuilder
             _originDistancesRatios[i] = distance / fillOutTotalDistance;
         }
 
-        distance = 0;
+        distance = emptyZoneLength;
         for (int i = 0; i < _targetDistancesRatios.Length; i++)
         {
             distance += _targetDistancesRatios[i];
@@ -247,120 +247,108 @@ public struct ValknutTransitionsBuilder
         QST_Segment current = new();
         QST_Segment next = new();
 
-        float2 filledLerpRange = new float2(0, 0);
-        float2 fillOutLerpRange = new float2(0, 0);
-
-        bool isStartToEnd = originDirection == LineEndDirectionType.StartToEnd;
-        FillType fillOutType = isStartToEnd ? FillType.ToEnd : FillType.ToStart;
-        for (int i = 0; i < _origin.QuadsCount; i++)
+        for (int i = 0; i < _originDistancesRatios.Length; i++)
         {
+            float2 fillOutLerpRange;
             if (i == 0)
             {
                 current = _writeBuffer[i];
                 QSTS_BuilderUtils.UpdateFillDataLength(ref current, 1);
-            }
+                fillOutLerpRange = new float2(0, _originDistancesRatios[0]);
+    }
             else
             {
                 current = next;
+                fillOutLerpRange = new float2(_originDistancesRatios[i - 1], _originDistancesRatios[i]);
             }
 
-            MoveLerprange(ref fillOutLerpRange, _originDistancesRatios[i]);
             QSTS_FillData fillOut = new QSTS_FillData(
                 ConstructType.New,
-                fillOutType,
+                originDirection == LineEndDirectionType.StartToEnd ? FillType.ToEnd : FillType.ToStart,
                 fillOutLerpRange
             );
             current[0] = fillOut;
             _writeBuffer[i] = current;
 
             int nextIndex = i + 1;
-            if (nextIndex < _origin.QuadsCount)
+            if (nextIndex < _originDistancesRatios.Length)
             {
                 next = _writeBuffer[nextIndex];
                 QSTS_BuilderUtils.UpdateFillDataLength(ref next, 2);
-                MoveLerprange(ref filledLerpRange, _originDistancesRatios[i]);
-
                 QSTS_FillData filledState = new QSTS_FillData(
                     ConstructType.New,
                     FillType.StartToEnd,
-                    filledLerpRange
+                    new float2(0, _originDistancesRatios[i])
                 );
                 next[1] = filledState;
+                _writeBuffer[nextIndex] = next;
             }
         }
 
-        QST_Segment lastFillOutSegment = _writeBuffer[_writeBuffer.Length - 1];
-        FillType fillType = originDirection == LineEndDirectionType.StartToEnd ? FillType.ToEnd : FillType.ToStart;
-        QSTS_FillData lastFillOut = new QSTS_FillData(
+        QST_Segment lastSegment = _writeBuffer[_writeBuffer.Length - 1];
+
+        float lastDistanceRatio = _originDistancesRatios[_originDistancesRatios.Length - 1];
+
+        // fillOut
+        lastSegment[0] = new QSTS_FillData(
             ConstructType.New,
-            fillType,
-            new float2(_originDistancesRatios[_origin.QuadsCount], 1)
-        );
-        
-        lastFillOutSegment[2] = lastFillOut;
-        _writeBuffer[_writeBuffer.Length - 1] = lastFillOutSegment;
-    }
-
-    private void BuildFillInData(LineEndDirectionType originDirection, LineEndDirectionType targetDirection, float inFillTotalDistance)
-    {
-        QST_Segment current = _writeBuffer[_writeBuffer.Length - 1];
-
-        FillType fillInType = originDirection == LineEndDirectionType.StartToEnd ? FillType.FromEnd : FillType.FromStart;
-
-        float2 fillInLerpRange = new float2(0, 0);
-        float emptyZoneDistanceRatio = _emptyZoneLength / inFillTotalDistance;
-        MoveLerprange(ref fillInLerpRange, emptyZoneDistanceRatio);
-
-        current[0] = new QSTS_FillData(
-            ConstructType.New,
-            fillInType,
-            fillInLerpRange
+            originDirection == LineEndDirectionType.StartToEnd ? FillType.FromStart : FillType.FromEnd,
+            new float2(0, _emptyFillInDistanceRatio)
         );
 
-        float2 filledLerpRange = new float2(emptyZoneDistanceRatio, _originDistancesRatios[_origin.QuadsCount]);
-        current[1] = new QSTS_FillData(
+        // filled
+        lastSegment[1] = new QSTS_FillData(
             ConstructType.New,
             FillType.StartToEnd,
-            filledLerpRange
+            new float2(_emptyFillInDistanceRatio, lastDistanceRatio)
         );
 
-        _writeBuffer[_writeBuffer.Length - 1] = current;
+        // fillIn
+        lastSegment[2] = new QSTS_FillData(
+            ConstructType.New,
+            originDirection == LineEndDirectionType.StartToEnd ? FillType.ToEnd : FillType.ToStart,
+            new float2(lastDistanceRatio, 1)
+        );
+        
+        _writeBuffer[_writeBuffer.Length - 1] = lastSegment;
+    }
 
-        filledLerpRange.y = 1;
-        int writeIndexer = _origin.QuadsCount;
-        FillType fillType = targetDirection == LineEndDirectionType.StartToEnd ? FillType.FromStart: FillType.FromEnd;
+    private void BuildFillInData(LineEndDirectionType originDirection, LineEndDirectionType targetDirection)
+    {
+        int writeIndexer = _originDistancesRatios.Length;
         for (int i = 0; i < _target.QuadsCount; i++)
         {
             if (i != _target.QuadsCount - 1)
             { 
-                current = _writeBuffer[writeIndexer];
+                QST_Segment current = _writeBuffer[writeIndexer];
                 QSTS_BuilderUtils.UpdateFillDataLength(ref current, 2);
 
-                MoveLerprange(ref fillInLerpRange, _targetDistancesRatios[i]);
+                float2 fillInLerpRange = i == 0 ? 
+                    new float2(_emptyFillInDistanceRatio, _targetDistancesRatios[i]) : 
+                    new float2(_targetDistancesRatios[i - 1], _targetDistancesRatios[i]);
+
                 current[0] = new QSTS_FillData(
                     ConstructType.New,
-                    fillType,
+                    targetDirection == LineEndDirectionType.StartToEnd ? FillType.FromStart: FillType.FromEnd,
                     fillInLerpRange
                 );
 
-                filledLerpRange.x = _targetDistancesRatios[i];
                 current[1] = new QSTS_FillData(
                     ConstructType.New, 
                     FillType.StartToEnd,
-                    filledLerpRange
+                    new float2(_targetDistancesRatios[i], 1)
                 );
                 _writeBuffer[writeIndexer++] = current;
             }
             else
             {
-                current = _writeBuffer[writeIndexer];
+                QST_Segment current = _writeBuffer[writeIndexer];
                 QSTS_BuilderUtils.UpdateFillDataLength(ref current, 1);
 
-                MoveLerprange(ref fillInLerpRange, _targetDistancesRatios[i]);
                 current[0] = new QSTS_FillData(
                     ConstructType.New,
-                    fillType,
-                    fillInLerpRange
+                    targetDirection == LineEndDirectionType.StartToEnd ? FillType.FromStart: FillType.FromEnd,
+                    new float2(_targetDistancesRatios[i - 1], 1)
                 );
                 _writeBuffer[writeIndexer++] = current;
             }
