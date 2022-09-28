@@ -2,15 +2,21 @@ using UnityEngine;
 using UnityEngine.Assertions;
 
 public class FigureIdleState : FigureState
-{ 
+{
+    private float _scaling;
     protected SwipeCommand _currentSwipeCommand;
     protected FigureSegmentPoint _currentSelectedPoint;
     protected Selectable _selectable;
-    public FigureIdleState(Selectable selectable, FigureStatesController statesController, Figure figure) 
+    public FigureIdleState(Selectable selectable, FigureStatesController statesController, Figure figure)
         : base(statesController, figure)
     {
         _selectable = selectable;
         _selectable.SetSelectionActions(SelectAction, DeselectCheckOnPointerUp, DeselectAction);
+    }
+
+    public void SetSelectionScaling(float scaling)
+    {
+        _scaling = scaling;
     }
 
     public override void OnEnter()
@@ -43,6 +49,7 @@ public class FigureIdleState : FigureState
         Debug.Log($"Select action {segmentPointCollider.ParentPoint.Index}");
         _currentSelectedPoint = segmentPointCollider.ParentPoint;
         _currentSelectedPoint.Segment.HighlightRender();
+        _currentSelectedPoint.Segment.transform.localScale = new Vector3(_scaling, _scaling, _scaling);
     }
 
     private bool DeselectCheckOnPointerUp(Collider collider)
@@ -52,7 +59,7 @@ public class FigureIdleState : FigureState
         // {
         //     return true;
         // }
-        
+
         // bool isFound = collider.TryGetComponent(out FigureSegmentPointCollider segmentPointCollider);
         // Assert.IsTrue(isFound);
         // if (segmentPointCollider.ParentPoint == _currentSelectedPoint)
@@ -68,17 +75,18 @@ public class FigureIdleState : FigureState
     private void DeselectAction()
     {
         if (_currentSelectedPoint != null)
-        { 
+        {
             Debug.Log("DeselectAction");
+            _currentSelectedPoint.Segment.DefaultRender();
+            _currentSelectedPoint.Segment.transform.localScale = Vector3.one;
+            _currentSelectedPoint = null;
         }
-        _currentSelectedPoint?.Segment.DefaultRender();
-        _currentSelectedPoint = null;
     }
 
     private void OnSwipeCommand(SwipeCommand swipeCommand)
     {
         if (_currentSelectedPoint != null)
-        { 
+        {
             _currentSwipeCommand = swipeCommand;
         }
     }
@@ -102,7 +110,7 @@ public class FigureIdleState : FigureState
     public virtual void OnDestroy()
     {
         if (InputDelegatesContainer.SwipeCommand != null)
-        { 
+        {
             InputDelegatesContainer.SwipeCommand -= OnSwipeCommand;
         }
     }

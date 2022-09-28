@@ -32,6 +32,7 @@ public class FigureParamsSO : ScriptableObject
     
     [Header("Moving")]
     public float MoveLerpSpeed = 2;
+    public float SelectionScaling = 1.2f;
 
     [Header("Completion")]
     public float CompleteLerpSpeed;

@@ -19,6 +19,7 @@ namespace Orazum.CustomEditor
         private SerializedProperty _shuffleLerpSpeed;
 
         private SerializedProperty _moveLerpSpeed;
+        private SerializedProperty _selectionScaling;
 
         private SerializedProperty _completeLerpSpeed;
         private SerializedProperty _rotationAmplitude;
@@ -38,6 +39,7 @@ namespace Orazum.CustomEditor
             _shuffleLerpSpeed = serializedObject.FindProperty("ShuffleLerpSpeed");
             
             _moveLerpSpeed = serializedObject.FindProperty("MoveLerpSpeed");
+            _selectionScaling = serializedObject.FindProperty("SelectionScaling");
 
             _completeLerpSpeed = serializedObject.FindProperty("CompleteLerpSpeed");
             _rotationAmplitude = serializedObject.FindProperty("RotationAmplitude");
@@ -66,6 +68,7 @@ namespace Orazum.CustomEditor
             EditorGUILayout.PropertyField(_shuffleLerpSpeed);
 
             EditorGUILayout.PropertyField(_moveLerpSpeed);
+            EditorGUILayout.PropertyField(_selectionScaling);
 
             EditorGUILayout.PropertyField(_completeLerpSpeed);
             EditorGUILayout.PropertyField(_rotationAmplitude);

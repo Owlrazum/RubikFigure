@@ -12,6 +12,7 @@ public class WheelStatesController : FigureStatesController
         {
             RaycastSelectable raycastSelectable = new RaycastSelectable(SegmentPointsLayerMask);
             IdleState = new FigureIdleState(raycastSelectable, this, wheel);
+            IdleState.SetSelectionScaling(figureParams.SelectionScaling);
         }
 
         MoveState = new WheelMoveState(this, wheel, figureParams.MoveLerpSpeed);
