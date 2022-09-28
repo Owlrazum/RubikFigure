@@ -9,13 +9,13 @@ using UnityEngine.Rendering;
 using Orazum.Meshing;
 using static Orazum.Math.LineSegmentUtilities;
 
-public struct MeshDataLineSegmets : IDisposable
+public struct MeshDataLineSegments : IDisposable
 {
     public NativeArray<float3x2> LineSegments;
     public NativeArray<VertexData> Vertices;
     public NativeArray<short> Indices;
 
-    public MeshDataLineSegmets(int lineSegmentsCount)
+    public MeshDataLineSegments(int lineSegmentsCount)
     {
         LineSegments = new NativeArray<float3x2>(lineSegmentsCount, Allocator.Persistent);
         Vertices = new NativeArray<VertexData>(lineSegmentsCount * 2, Allocator.Persistent);
@@ -108,7 +108,7 @@ public static class MeshGenUtils
         mesh.RecalculateBounds();
     }
 
-    public static QuadStrip GenerateSimpleQuadStrip(ref MeshDataLineSegmets data, in float3x2 start, in float3x2 delta)
+    public static QuadStrip SimpleQuadStrip(ref MeshDataLineSegments data, in float3x2 start, in float3x2 delta)
     {
         data.LineSegments[0] = start;
         float3x2 current = start + delta;
@@ -120,7 +120,7 @@ public static class MeshGenUtils
         return new QuadStrip(data.LineSegments);
     }
 
-    public static QuadStrip GenerateSimpleRadialQuadStrip(ref MeshDataLineSegmets data, in float3x2 start, float angleRad)
+    public static QuadStrip SimpleRadialQuadStrip(ref MeshDataLineSegments data, in float3x2 start, float angleRad)
     {
         data.LineSegments[0] = start;
 
@@ -133,5 +133,34 @@ public static class MeshGenUtils
             current = RotateLineSegment(q, current);
         }
         return new QuadStrip(data.LineSegments);
+    }
+
+    public static void SquareArcMesh(
+        float3 center,
+        float angle,
+        float width,
+        float gapWidth,
+        float gapHeight,
+        out MeshDataLineSegments meshData
+    )
+    {
+        float3x2 s1 = new float3x2(new float3(-gapWidth, 0, 0        ), new float3(-gapWidth - width, 0, 0));
+        float3x2 s2 = new float3x2(new float3(-gapWidth, 0, gapHeight), new float3(-gapWidth - width, 0, gapHeight + width));
+        float3x2 s3 = new float3x2(new float3( gapWidth, 0, gapHeight), new float3( gapWidth + width, 0, gapHeight + width));
+        float3x2 s4 = new float3x2(new float3( gapWidth, 0, 0        ), new float3( gapWidth + width, 0, 0));
+
+        quaternion q = quaternion.AxisAngle(math.up(), angle);
+
+        s1 = RotateLineSegment(q, s1);
+        s2 = RotateLineSegment(q, s2);
+        s3 = RotateLineSegment(q, s3);
+        s4 = RotateLineSegment(q, s4);
+
+        float3x2 centerDelta = new float3x2(center, center);
+        meshData = new MeshDataLineSegments(4);
+        meshData.LineSegments[0] = s1 + centerDelta;
+        meshData.LineSegments[1] = s2 + centerDelta;
+        meshData.LineSegments[2] = s3 + centerDelta;
+        meshData.LineSegments[3] = s4 + centerDelta;
     }
 }

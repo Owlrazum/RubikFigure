@@ -10,125 +10,149 @@ using Unity.Collections;
 
 using Orazum.Math;
 using Orazum.Meshing;
+using static Orazum.Constants.Math;
+using static Orazum.Math.LineSegmentUtilities;
 using static Orazum.Math.EasingUtilities;
 using static Orazum.Math.MathUtils;
 
-public class ValknutTransitionsTests
+public class ValknutTransitionsTests : TransitionsTester
 {
-    [UnityTest]
-    public IEnumerator TasToTas()
-    {
-        MeshDataLineSegmets originMeshData = new MeshDataLineSegmets(4);
-        MeshDataLineSegmets targetMeshData = new MeshDataLineSegmets(4);
+    private MeshDataLineSegments _originMesh;
+    private MeshDataLineSegments _targetMesh;
 
-        originMeshData.LineSegments[0] = new float3x2(new float3(-1, 0, -3), new float3(-1, 0, -4));
-        originMeshData.LineSegments[1] = new float3x2(new float3(-2, 0, -3), new float3(-3, 0, -4));
-        originMeshData.LineSegments[2] = new float3x2(new float3(-2, 0, -1), new float3(-3, 0, -0));
-        originMeshData.LineSegments[3] = new float3x2(new float3(-1, 0, -1), new float3(-1, 0, -0));
+    protected override ref MeshDataLineSegments FirstStartMeshData => ref _originMesh;
+    protected override ref MeshDataLineSegments SecondStartMeshData => ref _targetMesh;
 
+    private LineEndDirectionType _originDirection;
+    private LineEndDirectionType _targetDirection;
 
-        targetMeshData.LineSegments[0] = new float3x2(new float3(1, 0, -1), new float3(0, 0, -1));
-        targetMeshData.LineSegments[1] = new float3x2(new float3(1, 0, 2), new float3(0, 0, 3));
-        targetMeshData.LineSegments[2] = new float3x2(new float3(2, 0, 2), new float3(3, 0, 3));
-        targetMeshData.LineSegments[3] = new float3x2(new float3(2, 0, -1), new float3(3, 0, -1));
-
-        PlayModeTestsUtils.CreateCamera(new float3(0, 10, 0), math.down(), math.forward());
-        yield return Test(originMeshData, targetMeshData, TasToTasInitializer);
-    }
-
-    private void TasToTasInitializer(ref ValknutTransitionsBuilder builder)
-    {
-        builder.InitializeOriginRays(LineEndType.End, LineEndDirectionType.StartToEnd);
-        builder.InitializeTargetRay(LineEndType.Start, LineEndDirectionType.EndToStart, LineEndType.End);
-    }
+    private LineEndType _targetRayQuadStripEnd;
+    private LineEndDirectionType _targetRayDirection;
+    private LineEndType _targetRayLineSegmentSide;
 
     [UnityTest]
-    public IEnumerator TasToOas()
+    public IEnumerator OriginTargetDirections()
     {
-        MeshDataLineSegmets originMeshData = new MeshDataLineSegmets(4);
-        MeshDataLineSegmets targetMeshData = new MeshDataLineSegmets(3);
-
-        originMeshData.LineSegments[0] = new float3x2(new float3(-1, 0, 0), new float3(-1, 0, -1));
-        originMeshData.LineSegments[1] = new float3x2(new float3(-2, 0, 0), new float3(-3, 0, -1));
-        originMeshData.LineSegments[2] = new float3x2(new float3(-2, 0, 3), new float3(-3, 0, 4));
-        originMeshData.LineSegments[3] = new float3x2(new float3(-1, 0, 3), new float3(-1, 0, 4));
-
-
-        targetMeshData.LineSegments[0] = new float3x2(new float3(2, 0, -3), new float3(1, 0, -3));
-        targetMeshData.LineSegments[1] = new float3x2(new float3(1, 0, -2), new float3(0, 0, -2));
-        targetMeshData.LineSegments[2] = new float3x2(new float3(2, 0, 0), new float3(1, 0, 0));
-
-        PlayModeTestsUtils.CreateCamera(new float3(0, 10, 0), math.down(), math.forward());
-        yield return Test(originMeshData, targetMeshData, TasToOasInitializer);
+        yield return SESE(isFirst: true);
+        yield return ESSE();
     }
 
-    private void TasToOasInitializer(ref ValknutTransitionsBuilder builder)
+    private IEnumerator ESSE(bool isFirst = false)
+    {
+        _originDirection = LineEndDirectionType.EndToStart;
+        _targetDirection = LineEndDirectionType.StartToEnd;
+
+        _targetRayQuadStripEnd = LineEndType.Start;
+        _targetRayDirection = LineEndDirectionType.EndToStart;
+        _targetRayLineSegmentSide = LineEndType.End;
+
+        MeshGenUtils.SquareArcMesh(
+            center: new float3(-0.5f, 0, 1f),
+            angle: -TAU / 4,
+            width: 1,
+            gapWidth: 0.3f,
+            gapHeight: 2,
+            out _originMesh
+        );
+        MeshGenUtils.SquareArcMesh(
+            center: new float3(1.5f, 0, -1),
+            angle: 0,
+            width: 1,
+            gapWidth: 0.5f,
+            gapHeight: 2f,
+            out _targetMesh
+        );
+        yield return TestCase(isFirst);
+    }
+
+    private IEnumerator SESE(bool isFirst)
     { 
+        _originDirection = LineEndDirectionType.StartToEnd;
+        _targetDirection = LineEndDirectionType.StartToEnd;
 
+        _targetRayQuadStripEnd = LineEndType.Start;
+        _targetRayDirection = LineEndDirectionType.EndToStart;
+        _targetRayLineSegmentSide = LineEndType.End;
+        MeshGenUtils.SquareArcMesh(
+            center: new float3(-0.5f, 0, -1.3f),
+            angle: -TAU / 4,
+            width: 1,
+            gapWidth: 0.3f,
+            gapHeight: 2,
+            out _originMesh
+        );
+        MeshGenUtils.SquareArcMesh(
+            center: new float3(1.5f, 0, -1),
+            angle: 0,
+            width: 1,
+            gapWidth: 0.5f,
+            gapHeight: 2f,
+            out _targetMesh
+        );
+        yield return TestCase(isFirst);
+    }
+
+    private IEnumerator TestCase(bool shouldInitializeScene = false)
+    {
+        if (shouldInitializeScene)
+        {
+            yield return InitializeScene();
+            yield return new WaitForSeconds(1);
+        }
+        DestroyMeshDummies();
+        yield return TestTransition(Initializer);
+        yield return new WaitUntil(() => Input.GetKeyDown(KeyCode.F));
     }
 
     private delegate void RayInitializerDelegate(ref ValknutTransitionsBuilder builder);
-    private IEnumerator Test(MeshDataLineSegmets originData, MeshDataLineSegmets targetData, RayInitializerDelegate Initializer)
+    private IEnumerator TestTransition(RayInitializerDelegate Initializer)
     {
-        QuadStrip originQs = new QuadStrip(originData.LineSegments);
-        QuadStrip targetQs = new QuadStrip(targetData.LineSegments);
+        QuadStrip originQs = new QuadStrip(_originMesh.LineSegments);
+        QuadStrip targetQs = new QuadStrip(_targetMesh.LineSegments);
+        ValknutTransitionsBuilder builder = new(originQs, targetQs);
+        NativeArray<QST_Segment> writeBuffer = new NativeArray<QST_Segment>(originQs.QuadsCount + 1 + targetQs.QuadsCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
 
-        float3x2 normalUV = new float3x2(new float3(0, 1, 0), float3.zero);
-
-        QuadStripBuilder builder = new QuadStripBuilder(originData.Vertices, originData.Indices, normalUV);
-        MeshBuffersIndexers buffersIndexers = new MeshBuffersIndexers();
-        builder.Build(originQs, ref buffersIndexers);
-        PlayModeTestsUtils.CreateMeshDummy(out MeshFilter originMesh);
-        MeshGenUtils.ApplyMeshBuffers(originData.Vertices, originData.Indices, originMesh, buffersIndexers);
-
-        builder = new QuadStripBuilder(targetData.Vertices, targetData.Indices, normalUV);
-        buffersIndexers.Reset();
-        builder.Build(targetQs, ref buffersIndexers);
-        PlayModeTestsUtils.CreateMeshDummy(out MeshFilter targetMesh);
-        MeshGenUtils.ApplyMeshBuffers(targetData.Vertices, targetData.Indices, targetMesh, buffersIndexers);
-
-        PlayModeTestsUtils.CreateLight(new float3(0, -1, 1), math.forward());
-        yield return new WaitForSeconds(0.5f);
-
-        ValknutTransitionsBuilder transitionsBuilder = new ValknutTransitionsBuilder(originQs, targetQs);
-        NativeArray<QST_Segment> writeBuffer = new NativeArray<QST_Segment>(7, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-        Initializer.Invoke(ref transitionsBuilder);
-        bool isSuccess = transitionsBuilder.BuildTransition(LineEndDirectionType.StartToEnd, LineEndDirectionType.StartToEnd, ref writeBuffer);
+        Initializer.Invoke(ref builder);
+        bool isSuccess = builder.BuildTransition(_originDirection, _targetDirection, ref writeBuffer);
         if (!isSuccess)
         {
-            originData.Dispose();
-            targetData.Dispose();
+            Debug.LogError("Transition build failed!");
+            _originMesh.Dispose();
+            _targetMesh.Dispose();
 
             writeBuffer.Dispose();
             yield return new WaitUntil(() => Input.GetKeyDown(KeyCode.F));
             yield break;
         }
-        GameObject.Destroy(originMesh);
-        GameObject.Destroy(targetMesh);
 
         QS_Transition transition = new QS_Transition(writeBuffer);
-        MeshData meshData = new MeshData(15);
-        QST_Animator animator = new QST_Animator(meshData.Vertices, meshData.Indices, normalUV);
-        animator.AssignTransition(transition);
+        _transitionMesh = new(writeBuffer.Length * 2);
+        _animator = new(_transitionMesh.Vertices, _transitionMesh.Indices, NormalUV);
+        _animator.AssignTransition(transition);
 
         PlayModeTestsUtils.CreateMeshDummy(out MeshFilter mesh);
-        float lerpParam = 0;
-        buffersIndexers.Reset();
-        while (lerpParam < 1)
+        yield return TestTransition(mesh, PlayModeTestsParams.ExtraSlowLerpSpeed);
+        _originMesh.Dispose();
+        _targetMesh.Dispose();
+
+        writeBuffer.Dispose(); ;
+        _transitionMesh.Dispose();
+        GameObject.Destroy(mesh.gameObject);
+    }
+
+    private IEnumerator TestSegments(NativeArray<QST_Segment> writeBuffer)
+    {
+        for (int i = 0; i < writeBuffer.Length; i++)
         {
-            lerpParam += PlayModeTestsParams.ExtraSlowLerpSpeed * Time.deltaTime;
-            ClampToOne(ref lerpParam);
-            animator.UpdateWithLerpPos(EaseOut(lerpParam), shouldReorientVertices: false, ref buffersIndexers);
-            MeshGenUtils.ApplyMeshBuffers(meshData.Vertices, meshData.Indices, mesh, buffersIndexers);
-            buffersIndexers.Reset();
-            yield return null;
+            DrawLineSegmentWithRaysUp(writeBuffer[i].StartLineSegment, 1, 3);
+            yield return new WaitForSeconds(1);
+            DrawLineSegmentWithRaysUp(writeBuffer[i].EndLineSegment, 1, 2);
+            yield return new WaitForSeconds(2);
         }
+    }
 
-        originData.Dispose();
-        targetData.Dispose();
-
-        writeBuffer.Dispose();
-        meshData.Dispose();
-        yield return new WaitUntil(() => Input.GetKeyDown(KeyCode.F));
+    private void Initializer(ref ValknutTransitionsBuilder builder)
+    {
+        builder.InitializeTargetRay(_targetRayQuadStripEnd, _targetRayDirection, _targetRayLineSegmentSide);
     }
 }

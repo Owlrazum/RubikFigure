@@ -21,7 +21,7 @@ public class FigureShuffleTranstionTests
     public IEnumerator TestShuffleTransition()
     {
         int lineSegmentsCount = QSLS_Count * 2;
-        MeshDataLineSegmets meshData = new(lineSegmentsCount);
+        MeshDataLineSegments meshData = new(lineSegmentsCount);
 
         float3x2 startLeft = new float3x2(new float3(-2, 0, -1), new float3(-2, 0, -0.25f));
         float3x2 delta = new float3x2(new float3( 1, 0, 0), new float3( 1, 0, 0));

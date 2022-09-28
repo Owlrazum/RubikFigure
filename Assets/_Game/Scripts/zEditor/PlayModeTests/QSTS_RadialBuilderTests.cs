@@ -30,14 +30,14 @@ public class QSTS_RadialBuilderTests
     public IEnumerator SingleRotationLerp()
     {
         int resolution = 18;
-        MeshDataLineSegmets meshData = new MeshDataLineSegmets(resolution + 1);
+        MeshDataLineSegments meshData = new MeshDataLineSegments(resolution + 1);
 
         MeshBuffersIndexers buffersIndexers = new MeshBuffersIndexers();
 
         float3x2 start = new float3x2(new float3(0, 0, 1), new float3(0, 0, 2));
         float totalAngle = TAU / 4;
         float deltaAngle = totalAngle / (resolution);
-        QuadStrip quadStrip = MeshGenUtils.GenerateSimpleRadialQuadStrip(ref meshData, start, deltaAngle);
+        QuadStrip quadStrip = MeshGenUtils.SimpleRadialQuadStrip(ref meshData, start, deltaAngle);
 
         float3x2 normalUV = new float3x2(new float3(0, 1, 0), float3.zero);
 
@@ -106,18 +106,18 @@ public class QSTS_RadialBuilderTests
     public IEnumerator MoveLerp()
     {
         int resolution = 15;
-        MeshDataLineSegmets meshDataUp = new MeshDataLineSegmets(resolution + 1);
-        MeshDataLineSegmets meshDataDown = new MeshDataLineSegmets(resolution + 1);
+        MeshDataLineSegments meshDataUp = new MeshDataLineSegments(resolution + 1);
+        MeshDataLineSegments meshDataDown = new MeshDataLineSegments(resolution + 1);
         MeshBuffersIndexers buffersIndexersUp = new MeshBuffersIndexers();
         MeshBuffersIndexers buffersIndexersDown = new MeshBuffersIndexers();
 
         float totalAngle = TAU / 4;
         float deltaAngle = totalAngle / resolution;
         float3x2 startUp = new float3x2(new float3(0, 0, 3), new float3(0, 0, 4));
-        QuadStrip quadStripUp = MeshGenUtils.GenerateSimpleRadialQuadStrip(ref meshDataUp, startUp, deltaAngle);
+        QuadStrip quadStripUp = MeshGenUtils.SimpleRadialQuadStrip(ref meshDataUp, startUp, deltaAngle);
 
         float3x2 startDown = new float3x2(new float3(0, 0, 1), new float3(0, 0, 2));
-        QuadStrip quadStripDown = MeshGenUtils.GenerateSimpleRadialQuadStrip(ref meshDataDown, startDown, deltaAngle);
+        QuadStrip quadStripDown = MeshGenUtils.SimpleRadialQuadStrip(ref meshDataDown, startDown, deltaAngle);
 
         float3x2 normalUV = new float3x2(new float3(0, 1, 0), float3.zero);
         QuadStripBuilder builder = new QuadStripBuilder(meshDataUp.Vertices, meshDataUp.Indices, normalUV);

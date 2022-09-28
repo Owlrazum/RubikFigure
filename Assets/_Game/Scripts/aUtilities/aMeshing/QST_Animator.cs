@@ -102,6 +102,10 @@ namespace Orazum.Meshing
             float2 lerpRange = fillData.LerpRange;
 
             float localLerpParam = math.unlerp(lerpRange.x, lerpRange.y, _globalLerpParam);
+            if (fillData.Fill == FillType.FromEnd || fillData.Fill == FillType.ToStart)
+            {
+                localLerpParam = 1 - localLerpParam;
+            }
             float3x2 middle = new float3x2(
                 math.lerp(start[0], end[0], localLerpParam),
                 math.lerp(start[1], end[1], localLerpParam)
@@ -126,34 +130,18 @@ namespace Orazum.Meshing
                     _quadStripBuilder.Continue(end, ref buffersIndexers);
                     break;
                 case FillType.FromStart:
+                case FillType.ToStart:
                     StartStripIfNeeded(start, constructType, ref buffersIndexers);
                     _quadStripBuilder.Continue(middle, ref buffersIndexers);
                     break;
                 case FillType.ToEnd:
+                case FillType.FromEnd:
                     if (constructType == ConstructType.Continue)
                     {
                         Debug.LogWarning("ToX fillType with Continue ConstructType may lead to not wanted results.");
                     }
                     StartStripIfNeeded(middle, constructType, ref buffersIndexers);
                     _quadStripBuilder.Continue(end, ref buffersIndexers);
-                    break;
-                case FillType.FromEnd:
-                    // negative direction, we should flipped line segments
-                    float3x2 flippedEnd = new float3x2(end[1], end[0]);
-                    StartStripIfNeeded(flippedEnd, constructType, ref buffersIndexers);
-                    float3x2 flippedMiddle = new float3x2(middle[1], middle[0]);
-                    _quadStripBuilder.Continue(flippedMiddle, ref buffersIndexers);
-                    break;
-                case FillType.ToStart:
-                    // negative direction, we should flipped line segments
-                    flippedMiddle = new float3x2(middle[1], middle[0]);
-                    if (constructType == ConstructType.Continue)
-                    {
-                        Debug.LogWarning("ToX fillType with Continue ConstructType may lead to not wanted results.");
-                    }
-                    StartStripIfNeeded(flippedMiddle, constructType, ref buffersIndexers);
-                    float3x2 flippedStart = new float3x2(start[1], start[0]);
-                    _quadStripBuilder.Continue(flippedStart, ref buffersIndexers);
                     break;
                 default:
                     throw new System.ArgumentOutOfRangeException("Unknown FillType");

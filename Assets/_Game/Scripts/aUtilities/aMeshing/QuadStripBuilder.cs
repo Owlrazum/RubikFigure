@@ -42,9 +42,18 @@ namespace Orazum.Meshing
             }
         }
 
+        public void Build(NativeArray<float3x2> lineSegments, ref MeshBuffersIndexers buffersIndexers)
+        { 
+            Start(lineSegments[0], ref buffersIndexers);
+            for (int i = 1; i < lineSegments.Length; i++)
+            {
+                Continue(lineSegments[i], ref buffersIndexers);
+            }
+        }
+
         public void Start(in float3x2 lineSegment, ref MeshBuffersIndexers buffersIndexers)
         {
-            _prevIndices.x = AddVertex(lineSegment[0], ref buffersIndexers, new float2(0, 0.44f));
+            _prevIndices.x = AddVertex(lineSegment[0], ref buffersIndexers);//, new float2(0, 0.44f)
             _prevIndices.y = AddVertex(lineSegment[1], ref buffersIndexers);
 
             _currentQuad[2] = lineSegment[0];
@@ -54,7 +63,7 @@ namespace Orazum.Meshing
         public void Continue(in float3x2 lineSegment, ref MeshBuffersIndexers buffersIndexers)
         {
             int2 newIndices = int2.zero;
-            newIndices.x = AddVertex(lineSegment[0], ref buffersIndexers, new float2(0, 0.44f));
+            newIndices.x = AddVertex(lineSegment[0], ref buffersIndexers);//, new float2(0, 0.44f)
             newIndices.y = AddVertex(lineSegment[1], ref buffersIndexers);
 
             _currentQuad[0] = _currentQuad[2];

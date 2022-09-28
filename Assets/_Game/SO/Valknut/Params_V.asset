@@ -25,5 +25,5 @@ MonoBehaviour:
   ShufflePauseTime: 0.1
   ShuffleLerpSpeed: 2
   MoveLerpSpeed: 0.5
-  CompleteLerpSpeed: 0
-  RotationAmplitude: 0
+  CompleteLerpSpeed: 1
+  RotationAmplitude: 7

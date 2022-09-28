@@ -25,6 +25,9 @@ public class FigurePuzzler : MonoBehaviour
 
     private Dictionary<int, List<FigureSegment>> _emptiedSegmentsByPuzzleIndex;
     private Dictionary<int, List<int2>> _assembleIndicesByPuzzleIndex;
+
+    private List<int> _emptyPuzzleIndices;
+
     private List<int2> _targetIndicesBuffer;
 
     private Figure _figure;
@@ -36,6 +39,7 @@ public class FigurePuzzler : MonoBehaviour
         _emptiedSegmentsByPuzzleIndex = new Dictionary<int, List<FigureSegment>>(maxPuzzleIndexCount);
         _assembleIndicesByPuzzleIndex = new Dictionary<int, List<int2>>(maxPuzzleIndexCount);
         _targetIndicesBuffer = new List<int2>(_emptyPlacesCount);
+        _emptyPuzzleIndices = new List<int>(maxPuzzleIndexCount);
 
         _emptyPlacesCount = _figureParams.EmptyPlacesCount;
 
@@ -143,6 +147,11 @@ public class FigurePuzzler : MonoBehaviour
             }
 
             _emptiedSegmentsByPuzzleIndex[puzzleIndex].Add(emptiedSegments[i]);
+
+            if (_emptiedSegmentsByPuzzleIndex[puzzleIndex].Count == _figureParams.GenParams.Dimensions.y)
+            {
+                _emptyPuzzleIndices.Add(puzzleIndex);
+            }
         }
     }
 
@@ -151,6 +160,8 @@ public class FigurePuzzler : MonoBehaviour
         _assembleIndicesByPuzzleIndex.Clear();
         _targetIndicesBuffer.Clear();
         Array2D<FigureSegmentPoint> segmentPoints = _figure.GetSegmentPointsForCompletionCheck();
+
+        int emptyPuzzleIndexer = 0;
         for (int col = 0; col < segmentPoints.ColCount; col++)
         {
             int puzzleIndex = -1;
@@ -169,13 +180,23 @@ public class FigurePuzzler : MonoBehaviour
                 }
                 else if (puzzleIndex != segmentPoints[index].Segment.PuzzleIndex)
                 {
+                    Debug.Log($"NoCompletion: puzzleIndices {puzzleIndex} != {segmentPoints[index].Segment.PuzzleIndex}");
                     return;
                 }
             }
-            if (puzzleIndex < 0 || _assembleIndicesByPuzzleIndex.ContainsKey(puzzleIndex))
-            { 
-                return;
+            if (puzzleIndex < 0)
+            {
+                if (_emptyPuzzleIndices.Count == 0)
+                {
+                    Debug.Log("NoCompletion: no puzzleIndices in the column and no emptyPuzzleIndices");
+                    return;
+                }
+
+                int emptyPuzzleIndex = _emptyPuzzleIndices[emptyPuzzleIndexer++];
+                _assembleIndicesByPuzzleIndex.Add(emptyPuzzleIndex, _targetIndicesBuffer);
             }
+
+            Assert.IsFalse(_assembleIndicesByPuzzleIndex.ContainsKey(puzzleIndex));
             if (_targetIndicesBuffer.Count > 0)
             {
                 _assembleIndicesByPuzzleIndex.Add(puzzleIndex, _targetIndicesBuffer);
@@ -187,6 +208,7 @@ public class FigurePuzzler : MonoBehaviour
 
     private void Complete()
     {
+        Debug.Log("=== COMPLETED===");
         List<FigureVerticesMove> completionMoves = new List<FigureVerticesMove>(_emptyPlacesCount);
         foreach (var entry in _assembleIndicesByPuzzleIndex)
         {
@@ -207,6 +229,10 @@ public class FigurePuzzler : MonoBehaviour
             }
         }
         _figure.StatesController.StopUpdating();
+        for (int i = 0; i < completionMoves.Count; i++)
+        {
+            Debug.Log(completionMoves[i].ToIndex);
+        }
         _figure.Complete(completionMoves, FigureDelegatesContainer.Completed);
         StartCoroutine(CompletionSequence(1.0f / _figureParams.CompleteLerpSpeed, _figure.transform));
     }

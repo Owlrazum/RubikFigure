@@ -18,11 +18,11 @@ public class QSTS_QuadBulderTests
     public IEnumerator OneQuadStrip()
     {
         int lineSegmentsCount = 10;
-        MeshDataLineSegmets data = new MeshDataLineSegmets(lineSegmentsCount);
+        MeshDataLineSegments data = new MeshDataLineSegments(lineSegmentsCount);
 
         float3x2 start = new float3x2(new float3(-2, 0, -1), new float3(-2, 0, 1));
         float3x2 delta = new float3x2(new float3(1, 0, 0), new float3(1, 0, 0));
-        QuadStrip qs = MeshGenUtils.GenerateSimpleQuadStrip(ref data, start, delta);
+        QuadStrip qs = MeshGenUtils.SimpleQuadStrip(ref data, start, delta);
 
         MeshBuffersIndexers buffersIndexers = new MeshBuffersIndexers();
         float3x2 normalUV = new float3x2(new float3(0, 1, 0), float3.zero);
@@ -80,8 +80,8 @@ public class QSTS_QuadBulderTests
     public IEnumerator TwoQuadStrips()
     {
         int lineSegmentsCount = 10;
-        MeshDataLineSegmets dataLeft_ = new MeshDataLineSegmets(lineSegmentsCount);
-        MeshDataLineSegmets dataRight = new MeshDataLineSegmets(lineSegmentsCount);
+        MeshDataLineSegments dataLeft_ = new MeshDataLineSegments(lineSegmentsCount);
+        MeshDataLineSegments dataRight = new MeshDataLineSegments(lineSegmentsCount);
 
         float3x2 startLeft_ = new float3x2(new float3(-2, 0, -1), new float3(-2, 0, -0.25f));
         float3x2 deltaLeft_ = new float3x2(new float3( 1, 0, 0), new float3( 1, 0, 0));
@@ -89,8 +89,8 @@ public class QSTS_QuadBulderTests
         // float rightStartX = -2 + (lineSegmentsCount - 1) * deltaLeft_[0].x;
         float3x2 startRight = new float3x2(new float3(-2, 0, 0.25f), new float3(-2, 0, 1));
         // float3x2 deltaRight = new float3x2(new float3(-1, 0, 0), new float3(-1, 0, 0));
-        QuadStrip qsLeft_ = MeshGenUtils.GenerateSimpleQuadStrip(ref dataLeft_, startLeft_, deltaLeft_);
-        QuadStrip qsRight = MeshGenUtils.GenerateSimpleQuadStrip(ref dataRight, startRight, deltaLeft_);
+        QuadStrip qsLeft_ = MeshGenUtils.SimpleQuadStrip(ref dataLeft_, startLeft_, deltaLeft_);
+        QuadStrip qsRight = MeshGenUtils.SimpleQuadStrip(ref dataRight, startRight, deltaLeft_);
 
         MeshBuffersIndexers biLeft_ = new MeshBuffersIndexers();
         MeshBuffersIndexers biRight = new MeshBuffersIndexers();
@@ -153,8 +153,8 @@ public class QSTS_QuadBulderTests
     public IEnumerator TransitionConcaternation()
     { 
         int lineSegmentsCount = 10;
-        MeshDataLineSegmets meshDataLeft_ = new MeshDataLineSegmets(lineSegmentsCount);
-        MeshDataLineSegmets meshDataRight = new MeshDataLineSegmets(lineSegmentsCount);
+        MeshDataLineSegments meshDataLeft_ = new MeshDataLineSegments(lineSegmentsCount);
+        MeshDataLineSegments meshDataRight = new MeshDataLineSegments(lineSegmentsCount);
 
         float3x2 startLeft_ = new float3x2(new float3(-2, 0, -1), new float3(-2, 0, -0.25f));
         float3x2 deltaLeft_ = new float3x2(new float3( 1, 0, 0), new float3( 1, 0, 0));
@@ -162,8 +162,8 @@ public class QSTS_QuadBulderTests
         // float rightStartX = -2 + (lineSegmentsCount - 1) * deltaLeft_[0].x;
         float3x2 startRight = new float3x2(new float3(-2, 0, 0.25f), new float3(-2, 0, 1));
         // float3x2 deltaRight = new float3x2(new float3(-1, 0, 0), new float3(-1, 0, 0));
-        QuadStrip qsLeft_ = MeshGenUtils.GenerateSimpleQuadStrip(ref meshDataLeft_, startLeft_, deltaLeft_);
-        QuadStrip qsRight = MeshGenUtils.GenerateSimpleQuadStrip(ref meshDataRight, startRight, deltaLeft_);
+        QuadStrip qsLeft_ = MeshGenUtils.SimpleQuadStrip(ref meshDataLeft_, startLeft_, deltaLeft_);
+        QuadStrip qsRight = MeshGenUtils.SimpleQuadStrip(ref meshDataRight, startRight, deltaLeft_);
 
         MeshBuffersIndexers biLeft_ = new MeshBuffersIndexers();
         MeshBuffersIndexers biRight = new MeshBuffersIndexers();
@@ -191,7 +191,7 @@ public class QSTS_QuadBulderTests
 
         var transBuffer = QS_Transition.PrepareConcatenationBuffer(fadeOutTransition, fadeInTransition, Allocator.Persistent);
         var transConc = QS_Transition.Concatenate(fadeOutTransition, fadeInTransition, transBuffer);
-        MeshDataLineSegmets meshDataConc = new MeshDataLineSegmets(lineSegmentsCount * 2);
+        MeshDataLineSegments meshDataConc = new MeshDataLineSegments(lineSegmentsCount * 2);
         NativeArray<QST_Segment> dataConc = new(lineSegmentsCount * 2 - 1, Allocator.Persistent);
 
         yield return new WaitForSeconds(1);

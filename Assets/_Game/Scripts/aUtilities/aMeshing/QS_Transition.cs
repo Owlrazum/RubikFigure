@@ -104,7 +104,7 @@ namespace Orazum.Meshing
 
         public override string ToString()
         {
-            return $"{Length} transition segments\n";
+            return $"Transition: the length is {Length}\n";
         }
     }
 }

@@ -115,6 +115,7 @@ public abstract class FigureGenerator : MonoBehaviour
 
     protected void UpdateSegment(FigureSegment segment, in MeshBuffersIndexers indexers, int puzzleIndex, int2 meshBuffersMaxCount)
     {
+        segment.gameObject.name = segment.gameObject.name + $" {puzzleIndex}";
         Mesh mesh = segment.MeshContainer.mesh;
         mesh.MarkDynamic();
 

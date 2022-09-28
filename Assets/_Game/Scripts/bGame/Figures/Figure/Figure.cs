@@ -107,7 +107,8 @@ public abstract class Figure : MonoBehaviour
 
     public void Complete(IList<FigureVerticesMove> moves, Action movesCompleteAction)
     {
-       _movesCompleteAction = movesCompleteAction;
+        Debug.Log("Figure making completion moves");
+        _movesCompleteAction = movesCompleteAction;
         _movesCount = new int2(0, moves.Count);
 
         for (int i = 0; i < moves.Count; i++)
@@ -125,6 +126,7 @@ public abstract class Figure : MonoBehaviour
         Assert.IsTrue(IsValidIndex(move.FromIndex) || IsValidIndex(move.ToIndex));
         AssignUniversalTransition(move);
 
+
         segment.StartMove(move, moveCompleteAction);
     }
 
@@ -139,6 +141,7 @@ public abstract class Figure : MonoBehaviour
             else
             {
                 move.Transition = _shuffleTransitions[move.ToIndex].FadeIn;
+                Debug.Log($"FadeIn assign to {move.ToIndex} {move.Transition}");
             }
         }
         else

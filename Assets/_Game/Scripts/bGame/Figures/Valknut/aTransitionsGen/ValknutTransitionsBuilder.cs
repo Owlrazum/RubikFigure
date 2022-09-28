@@ -48,12 +48,6 @@ public struct ValknutTransitionsBuilder
         _writeBuffer = new NativeArray<QST_Segment>();
     }
 
-    public void InitializeOriginRays(LineEndType quadStripEnd, LineEndDirectionType raysDirection)
-    {
-        _originRays = _origin.GetRays(quadStripEnd, raysDirection);
-        // DrawRay(_originRays[0], _originRays[1], 10, 10);
-        // DrawRay(_originRays[2], _originRays[3], 10, 10);
-    }
     public void InitializeTargetRay(LineEndType quadStripEnd, LineEndDirectionType raysDirection, LineEndType lineSegmentEnd)
     {
         _targetRay = _target.GetRay(quadStripEnd, raysDirection, lineSegmentEnd);
@@ -67,6 +61,16 @@ public struct ValknutTransitionsBuilder
     {
         Assert.IsTrue(writeBuffer.Length == _origin.QuadsCount + 1 + _target.QuadsCount);
         _writeBuffer = writeBuffer;
+
+        if (originDirection == LineEndDirectionType.StartToEnd)
+        {
+            _originRays = _origin.GetRays(LineEndType.End, originDirection);
+        }
+        else
+        {
+            _originRays = _origin.GetRays(LineEndType.Start, originDirection);
+        }
+
         bool areIntersecting = ComputeDistancesRatios(
             originDirection,
             targetDirection
@@ -77,6 +81,7 @@ public struct ValknutTransitionsBuilder
         }
 
         PrepareSegments(originDirection, targetDirection);
+
         BuildFillOutData(originDirection);
         BuildFillInData(originDirection, targetDirection);
 
@@ -255,16 +260,17 @@ public struct ValknutTransitionsBuilder
                 current = _writeBuffer[i];
                 QSTS_BuilderUtils.UpdateFillDataLength(ref current, 1);
                 fillOutLerpRange = new float2(0, _originDistancesRatios[0]);
-    }
+            }
             else
             {
                 current = next;
                 fillOutLerpRange = new float2(_originDistancesRatios[i - 1], _originDistancesRatios[i]);
             }
 
+            FillType fillType = originDirection == LineEndDirectionType.StartToEnd ? FillType.ToEnd : FillType.ToStart;
             QSTS_FillData fillOut = new QSTS_FillData(
                 ConstructType.New,
-                originDirection == LineEndDirectionType.StartToEnd ? FillType.ToEnd : FillType.ToStart,
+                fillType,
                 fillOutLerpRange
             );
             current[0] = fillOut;

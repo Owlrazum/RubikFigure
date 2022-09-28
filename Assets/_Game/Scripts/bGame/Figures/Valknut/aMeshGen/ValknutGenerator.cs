@@ -47,7 +47,7 @@ public class ValknutGenerator : FigureGenerator
 
 
     private const int MaxRangesCountForOneSegment = 7;
-    private const int MaxVertexCount = (MaxRangesCountForOneSegment + 2) * 2;
+    private const int MaxVertexCount = MaxRangesCountForOneSegment * 4;
     private const int MaxIndexCount = MaxRangesCountForOneSegment * 6;
     #endregion
 

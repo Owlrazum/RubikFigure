@@ -53,11 +53,6 @@ public struct ValknutGenJobTransData : IJobFor
 
         bool samePart = originPart == targetPart;
         LineEndDirectionType originDirection = samePart ? LineEndDirectionType.StartToEnd : LineEndDirectionType.EndToStart;
-        dataBuilder.InitializeOriginRays(
-            samePart ? LineEndType.End : LineEndType.Start,
-            samePart ? LineEndDirectionType.StartToEnd : LineEndDirectionType.EndToStart
-        );
-
         LineEndDirectionType targetDirection = LineEndDirectionType.StartToEnd;
         if (originPart == 0 && targetPart == 0)
         { 
