@@ -126,7 +126,7 @@ public class ValknutGenerator : FigureGenerator
         return segmentPointGb.AddComponent<ValknutSegmentPoint>();
     }
 
-    protected override void CompleteGeneration(FigureParamsSO figureParams)
+    protected override void CompleteGeneration(FigureParamsSO figureParams, FigureGenParamsSO genParams)
     {
         _figureMeshGenJobHandle.Complete();
         _segmentPointsMeshGenJobHandle.Complete();
@@ -187,7 +187,8 @@ public class ValknutGenerator : FigureGenerator
 
         _figure.Initialize(
             _segmentPoints,
-            figureParams
+            figureParams,
+            genParams
         );
 
         _figureVertices.Dispose();

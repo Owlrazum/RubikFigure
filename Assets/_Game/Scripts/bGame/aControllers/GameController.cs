@@ -49,7 +49,7 @@ public class GameController : MonoBehaviour
             ApplicationDelegatesContainer.StartLoadingScene(_sceneIndexToTest);
         }
 #endif
-        ApplicationDelegatesContainer.StartLoadingScene(1);
+        ApplicationDelegatesContainer.StartLoadingScene(_gameDesc.Levels[_currentLevel].sceneIndex);
     }
 
     private GameStateType GetGameState()
@@ -66,6 +66,8 @@ public class GameController : MonoBehaviour
     private void OnStartGameLoadingSceneFinished()
     {
         GameDelegatesContainer.StartLevel(_gameDesc.Levels[_currentLevel]);
+
+        GameDelegatesContainer.EventLevelStarted?.Invoke(_gameDesc.Levels[_currentLevel]);
     }
 
     private void OnExitToMainMenuCommand()

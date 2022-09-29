@@ -10,13 +10,11 @@ using Orazum.Collections;
 
 public class FigurePuzzler : MonoBehaviour
 {
-    [SerializeField]
     private FigureParamsSO _figureParams;
-
-    [SerializeField]
-    private PuzzleType puzzleType;
+    private FigureGenParamsSO _genParams;
 
     // Assuming always by column, puzzleIndex should be equal column-wise
+    // Currently, only byColumn is implemented
     private enum PuzzleType
     {
         ByColumn,
@@ -35,25 +33,32 @@ public class FigurePuzzler : MonoBehaviour
 
     protected virtual void Awake()
     {
-        int maxPuzzleIndexCount = _figureParams.GenParams.Dimensions.x;
+        FigureDelegatesContainer.ActionGrabParameters += GrapParameters;
+        FigureDelegatesContainer.ActionStartPuzzle += StartPuzzle;
+        FigureDelegatesContainer.ActionCheckCompletion += CheckCompletion;
+    }
+
+    protected virtual void OnDestroy()
+    {
+        FigureDelegatesContainer.ActionGrabParameters -= GrapParameters;
+        FigureDelegatesContainer.ActionStartPuzzle -= StartPuzzle;
+        FigureDelegatesContainer.ActionCheckCompletion -= CheckCompletion;
+    }
+
+    private void GrapParameters(LevelDescriptionSO levelDescription)
+    {
+        _figureParams = levelDescription.FigureParams;
+        _genParams = levelDescription.GenParams;
+        int maxPuzzleIndexCount = _genParams.Dimensions.x;
         _emptiedSegmentsByPuzzleIndex = new Dictionary<int, List<FigureSegment>>(maxPuzzleIndexCount);
         _assembleIndicesByPuzzleIndex = new Dictionary<int, List<int2>>(maxPuzzleIndexCount);
         _targetIndicesBuffer = new List<int2>(_emptyPlacesCount);
         _emptyPuzzleIndices = new List<int>(maxPuzzleIndexCount);
 
         _emptyPlacesCount = _figureParams.EmptyPlacesCount;
-
-        FigureDelegatesContainer.EventFigureGenerationCompleted += OnFigureGenerated;
-        FigureDelegatesContainer.ActionCheckCompletion += CheckCompletion;
     }
 
-    protected virtual void OnDestroy()
-    {
-        FigureDelegatesContainer.EventFigureGenerationCompleted -= OnFigureGenerated;
-        FigureDelegatesContainer.ActionCheckCompletion -= CheckCompletion;
-    }
-
-    private void OnFigureGenerated(Figure figure)
+    private void StartPuzzle(Figure figure)
     {
         _figure = figure;
         StartCoroutine(DelayedEmpty());
@@ -77,7 +82,7 @@ public class FigurePuzzler : MonoBehaviour
         }
         else
         {
-            int2 dims = _figureParams.GenParams.Dimensions;
+            int2 dims = _genParams.Dimensions;
             emptyIndices =
                 GenerateRandomEmptyPoints(_emptyPlacesCount, dims.x, dims.y);
         }
@@ -148,7 +153,7 @@ public class FigurePuzzler : MonoBehaviour
 
             _emptiedSegmentsByPuzzleIndex[puzzleIndex].Add(emptiedSegments[i]);
 
-            if (_emptiedSegmentsByPuzzleIndex[puzzleIndex].Count == _figureParams.GenParams.Dimensions.y)
+            if (_emptiedSegmentsByPuzzleIndex[puzzleIndex].Count == _genParams.Dimensions.y)
             {
                 _emptyPuzzleIndices.Add(puzzleIndex);
             }

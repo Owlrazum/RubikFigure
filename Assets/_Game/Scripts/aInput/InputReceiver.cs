@@ -37,6 +37,11 @@ public abstract class InputReceiver : MonoBehaviour
     {
         _shouldUpdate = true;
         _registeredSelectables = new HashSet<Selectable>();
+
+
+        InputDelegatesContainer.SetInputCamera += SetInputCamera;
+        InputDelegatesContainer.GetInputCamera += GetInputCamera;
+
         InputDelegatesContainer.SetShouldRespond += SetShouldRespond;
         InputDelegatesContainer.RegisterSelectable += RegisterSelectable;
         InputDelegatesContainer.UnregisterSelectable += UnregisterSelectable;
@@ -44,14 +49,22 @@ public abstract class InputReceiver : MonoBehaviour
 
     private void OnDestroy()
     {
+        InputDelegatesContainer.SetInputCamera -= SetInputCamera;
+        InputDelegatesContainer.GetInputCamera -= GetInputCamera;
+
         InputDelegatesContainer.SetShouldRespond -= SetShouldRespond;
         InputDelegatesContainer.RegisterSelectable -= RegisterSelectable;
         InputDelegatesContainer.UnregisterSelectable -= UnregisterSelectable;
     }
 
-    private void Start()
+    private void SetInputCamera(Camera camera)
     {
-        _inputCamera = InputDelegatesContainer.GetInputCamera();
+        _inputCamera = camera;
+    }
+
+    private Camera GetInputCamera()
+    {
+        return _inputCamera;
     }
 
     private void SetShouldRespond(bool shouldRespond)

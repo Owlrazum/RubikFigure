@@ -3,7 +3,7 @@ using static Orazum.Constants.Layers;
 
 public class WheelStatesController : FigureStatesController
 {
-    public override void Initialize(Figure figure, FigureParamsSO figureParams)
+    public override void Initialize(Figure figure, FigureParamsSO figureParams, FigureGenParamsSO genParams)
     {
         Wheel wheel = figure as Wheel;
         Assert.IsNotNull(wheel);
@@ -16,6 +16,6 @@ public class WheelStatesController : FigureStatesController
         }
 
         MoveState = new WheelMoveState(this, wheel, figureParams.MoveLerpSpeed);
-        ShuffleState = new FigureShuffleState(this, wheel, figureParams);
+        ShuffleState = new FigureShuffleState(this, wheel, figureParams, genParams);
     }
 }

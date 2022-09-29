@@ -34,7 +34,8 @@ public abstract class Figure : MonoBehaviour
 
     public virtual void Initialize(
         Array2D<FigureSegmentPoint> segmentPoints,
-        FigureParamsSO figureParams
+        FigureParamsSO figureParams,
+        FigureGenParamsSO genParams
     )
     {
         _segmentPoints = segmentPoints;
@@ -45,7 +46,7 @@ public abstract class Figure : MonoBehaviour
 
         _movedSegmentsBuffer = new FigureSegment[_dims.x * _dims.y];
 
-        _statesController.Initialize(this, figureParams);
+        _statesController.Initialize(this, figureParams, genParams);
     }
 
 

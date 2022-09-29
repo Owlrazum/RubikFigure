@@ -11,7 +11,7 @@ public abstract class FigureStatesController : MonoBehaviour
     public FigureShuffleState ShuffleState { get; protected set; }
 
     private IEnumerator _stateSwitchSequence;
-    public abstract void Initialize(Figure figure, FigureParamsSO figureParams);
+    public abstract void Initialize(Figure figure, FigureParamsSO figureParams, FigureGenParamsSO genParams);
     public void StartUpdating()
     { 
         _currentState = ShuffleState;

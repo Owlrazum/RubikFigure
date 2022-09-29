@@ -10,14 +10,24 @@ public class UIMainMenuCanvas : MonoBehaviour
         transform.GetChild(0).TryGetComponent(out _startGameButton);
         _startGameButton.EventOnTouch += OnStartGameButtonPressed;
 
-        transform.GetChild(1).TryGetComponent(out _exitGameButton);
-        _exitGameButton.EventOnTouch += OnExitGameButtonPressed;
+        if (transform.childCount >= 2)
+        { 
+            transform.GetChild(1).TryGetComponent(out _exitGameButton);
+            if (_exitGameButton != null)
+            { 
+                _exitGameButton.EventOnTouch += OnExitGameButtonPressed;
+            }
+        }
     }
 
     private void OnDestroy()
     {
         _startGameButton.EventOnTouch -= OnStartGameButtonPressed;
-        _exitGameButton.EventOnTouch -= OnExitGameButtonPressed;
+
+        if (_exitGameButton != null)
+        { 
+            _exitGameButton.EventOnTouch -= OnExitGameButtonPressed;
+        }
     }
 
     private void OnStartGameButtonPressed()

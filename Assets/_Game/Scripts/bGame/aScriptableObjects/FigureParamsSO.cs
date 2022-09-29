@@ -9,7 +9,6 @@ public enum SelectMethodType
 [CreateAssetMenu(fileName = "FigureParams", menuName = "Figure/FigureParams", order = 1)]
 public class FigureParamsSO : ScriptableObject
 {
-    public FigureGenParamsSO GenParams;
     public SelectMethodType SelectMethod;
 
     [Header("Emptying")]

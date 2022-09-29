@@ -31,14 +31,14 @@ public class FigureShuffleState : FigureState
         return false;
     }
 
-    public FigureShuffleState(FigureStatesController statesController, Figure figure, FigureParamsSO figureParams)
+    public FigureShuffleState(FigureStatesController statesController, Figure figure, FigureParamsSO figureParams, FigureGenParamsSO genParams)
     : base (statesController, figure)
     {
         _shuffleLerpSpeed = figureParams.ShuffleLerpSpeed;
 
         _shuffleTimer = new float2(0, 1 / _shuffleLerpSpeed + figureParams.ShufflePauseTime);
         _shuffleStep = new int2(0, figureParams.ShuffleStepsAmount);
-        _dims = figureParams.GenParams.Dimensions;
+        _dims = genParams.Dimensions;
 
         _shuffleIndices = new Array2D<int2>(_dims);
         for (int row = 0; row < _dims.y; row++)

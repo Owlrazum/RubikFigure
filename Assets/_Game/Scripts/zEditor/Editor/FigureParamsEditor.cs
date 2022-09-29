@@ -6,7 +6,6 @@ namespace Orazum.CustomEditor
     public class FigureParamsEditor : Editor
     {
         //TODO add property for select method
-        private SerializedProperty _generationParams;
 
         private SerializedProperty _emptyLerpSpeed;
         private SerializedProperty _beforeEmptyTime;
@@ -26,8 +25,6 @@ namespace Orazum.CustomEditor
 
         public void OnEnable()
         {
-            _generationParams = serializedObject.FindProperty("GenParams");
-
             _emptyLerpSpeed = serializedObject.FindProperty("EmptyLerpSpeed");
             _beforeEmptyTime = serializedObject.FindProperty("BeforeEmptyTime");
             _shouldUsePredefinedEmptyPlaces = serializedObject.FindProperty("ShouldUsePredefinedEmptyPlaces");
@@ -48,8 +45,6 @@ namespace Orazum.CustomEditor
         public override void OnInspectorGUI()
         {
             serializedObject.Update();
-
-            EditorGUILayout.PropertyField(_generationParams);
 
             EditorGUILayout.PropertyField(_emptyLerpSpeed);
             EditorGUILayout.PropertyField(_beforeEmptyTime);

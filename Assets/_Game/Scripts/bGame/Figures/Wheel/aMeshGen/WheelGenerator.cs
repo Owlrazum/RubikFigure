@@ -111,7 +111,7 @@ public class WheelGenerator : FigureGenerator
         return segmentPointGb.AddComponent<FigureSegmentPoint>();
     }
 
-    protected override void CompleteGeneration(FigureParamsSO figureParams)
+    protected override void CompleteGeneration(FigureParamsSO figureParams, FigureGenParamsSO genParams)
     {
         _figureMeshGenJobHandle.Complete();
         _segmentPointsMeshGenJobHandle.Complete();
@@ -135,7 +135,8 @@ public class WheelGenerator : FigureGenerator
 
         _figure.Initialize(
             _segmentPoints,
-            figureParams
+            figureParams,
+            genParams
         );
 
         _figureVertices.Dispose();

@@ -14,9 +14,6 @@ using Orazum.Meshing;
 
 public abstract class FigureGenerator : MonoBehaviour
 {
-    [SerializeField]
-    private FigureParamsSO _figureParams;
-
     protected const float SegmentPointHeight = 1;
     protected const MeshUpdateFlags GenerationMeshUpdateFlags = MeshUpdateFlags.Default;
 
@@ -25,22 +22,42 @@ public abstract class FigureGenerator : MonoBehaviour
     protected Array2D<FigureSegment> _segments;
     protected Array2D<FigureSegmentPoint> _segmentPoints;
 
+    private FigureParamsSO _figureParams;
+    private FigureGenParamsSO _genParams;
 
     private FigureTransitionsGenerator _transitionsGenerator;
     private void Awake()
     {
+        FigureDelegatesContainer.ActionGrabParameters += GrapParameters;
+        FigureDelegatesContainer.ActionStartFigureGeneration += StartFigureGeneration;
+    }
+    private void Unsubscribe()
+    { 
+        FigureDelegatesContainer.ActionGrabParameters -= GrapParameters;
+        FigureDelegatesContainer.ActionStartFigureGeneration -= StartFigureGeneration;
+    }
+
+    private void GrapParameters(LevelDescriptionSO levelDescription)
+    {
+        _figureParams = levelDescription.FigureParams;
+        _genParams = levelDescription.GenParams;
+    }
+
+    private void StartFigureGeneration()
+    {
         StartCoroutine(FigureGenerationSequence());
     }
+
     private IEnumerator FigureGenerationSequence()
     {
         bool isFound = TryGetComponent(out _transitionsGenerator);
         Assert.IsTrue(isFound);
 
-        InitializeParameters(_figureParams.GenParams);
+        InitializeParameters(_genParams);
         StartMeshGeneration();
         GenerateFigureGameObject();
         yield return null;
-        CompleteGeneration(_figureParams);
+        CompleteGeneration(_figureParams, _genParams);
         _transitionsGenerator.StartGeneration(_quadStripsCollection, _figureMeshGenJobHandle);
         yield return null;
         _transitionsGenerator.FinishGeneration(_figure);
@@ -92,7 +109,7 @@ public abstract class FigureGenerator : MonoBehaviour
                 segmentGb.transform.parent = segmentsParent;
                 FigureSegment segment = AddSegmentComponent(segmentGb);
                 Assert.IsNotNull(segment);
-                segment.PrepareRenderer(_figureParams.GenParams.DefaultMaterial, _figureParams.GenParams.HighlightMaterial);
+                segment.PrepareRenderer(_genParams.DefaultMaterial, _genParams.HighlightMaterial);
                 _segments[index] = segment;
 
                 GameObject segmentPointGb = new GameObject(FigureName + "SegmentPoint", typeof(MeshFilter), typeof(MeshRenderer));
@@ -111,7 +128,7 @@ public abstract class FigureGenerator : MonoBehaviour
     protected abstract FigureSegment AddSegmentComponent(GameObject segmentGb);
     protected abstract FigureSegmentPoint AddSegmentPointComponent(GameObject segmentPointGb);
 
-    protected abstract void CompleteGeneration(FigureParamsSO figureParams);
+    protected abstract void CompleteGeneration(FigureParamsSO figureParams, FigureGenParamsSO genParams);
 
     protected void UpdateSegment(FigureSegment segment, in MeshBuffersIndexers indexers, int puzzleIndex, int2 meshBuffersMaxCount)
     {
@@ -183,6 +200,8 @@ public abstract class FigureGenerator : MonoBehaviour
     }
     protected virtual void OnDestroy()
     {
+        Unsubscribe();
+
         _quadStripsCollection.DisposeIfNeeded();
 
         CollectionUtilities.DisposeIfNeeded(_figureVertices);

@@ -4,6 +4,11 @@ public class InputReceiverEditor : InputReceiver
 {
     protected override void CheckPointerDown()
     {
+        if (_inputCamera == null)
+        {
+            return;
+        }
+
         if (Input.GetMouseButtonDown(0))
         {
             _pressPos = Input.mousePosition;
@@ -17,6 +22,11 @@ public class InputReceiverEditor : InputReceiver
     }
     protected override void CheckPointer()
     {
+        if (_inputCamera == null)
+        {
+            return;
+        }
+
         if (Input.GetMouseButton(0))
         {
             _lastPos = Input.mousePosition;
@@ -24,6 +34,11 @@ public class InputReceiverEditor : InputReceiver
     }
     protected override void CheckPointerUp()
     {
+        if (_inputCamera == null)
+        {
+            return;
+        }
+        
         if (Input.GetMouseButtonUp(0))
         {
             CheckSwipeCommand();

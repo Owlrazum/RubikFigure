@@ -9,14 +9,18 @@ public class CameraController : MonoBehaviour
     {
         bool isFound = TryGetComponent(out _renderingCamera);
         Assert.IsTrue(isFound);
-        GameDelegatesContainer.GetRenderingCamera += GetRenderingCamera;
-        InputDelegatesContainer.GetInputCamera += GetRenderingCamera;
+
+        GameDelegatesContainer.EventLevelStarted += OnLevelStarted;
     }
 
     private void OnDestroy()
     {
-        GameDelegatesContainer.GetRenderingCamera -= GetRenderingCamera;
-        InputDelegatesContainer.GetInputCamera -= GetRenderingCamera;
+        GameDelegatesContainer.EventLevelStarted -= OnLevelStarted;
+    }
+
+    private void OnLevelStarted(LevelDescriptionSO notUsed)
+    {
+        InputDelegatesContainer.SetInputCamera(_renderingCamera);
     }
 
     private Camera GetRenderingCamera()

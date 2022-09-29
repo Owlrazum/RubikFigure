@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1eeb9d24981c04b148a37e9cbb558e9f, type: 3}
+  m_Name: Gen_O_4x5
+  m_EditorClassIdentifier: 
+  _segmentPointHeight: 1
+  _defaultMaterial: {fileID: 2100000, guid: a0e7b8218640c4ce8a7b698683b844f9, type: 2}
+  _highlightMaterial: {fileID: 2100000, guid: 054c82d6e0a504693892c693f9890ae9, type: 2}
+  _outerRadius: 5
+  _innerRadius: 0.6
+  _sideCount: 4
+  _ringCount: 5
+  _segmentResolution: 10
