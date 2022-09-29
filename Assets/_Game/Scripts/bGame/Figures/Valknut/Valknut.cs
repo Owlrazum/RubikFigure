@@ -17,27 +17,16 @@ public class Valknut : Figure
         _transitions = transitions;
     }
 
-    protected override void MakeSegmentMove(FigureSegment segment, FigureSegmentMove move, Action moveCompleteAction)
+    protected override void MakeSegmentMove(FigureSegment segment, FSMC_Transition move, Action moveCompleteAction)
     {
-        Assert.IsTrue(IsValidIndex(move.FromIndex) && IsValidIndex(move.ToIndex));
-        if (move is FigureVerticesMove verticesMove)
-        { 
-            // Assert.IsNull(_segmentPoints[move.ToIndex].Segment);
-            // Assert.IsNotNull(_segmentPoints[move.FromIndex].Segment);
-            AssignTransitionData(verticesMove);
-        }
-        else
-        {
-            throw new System.ArgumentException("Unknown type of move");
-        }
-
+        AssignTransitionData(move);
         segment.StartMove(move, moveCompleteAction);
     }
 
-    private void AssignTransitionData(FigureVerticesMove verticesMove)
+    private void AssignTransitionData(FSMC_Transition verticesMove)
     {
-        int2 from = verticesMove.FromIndex;
-        int2 to = verticesMove.ToIndex;
+        int2 from = verticesMove.From;
+        int2 to = verticesMove.To;
         if (from.y == 0 && to.y == 0 ||
             from.y == 1 && to.y == 1
         )

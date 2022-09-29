@@ -51,31 +51,16 @@ public class Wheel : Figure
         return Quaternion.AngleAxis(rotationAngle, Vector3.up);
     }
 
-    protected override void MakeSegmentMove(FigureSegment segment, FigureSegmentMove move, Action moveCompleteAction)
+    protected override void MakeSegmentMove(FigureSegment segment, FSMC_Transition move, Action moveCompleteAction)
     {
-        Assert.IsTrue(IsValidIndex(move.FromIndex) && IsValidIndex(move.ToIndex));
-        if (move is FigureVerticesMove verticesMove)
-        {
-            AssignTransData(verticesMove);
-        }
-        // else if (move is WheelVerticesMove verticesMove)
-        // { 
-        //     Assert.IsNull(_segmentPoints[move.ToIndex].Segment);
-        //     Assert.IsNotNull(_segmentPoints[move.FromIndex].Segment);
-        //     AssignSegmentMesh(verticesMove);
-        // }
-        // else if (move is WheelTeleportMove teleportMove)
-        // {
-        //     AssignTeleportMoveData(teleportMove);
-        // }
-
+        AssignTransData(move);
         segment.StartMove(move, moveCompleteAction);
     }
 
-    private void AssignTransData(FigureVerticesMove verticesMove)
+    private void AssignTransData(FSMC_Transition move)
     {
-        int2 from = verticesMove.FromIndex;
-        int2 to = verticesMove.ToIndex;
+        int2 from = move.From;
+        int2 to = move.To;
         Assert.IsTrue(from.x == to.x || from.y == to.y);
         int sideDelta = to.x - from.x;
         int ringDelta = to.y - from.y;
@@ -84,11 +69,11 @@ public class Wheel : Figure
         {
             if (sideDelta == _dims.x - 1)
             { 
-                verticesMove.Transition = _transitions[to].AntiCW;    
+                move.Transition = _transitions[to].AntiCW;    
             }
             else
             { 
-                verticesMove.Transition = _transitions[to].CW;
+                move.Transition = _transitions[to].CW;
             }
         }
 
@@ -96,11 +81,11 @@ public class Wheel : Figure
         {
             if (sideDelta == -(_dims.x - 1))
             {
-                verticesMove.Transition = _transitions[to].CW;
+                move.Transition = _transitions[to].CW;
             }
             else
             {
-                verticesMove.Transition = _transitions[to].AntiCW;
+                move.Transition = _transitions[to].AntiCW;
             }
         }
 
@@ -108,11 +93,11 @@ public class Wheel : Figure
         {
             if (ringDelta == _dims.y - 1)
             { 
-                verticesMove.Transition = _transitions[to].Down;
+                move.Transition = _transitions[to].Down;
             }
             else
             { 
-                verticesMove.Transition = _transitions[to].Up;
+                move.Transition = _transitions[to].Up;
             }
         }
 
@@ -120,11 +105,11 @@ public class Wheel : Figure
         {
             if (ringDelta == -(_dims.y - 1))
             {
-                verticesMove.Transition = _transitions[to].Up;
+                move.Transition = _transitions[to].Up;
             }
             else
             { 
-                verticesMove.Transition = _transitions[to].Down;
+                move.Transition = _transitions[to].Down;
             }
         }
     }

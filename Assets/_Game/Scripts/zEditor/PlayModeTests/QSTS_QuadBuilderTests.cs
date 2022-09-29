@@ -51,7 +51,7 @@ public class QSTS_QuadBulderTests
         {
             lerpParam += PlayModeTestsParams.FastLerpSpeed * Time.deltaTime;
             ClampToOne(ref lerpParam);
-            animator.UpdateWithLerpPos(EaseOut(lerpParam), shouldReorientVertices: false, ref buffersIndexers);
+            animator.UpdateWithLerpPos(EaseOut(lerpParam), ref buffersIndexers);
             MeshGenUtils.ApplyMeshBuffers(data.Vertices, data.Indices, meshContainer, buffersIndexers);
             buffersIndexers.Reset();
             yield return null;
@@ -63,7 +63,7 @@ public class QSTS_QuadBulderTests
         {
             lerpParam += PlayModeTestsParams.FastLerpSpeed * Time.deltaTime;
             ClampToOne(ref lerpParam);
-            animator.UpdateWithLerpPos(EaseOut(lerpParam), shouldReorientVertices: false, ref buffersIndexers);
+            animator.UpdateWithLerpPos(EaseOut(lerpParam), ref buffersIndexers);
             MeshGenUtils.ApplyMeshBuffers(data.Vertices, data.Indices, meshContainer, buffersIndexers);
             buffersIndexers.Reset();
             yield return null;
@@ -131,8 +131,8 @@ public class QSTS_QuadBulderTests
             lerpParam += PlayModeTestsParams.FastLerpSpeed * Time.deltaTime;
             ClampToOne(ref lerpParam);
             float easedLerp = EaseOut(lerpParam);
-            animLeft_.UpdateWithLerpPos(easedLerp, shouldReorientVertices: false, ref biLeft_);
-            animRight.UpdateWithLerpPos(easedLerp, shouldReorientVertices: false, ref biRight);
+            animLeft_.UpdateWithLerpPos(easedLerp, ref biLeft_);
+            animRight.UpdateWithLerpPos(easedLerp, ref biRight);
             MeshGenUtils.ApplyMeshBuffers(dataLeft_.Vertices, dataLeft_.Indices, meshLeft_, biLeft_);
             MeshGenUtils.ApplyMeshBuffers(dataRight.Vertices, dataRight.Indices, meshRight, biRight);
             biLeft_.Reset();
@@ -206,7 +206,7 @@ public class QSTS_QuadBulderTests
             lerpParam += PlayModeTestsParams.FastLerpSpeed * Time.deltaTime;
             ClampToOne(ref lerpParam);
             float easedLerp = EaseOut(lerpParam);
-            animConc.UpdateWithLerpPos(easedLerp, shouldReorientVertices: false, ref biConc);
+            animConc.UpdateWithLerpPos(easedLerp, ref biConc);
             MeshGenUtils.ApplyMeshBuffers(meshDataConc.Vertices, meshDataConc.Indices, meshLeft_, biConc);
             biConc.Reset();
             yield return null;

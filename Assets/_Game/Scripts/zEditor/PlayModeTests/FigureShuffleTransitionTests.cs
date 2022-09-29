@@ -56,22 +56,22 @@ public class FigureShuffleTranstionTests
         jobShuffleTrans.Run(transitionsIndexers.Length);
         yield return new WaitForSeconds(1);
 
-        FadeOutInTransitions[] shuffleTranses = new FadeOutInTransitions[2];
+        OutInTransitions[] shuffleTranses = new OutInTransitions[2];
         for (int i = 0; i < transitionsBuffer.TransitionsCount; i += 2)
         {
             QS_Transition fadeOut = transitionsBuffer.GetQSTransition(i);
             QS_Transition fadeIn = transitionsBuffer.GetQSTransition(i + 1);
 
-            FadeOutInTransitions transData = new FadeOutInTransitions();
-            transData.FadeOut = fadeOut;
-            transData.FadeIn = fadeIn;
+            OutInTransitions transData = new OutInTransitions();
+            transData.Out = fadeOut;
+            transData.In = fadeIn;
             shuffleTranses[i / 2] = transData;
         }
 
         var concBuffer = QS_Transition.PrepareConcatenationBuffer(
-            shuffleTranses[0].FadeOut, shuffleTranses[1].FadeIn, Allocator.Persistent);
+            shuffleTranses[0].Out, shuffleTranses[1].In, Allocator.Persistent);
 
-        var transConc = QS_Transition.Concatenate(shuffleTranses[0].FadeOut, shuffleTranses[1].FadeIn, concBuffer);
+        var transConc = QS_Transition.Concatenate(shuffleTranses[0].Out, shuffleTranses[1].In, concBuffer);
 
         QST_Animator animConc = new QST_Animator(meshData.Vertices, meshData.Indices, normalUV);
 
@@ -82,7 +82,7 @@ public class FigureShuffleTranstionTests
         {
             lerpParam += PlayModeTestsParams.FastLerpSpeed * Time.deltaTime;
             ClampToOne(ref lerpParam);
-            animConc.UpdateWithLerpPos(EaseOut(lerpParam), shouldReorientVertices: false, ref bi);
+            animConc.UpdateWithLerpPos(EaseOut(lerpParam), ref bi);
             MeshGenUtils.ApplyMeshBuffers(meshData.Vertices, meshData.Indices, mesh, bi);
             bi.Reset();
             yield return null;

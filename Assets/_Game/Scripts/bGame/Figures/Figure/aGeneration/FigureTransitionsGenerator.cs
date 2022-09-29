@@ -75,7 +75,7 @@ public abstract class FigureTransitionsGenerator : MonoBehaviour
     private void FinishShuffleTransitionsGeneration(Figure figure)
     {
         _shuffleTransitionsJobHandle.Complete();
-        Array2D<FadeOutInTransitions> shuffleTransitions = new Array2D<FadeOutInTransitions>(figure.Dimensions);
+        Array2D<OutInTransitions> shuffleTransitions = new Array2D<OutInTransitions>(figure.Dimensions);
         int2 indexer = int2.zero;
         for (int i = 0; i < _shuffleTransitionsCollection.TransitionsCount; i += 2)
         {
@@ -83,9 +83,9 @@ public abstract class FigureTransitionsGenerator : MonoBehaviour
             QS_Transition fadeIn = _shuffleTransitionsCollection.GetQSTransition(i + 1);
 
             // print($"fadeOut {fadeOut.Length} :: fadeIn {fadeIn.Length}");
-            FadeOutInTransitions transData = new FadeOutInTransitions();
-            transData.FadeOut = fadeOut;
-            transData.FadeIn = fadeIn;
+            OutInTransitions transData = new OutInTransitions();
+            transData.Out = fadeOut;
+            transData.In = fadeIn;
             shuffleTransitions[indexer] = transData;
             indexer.y++;
             if (indexer.y >= figure.Dimensions.y)

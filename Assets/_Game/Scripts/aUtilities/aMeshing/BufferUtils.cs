@@ -29,14 +29,14 @@ namespace Orazum.Meshing
         }
     }
 
-    public struct FadeOutInTransitions
+    public struct OutInTransitions
     {
-        public QS_Transition FadeOut;
-        public QS_Transition FadeIn;
+        public QS_Transition Out;
+        public QS_Transition In;
 
         public override string ToString()
         {
-            return $"FadeOut: {FadeOut.Length}; FadeIn: {FadeIn.Length}";
+            return $"FadeOut: {Out.Length}; FadeIn: {In.Length}";
         }
     }
 }

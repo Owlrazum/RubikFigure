@@ -17,7 +17,7 @@ public abstract class Figure : MonoBehaviour
     public FigureStatesController StatesController { get { return _statesController; } }
 
     protected Array2D<FigureSegmentPoint> _segmentPoints;
-    private Array2D<FadeOutInTransitions> _shuffleTransitions;
+    private Array2D<OutInTransitions> _universalTransitions;
 
     protected int2 _dims;
     public int2 Dimensions { get { return _dims; } }
@@ -30,7 +30,7 @@ public abstract class Figure : MonoBehaviour
 
     private FigureSegment[] _movedSegmentsBuffer;
 
-    protected abstract void MakeSegmentMove(FigureSegment segment, FigureSegmentMove move, Action moveCompleteAction);
+    protected abstract void MakeSegmentMove(FigureSegment segment, FSMC_Transition move, Action moveCompleteAction);
 
     public virtual void Initialize(
         Array2D<FigureSegmentPoint> segmentPoints,
@@ -50,12 +50,13 @@ public abstract class Figure : MonoBehaviour
     }
 
 
-    public void AssignUniversalTransitions(Array2D<FadeOutInTransitions> transitions)
+    public void AssignUniversalTransitions(Array2D<OutInTransitions> transitions)
     {
-        _shuffleTransitions = transitions;
+        Assert.IsTrue(math.all(_dims == new int2(transitions.ColCount, transitions.RowCount)));
+        _universalTransitions = transitions;
     }
 
-    public FigureSegment[] EmptyAndGetSegments(FigureVerticesMove[] emptyMoves, Action emptyCompletedAction)
+    public FigureSegment[] EmptyAndGetSegments(FSMT_Empty[] emptyMoves, Action emptyCompletedAction)
     {
         _movesCompleteAction = emptyCompletedAction;
         _movesCount = new int2(0, emptyMoves.Length);
@@ -63,7 +64,7 @@ public abstract class Figure : MonoBehaviour
         FigureSegment[] emptiedSegments = new FigureSegment[emptyMoves.Length];
         for (int i = 0; i < emptyMoves.Length; i++)
         {
-            int2 index = emptyMoves[i].FromIndex;
+            int2 index = emptyMoves[i].Index;
 
             Assert.IsNotNull(_segmentPoints[index].Segment);
             emptiedSegments[i] = _segmentPoints[index].Segment;
@@ -74,97 +75,52 @@ public abstract class Figure : MonoBehaviour
         return emptiedSegments;
     }
 
-    public void Shuffle(IList<FigureVerticesMove> moves, Action movesCompleteAction)
+    private bool IsUniversalMove(FS_Movement move)
     {
-        _movesCompleteAction = movesCompleteAction;
-        _movesCount = new int2(0, moves.Count);
-
-        for (int i = 0; i < moves.Count; i++)
-        {
-            FigureVerticesMove move = moves[i];
-            FigureSegment movedSegment = _segmentPoints[move.FromIndex].Segment;
-            if (movedSegment == null)
-            {
-                _movedSegmentsBuffer[i] = null;
-                _movesCount.x++;
-                continue;
-            }
-
-            MakeUniversalMove(movedSegment, move, MoveCompleteAction);
-
-            _movedSegmentsBuffer[i] = movedSegment;
-            _segmentPoints[move.FromIndex].Segment = null;
-        }
-
-        for (int i = 0; i < moves.Count; i++)
-        {
-            if (_movedSegmentsBuffer[i] == null)
-            {
-                continue;
-            }
-            _segmentPoints[moves[i].ToIndex].Segment = _movedSegmentsBuffer[i];
-        }
+        return move is FSMT_Empty || move is FSMT_Completion || move is FSMCT_Shuffle;
     }
-
-    public void Complete(IList<FigureVerticesMove> moves, Action movesCompleteAction)
+    private void MakeUniversalMove(FigureSegment segment, FS_Movement move, Action moveCompleteAction)
     {
-        Debug.Log("Figure making completion moves");
-        _movesCompleteAction = movesCompleteAction;
-        _movesCount = new int2(0, moves.Count);
-
-        for (int i = 0; i < moves.Count; i++)
-        {
-            FigureVerticesMove move = moves[i];
-            move.CompletionSegment.Appear();
-            MakeUniversalMove(move.CompletionSegment, move, MoveCompleteAction);
-
-            _segmentPoints[move.ToIndex].Segment = move.CompletionSegment;
-        }
-    }
-
-    private void MakeUniversalMove(FigureSegment segment, FigureVerticesMove move, Action moveCompleteAction)
-    {
-        Assert.IsTrue(IsValidIndex(move.FromIndex) || IsValidIndex(move.ToIndex));
         AssignUniversalTransition(move);
-
 
         segment.StartMove(move, moveCompleteAction);
     }
 
-    private void AssignUniversalTransition(FigureVerticesMove move)
+
+    private void AssignUniversalTransition(FS_Movement move)
     {
-        if (move.FromIndex.x < 0 || move.ToIndex.x < 0)
-        {
-            if (move.FromIndex.x >= 0)
-            {
-                move.Transition = _shuffleTransitions[move.FromIndex].FadeOut;
-            }
-            else
-            {
-                move.Transition = _shuffleTransitions[move.ToIndex].FadeIn;
-                Debug.Log($"FadeIn assign to {move.ToIndex} {move.Transition}");
-            }
-        }
-        else
+        switch (move)
         { 
-            QS_Transition fadeOut = _shuffleTransitions[move.FromIndex].FadeOut;
-            QS_Transition fadeIn = _shuffleTransitions[move.ToIndex].FadeIn;
-            var buffer = QS_Transition.PrepareConcatenationBuffer(fadeOut, fadeIn, Allocator.Persistent);
-            QS_Transition concShuffle = QS_Transition.Concatenate(fadeOut, fadeIn, buffer);
-            move.ShouldDisposeTransition = true;
-            move.Transition = concShuffle;
+            case FSMT_Empty emptyMove:
+                int2 index = emptyMove.Index;
+                emptyMove.Transition = _universalTransitions[index].Out;
+                break;
+            case FSMT_Completion completionMove:
+                index = completionMove.CompletionIndex;
+                completionMove.Transition = _universalTransitions[index].In;
+                break;
+            case FSMCT_Shuffle shuffleMove:
+                QS_Transition fadeOut = _universalTransitions[shuffleMove.From].Out;
+                QS_Transition fadeIn = _universalTransitions[shuffleMove.To].In;
+                var buffer = QS_Transition.PrepareConcatenationBuffer(fadeOut, fadeIn, Allocator.Persistent);
+                QS_Transition concShuffle = QS_Transition.Concatenate(fadeOut, fadeIn, buffer);
+                shuffleMove.ShouldDisposeTransition = true;
+                shuffleMove.Transition = concShuffle;
+                break;
+            default:
+                throw new ArgumentException("Unknown universal move");
         }
     }
 
-    public void MakeMoves(IList<FigureSegmentMove> moves, Action movesCompleteAction)
+    public void MakeMoves(IList<FS_Movement> moves, Action movesCompleteAction)
     {
         _movesCompleteAction = movesCompleteAction;
         _movesCount = new int2(0, moves.Count);
 
         for (int i = 0; i < moves.Count; i++)
         {
-            FigureSegmentMove move = moves[i];
-            FigureSegment movedSegment = _segmentPoints[move.FromIndex].Segment;
+            FS_Movement move = moves[i];
+            FigureSegment movedSegment = GetSegmentToMove(move);
             if (movedSegment == null)
             {
                 _movedSegmentsBuffer[i] = null;
@@ -172,10 +128,26 @@ public abstract class Figure : MonoBehaviour
                 continue;
             }
 
-            MakeSegmentMove(movedSegment, move, MoveCompleteAction);
+            if (IsUniversalMove(move))
+            {
+                MakeUniversalMove(movedSegment, move, MoveCompleteAction);
+            }
+            else
+            {
+                FSMC_Transition segmentMove = move as FSMC_Transition;
+                Assert.IsNotNull(segmentMove);
+                MakeSegmentMove(movedSegment, segmentMove, MoveCompleteAction);
+            }
 
-            _movedSegmentsBuffer[i] = movedSegment;
-            _segmentPoints[move.FromIndex].Segment = null;
+            if (move is FSM_IndexChange indexChange)
+            {
+                _movedSegmentsBuffer[i] = movedSegment;
+                _segmentPoints[indexChange.From].Segment = null;
+            }
+            else
+            {
+                _movedSegmentsBuffer[i] = null;
+            }
         }
 
         for (int i = 0; i < moves.Count; i++)
@@ -184,7 +156,19 @@ public abstract class Figure : MonoBehaviour
             {
                 continue;
             }
-            _segmentPoints[moves[i].ToIndex].Segment = _movedSegmentsBuffer[i];
+            FSM_IndexChange indexChange = moves[i] as FSM_IndexChange;
+            Assert.IsNotNull(indexChange);
+            _segmentPoints[indexChange.To].Segment = _movedSegmentsBuffer[i];
+        }
+    }
+    private FigureSegment GetSegmentToMove(FS_Movement move)
+    {
+        switch (move)
+        { 
+            case FSMT_Completion completionMove:
+                return completionMove.CompletionSegment;
+            default:
+                return _segmentPoints[move.SegmentIndex].Segment;
         }
     }
     private void MoveCompleteAction()
@@ -220,15 +204,6 @@ public abstract class Figure : MonoBehaviour
         return IsOutOfDimsVertOrder(index, vertOrder, _dims);
     }
 
-    public bool IsValidIndex(int2 index)
-    {
-        if (index.y >= 0 && index.y < _dims.y && index.x >= 0 && index.x < _dims.x)
-        {
-            return true;
-        }
-
-        return false;
-    }
     public bool IsPointEmpty(int2 index)
     {
         return _segmentPoints[index].Segment == null;

@@ -8,7 +8,6 @@ using Orazum.Meshing;
 public struct FigureSegmentMoveJob : IJob
 {
     public float P_LerpParam;
-    public bool P_ShouldReorientVertices;
 
     public QST_Animator InputQuadStripTransition;
     
@@ -17,7 +16,7 @@ public struct FigureSegmentMoveJob : IJob
     public void Execute()
     {
         MeshBuffersIndexers indexers = OutputIndexers.GetIndexersForChangesInsideJob();;
-        InputQuadStripTransition.UpdateWithLerpPos(P_LerpParam, P_ShouldReorientVertices, ref indexers);
+        InputQuadStripTransition.UpdateWithLerpPos(P_LerpParam, ref indexers);
         OutputIndexers.ApplyChanges(indexers);
     }
 } 

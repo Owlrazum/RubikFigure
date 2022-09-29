@@ -25,7 +25,6 @@ public class FigureSegmentMover : MonoBehaviour
     protected JobHandle _segmentMoveJobHandle;
 
     protected float _currentLerpSpeed;
-    protected int2 _currentToIndex;
 
     protected Action _moveCompleteAction;
 
@@ -39,7 +38,7 @@ public class FigureSegmentMover : MonoBehaviour
     private bool _wasMoveCompleted;
 
     private bool _shouldDispose;
-    private QS_Transition toDispose; 
+    private QS_Transition _toDispose; 
 
     public void Initialize(float2 uv, int2 meshBuffersMaxCount)
     {
@@ -65,7 +64,7 @@ public class FigureSegmentMover : MonoBehaviour
 
         if (_shouldDispose)
         {
-            toDispose.DisposeConcatenationIfNeeded();
+            _toDispose.DisposeConcatenationIfNeeded();
         }
 
         CollectionUtilities.DisposeIfNeeded(_vertices);
@@ -74,40 +73,42 @@ public class FigureSegmentMover : MonoBehaviour
     }
 
     public virtual void StartMove(
-        FigureSegmentMove move,
+        FS_Movement move,
         Action OnMoveToDestinationCompleted)
     {
-        _currentToIndex = move.ToIndex;
-        _currentLerpSpeed = move.LerpSpeed;
         _moveCompleteAction = OnMoveToDestinationCompleted;
+        _currentLerpSpeed = move.LerpSpeed;
 
-        if (move is FigureVerticesMove verticesMove)
-        {
-            if (verticesMove.ShouldDisposeTransition)
-            {
-                _shouldDispose = true;
-                toDispose = verticesMove.Transition;
-            }
-            else
-            {
-                _shouldDispose = false;
-            }
-            StartCoroutine(MoveSequence(verticesMove));
-        }
-        else
-        {
-            Debug.LogError("Unknown type of move");
+        switch (move)
+        { 
+            case FSMC_Transition fsmct:
+                _shouldDispose = fsmct.ShouldDisposeTransition;
+                if (_shouldDispose)
+                {
+                    _toDispose = fsmct.Transition;
+                }
+                StartCoroutine(MoveSequence(fsmct.Transition));
+                break;
+            case FSM_Transition fsmt:
+                _shouldDispose = fsmt.ShouldDisposeTransition;
+                if (_shouldDispose)
+                {
+                    _toDispose = fsmt.Transition;
+                }
+                StartCoroutine(MoveSequence(fsmt.Transition));
+                break;
+            default:
+                throw new ArgumentException("Unknown type of move");
         }
     }
 
-     private IEnumerator MoveSequence(FigureVerticesMove verticesMove)
+     private IEnumerator MoveSequence(QS_Transition transition)
     {
         float lerpParam = 0;
-        Assert.IsTrue(verticesMove.Transition.IsCreated);
-        _animator_QST.AssignTransition(verticesMove.Transition);
+        Assert.IsTrue(transition.IsCreated);
+        _animator_QST.AssignTransition(transition);
         FigureSegmentMoveJob moveJob = new FigureSegmentMoveJob()
         {
-            P_ShouldReorientVertices = verticesMove.ShouldReorientVertices,
             InputQuadStripTransition = _animator_QST,
             OutputIndexers = _indexersForJob
         };
@@ -130,7 +131,7 @@ public class FigureSegmentMover : MonoBehaviour
         
         if (_shouldDispose)
         {
-            toDispose.DisposeConcatenation();
+            _toDispose.DisposeConcatenation();
         }
     }
 

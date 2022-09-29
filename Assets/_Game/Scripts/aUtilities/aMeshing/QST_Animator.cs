@@ -40,7 +40,7 @@ namespace Orazum.Meshing
         }
 
         // The order of transSegments is should not be assumed
-        public void UpdateWithLerpPos(float globalLerpParam, bool shouldReorientVertices, ref MeshBuffersIndexers buffersIndexers)
+        public void UpdateWithLerpPos(float globalLerpParam, ref MeshBuffersIndexers buffersIndexers)
         {
             _globalLerpParam = globalLerpParam;
 
@@ -51,11 +51,6 @@ namespace Orazum.Meshing
                 {
                     ConsiderFillData(in segment, segment[j], ref buffersIndexers);
                 }
-            }
-
-            if (shouldReorientVertices)
-            {
-                _quadStripBuilder.ReorientVertices(buffersIndexers.Count.x);
             }
         }
 

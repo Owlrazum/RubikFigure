@@ -199,7 +199,7 @@ public class QSTS_RadialBuilderTests
         {
             lerpParam += PlayModeTestsParams.FastLerpSpeed * Time.deltaTime;
             ClampToOne(ref lerpParam);
-            _animator.UpdateWithLerpPos(EaseOut(lerpParam), shouldReorientVertices: false, ref buffersIndexers);
+            _animator.UpdateWithLerpPos(EaseOut(lerpParam), ref buffersIndexers);
             MeshGenUtils.ApplyMeshBuffers(_transitionData.Vertices, _transitionData.Indices, mesh, buffersIndexers);
             buffersIndexers.Reset();
             yield return null;

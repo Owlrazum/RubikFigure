@@ -66,7 +66,7 @@ public abstract class TransitionsTester
         {
             lerpParam += lerpSpeed * Time.deltaTime;
             ClampToOne(ref lerpParam);
-            _animator.UpdateWithLerpPos(EaseOut(lerpParam), shouldReorientVertices: false, ref buffersIndexers);
+            _animator.UpdateWithLerpPos(EaseOut(lerpParam), ref buffersIndexers);
             MeshGenUtils.ApplyMeshBuffers(_transitionMesh.Vertices, _transitionMesh.Indices, mesh, buffersIndexers);
             buffersIndexers.Reset();
             yield return null;

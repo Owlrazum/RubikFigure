@@ -13,10 +13,10 @@ public class ValknutMoveState : FigureMoveState
         base(statesController, valknut, moveLerpSpeed)
     {
         _valknut = valknut;
-        _movesToMake = new List<FigureSegmentMove>(1);
+        _movesToMake = new List<FS_Movement>(1);
     }
 
-    protected override List<FigureSegmentMove> DetermineMovesFromInput(Vector3 worldPos, Vector3 worldDir)
+    protected override List<FS_Movement> DetermineMovesFromInput(Vector3 worldPos, Vector3 worldDir)
     {
         _movesToMake.Clear();
         ValknutSegmentPoint valknutPoint = _currentSelectedPoint as ValknutSegmentPoint;
@@ -34,7 +34,7 @@ public class ValknutMoveState : FigureMoveState
         }
     }
 
-    private List<FigureSegmentMove> ConstructVerticesMove(int2 index, LineEndType segmentEndPoint)
+    private List<FS_Movement> ConstructVerticesMove(int2 index, LineEndType segmentEndPoint)
     {
         int2 originIndex = index;
         int2 targetIndex = index;
@@ -50,7 +50,7 @@ public class ValknutMoveState : FigureMoveState
             return null;
         }
 
-        FigureVerticesMove verticesMove = new FigureVerticesMove();
+        FSMC_Transition verticesMove = new FSMC_Transition();
         verticesMove.AssignFromIndex(originIndex);
         verticesMove.AssignToIndex(targetIndex);
         verticesMove.AssignLerpSpeed(_moveLerpSpeed);

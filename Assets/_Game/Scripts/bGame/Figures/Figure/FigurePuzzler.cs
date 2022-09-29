@@ -115,11 +115,11 @@ public class FigurePuzzler : MonoBehaviour
 
     private void MakeEmptyMoves(int2[] emptyIndices)
     {
-        FigureVerticesMove[] emptyMoves = new FigureVerticesMove[emptyIndices.Length];
+        FSMT_Empty[] emptyMoves = new FSMT_Empty[emptyIndices.Length];
         for (int i = 0; i < emptyMoves.Length; i++)
         {
-            FigureVerticesMove emptyMove = new FigureVerticesMove();
-            emptyMove.AssignFromIndex(emptyIndices[i]);
+            FSMT_Empty emptyMove = new FSMT_Empty();
+            emptyMove.AssignIndex(emptyIndices[i]);
             emptyMove.AssignLerpSpeed(_figureParams.EmptyLerpSpeed);
             emptyMoves[i] = emptyMove;
         }
@@ -214,7 +214,7 @@ public class FigurePuzzler : MonoBehaviour
     private void Complete()
     {
         Debug.Log("=== COMPLETED===");
-        List<FigureVerticesMove> completionMoves = new List<FigureVerticesMove>(_emptyPlacesCount);
+        List<FS_Movement> completionMoves = new List<FS_Movement>(_emptyPlacesCount);
         foreach (var entry in _assembleIndicesByPuzzleIndex)
         {
             int puzzleIndex = entry.Key;
@@ -224,21 +224,17 @@ public class FigurePuzzler : MonoBehaviour
             for (int i = 0; i < teleportLocationIndices.Count; i++)
             {
                 Assert.IsNotNull(puzzleSegments[i]);
-                FigureVerticesMove completionMove = new FigureVerticesMove();
+                FSMT_Completion completionMove = new FSMT_Completion();
 
                 int2 destinationIndex = teleportLocationIndices[i];
-                completionMove.AssignToIndex(destinationIndex);
+                completionMove.AssignCompletionIndex(destinationIndex);
                 completionMove.AssignCompletionSegment(puzzleSegments[i]);
                 completionMove.AssignLerpSpeed(_figureParams.CompleteLerpSpeed);
                 completionMoves.Add(completionMove);
             }
         }
         _figure.StatesController.StopUpdating();
-        for (int i = 0; i < completionMoves.Count; i++)
-        {
-            Debug.Log(completionMoves[i].ToIndex);
-        }
-        _figure.Complete(completionMoves, FigureDelegatesContainer.Completed);
+        _figure.MakeMoves(completionMoves, FigureDelegatesContainer.Completed);
         StartCoroutine(CompletionSequence(1.0f / _figureParams.CompleteLerpSpeed, _figure.transform));
     }
 

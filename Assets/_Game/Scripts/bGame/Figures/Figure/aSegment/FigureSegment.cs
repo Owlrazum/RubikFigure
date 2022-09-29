@@ -5,6 +5,7 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Assertions;
 
+// FS is reserved
 public class FigureSegment : MonoBehaviour
 {
     protected FigureSegmentMover _mover;
@@ -35,7 +36,7 @@ public class FigureSegment : MonoBehaviour
     }
 
     public void StartMove(
-        FigureSegmentMove move,
+        FS_Movement move,
         Action OnMoveToDestinationCompleted)
     {
         _mover.StartMove(move, OnMoveToDestinationCompleted);
