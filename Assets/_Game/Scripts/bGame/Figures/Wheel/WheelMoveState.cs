@@ -13,10 +13,10 @@ public class WheelMoveState : FigureMoveState
     public WheelMoveState(WheelStatesController statesController, Wheel wheel, float moveLerpSpeed)
         : base(statesController, wheel, moveLerpSpeed)
     {
-        _movesToMake = new List<FS_Movement>(wheel.SideCount);
+        _movesToMake = new List<FM_Segment>(wheel.SideCount);
     }
 
-    protected override List<FS_Movement> DetermineMovesFromInput(Vector3 worldPos, Vector3 worldDir)
+    protected override List<FM_Segment> DetermineMovesFromInput(Vector3 worldPos, Vector3 worldDir)
     {
         _movesToMake.Clear();
 
@@ -43,13 +43,13 @@ public class WheelMoveState : FigureMoveState
         }
     }
 
-    private List<FS_Movement> ConstructVerticesMove(int2 index, VertOrderType vertOrder)
+    private List<FM_Segment> ConstructVerticesMove(int2 index, VertOrderType vertOrder)
     {
         int2 originIndex = index;
         int2 targetIndex = _figure.MoveIndexVertOrder(originIndex, vertOrder);
         for (int side = 0; side < _figure.Dimensions.x; side++)
         {
-            FSMC_Transition verticesMove = new FSMC_Transition();
+            FMSC_Transition verticesMove = new FMSC_Transition();
             verticesMove.AssignFromIndex(originIndex);
             verticesMove.AssignToIndex(targetIndex);
             verticesMove.AssignLerpSpeed(_moveLerpSpeed);
@@ -63,13 +63,13 @@ public class WheelMoveState : FigureMoveState
         return _movesToMake;
     }
 
-    private List<FS_Movement> ConstructVerticesMove(int2 index, ClockOrderType clockOrder)
+    private List<FM_Segment> ConstructVerticesMove(int2 index, ClockOrderType clockOrder)
     {
         int2 originIndex = index;
         int2 targetIndex = _figure.MoveIndexInClockOrder(originIndex, clockOrder);
         for (int side = 0; side < _figure.Dimensions.x; side++)
         {
-            FSMC_Transition verticesMove = new FSMC_Transition();
+            FMSC_Transition verticesMove = new FMSC_Transition();
             verticesMove.AssignFromIndex(originIndex);
             verticesMove.AssignToIndex(targetIndex);
             verticesMove.AssignLerpSpeed(_moveLerpSpeed);

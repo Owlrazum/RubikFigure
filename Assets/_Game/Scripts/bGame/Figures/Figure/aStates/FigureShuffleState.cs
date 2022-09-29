@@ -25,7 +25,7 @@ public class FigureShuffleState : FigureState
 
     private bool _isShuffleCompleted;
 
-    protected virtual bool CustomShuffle(float lerpSpeed, out FSMCT_Shuffle[] moves)
+    protected virtual bool CustomShuffle(float lerpSpeed, out FMSCT_Shuffle[] moves)
     {
         moves = null;
         return false;
@@ -106,7 +106,7 @@ public class FigureShuffleState : FigureState
         }
         ShuffleIndices();
 
-        FSMCT_Shuffle[] moves = new FSMCT_Shuffle[_dims.y * _dims.x];
+        FMSCT_Shuffle[] moves = new FMSCT_Shuffle[_dims.y * _dims.x];
         int moveIndex = 0;
         for (int row = 0; row < _shuffleIndices.RowCount; row++)
         {
@@ -114,7 +114,7 @@ public class FigureShuffleState : FigureState
             {
                 int2 fromIndex = new int2(col, row);
                 int2 toIndex = _shuffleIndices[fromIndex];
-                FSMCT_Shuffle shuffleMove = new FSMCT_Shuffle();
+                FMSCT_Shuffle shuffleMove = new FMSCT_Shuffle();
                 shuffleMove.AssignFromIndex(fromIndex);
                 shuffleMove.AssignToIndex(toIndex);
                 shuffleMove.AssignLerpSpeed(lerpSpeed);

@@ -115,10 +115,10 @@ public class FigurePuzzler : MonoBehaviour
 
     private void MakeEmptyMoves(int2[] emptyIndices)
     {
-        FSMT_Empty[] emptyMoves = new FSMT_Empty[emptyIndices.Length];
+        FMST_Empty[] emptyMoves = new FMST_Empty[emptyIndices.Length];
         for (int i = 0; i < emptyMoves.Length; i++)
         {
-            FSMT_Empty emptyMove = new FSMT_Empty();
+            FMST_Empty emptyMove = new FMST_Empty();
             emptyMove.AssignIndex(emptyIndices[i]);
             emptyMove.AssignLerpSpeed(_figureParams.EmptyLerpSpeed);
             emptyMoves[i] = emptyMove;
@@ -214,7 +214,7 @@ public class FigurePuzzler : MonoBehaviour
     private void Complete()
     {
         Debug.Log("=== COMPLETED===");
-        List<FS_Movement> completionMoves = new List<FS_Movement>(_emptyPlacesCount);
+        List<FM_Segment> completionMoves = new List<FM_Segment>(_emptyPlacesCount);
         foreach (var entry in _assembleIndicesByPuzzleIndex)
         {
             int puzzleIndex = entry.Key;
@@ -224,7 +224,7 @@ public class FigurePuzzler : MonoBehaviour
             for (int i = 0; i < teleportLocationIndices.Count; i++)
             {
                 Assert.IsNotNull(puzzleSegments[i]);
-                FSMT_Completion completionMove = new FSMT_Completion();
+                FMST_Completion completionMove = new FMST_Completion();
 
                 int2 destinationIndex = teleportLocationIndices[i];
                 completionMove.AssignCompletionIndex(destinationIndex);

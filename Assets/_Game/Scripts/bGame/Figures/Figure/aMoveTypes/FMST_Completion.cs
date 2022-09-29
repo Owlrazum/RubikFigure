@@ -1,6 +1,6 @@
 using Unity.Mathematics;
 
-public class FSMT_Completion : FSM_Transition
+public class FMST_Completion : FMS_Transition
 {
     public int2 CompletionIndex { get; private set; }
     public void AssignCompletionIndex(int2 index)

@@ -72,6 +72,8 @@ public class ValknutGenerator : FigureGenerator
         _figureVertices = new NativeArray<VertexData>(SegmentsTotalVertexCount, Allocator.TempJob);
         _figureIndices = new NativeArray<short>(SegmentsTotalIndexCount, Allocator.TempJob);
 
+        _scaledFigureVertices = new NativeArray<VertexData>(SegmentsTotalVertexCount, Allocator.TempJob);
+
         NativeArray<float3x2> lineSegments = new NativeArray<float3x2>(SegmentsTotalVertexCount, Allocator.Persistent);
         NativeArray<int2> quadStripsIndexers = new NativeArray<int2>(SegmentsCount, Allocator.Persistent);
         _quadStripsCollection = new QuadStripsBuffer(lineSegments, quadStripsIndexers);

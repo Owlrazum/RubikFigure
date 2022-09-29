@@ -1,12 +1,12 @@
 using Orazum.Meshing;
 
-public class FSMC_Transition : FSM_IndexChange
+public class FMSC_Transition : FMS_IndexChange
 {
-    public FSMC_Transition() : base()
+    public FMSC_Transition() : base()
     {
     }
 
-    public FSMC_Transition(FSM_IndexChange indexChange)
+    public FMSC_Transition(FMS_IndexChange indexChange)
     {
         From = indexChange.From;
         To = indexChange.To;

@@ -36,7 +36,7 @@ public class FigureSegment : MonoBehaviour
     }
 
     public void StartMove(
-        FS_Movement move,
+        FM_Segment move,
         Action OnMoveToDestinationCompleted)
     {
         _mover.StartMove(move, OnMoveToDestinationCompleted);

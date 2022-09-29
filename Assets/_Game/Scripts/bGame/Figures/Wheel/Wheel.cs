@@ -51,13 +51,13 @@ public class Wheel : Figure
         return Quaternion.AngleAxis(rotationAngle, Vector3.up);
     }
 
-    protected override void MakeSegmentMove(FigureSegment segment, FSMC_Transition move, Action moveCompleteAction)
+    protected override void MakeSegmentMove(FigureSegment segment, FMSC_Transition move, Action moveCompleteAction)
     {
         AssignTransData(move);
         segment.StartMove(move, moveCompleteAction);
     }
 
-    private void AssignTransData(FSMC_Transition move)
+    private void AssignTransData(FMSC_Transition move)
     {
         int2 from = move.From;
         int2 to = move.To;

@@ -73,7 +73,7 @@ public class FigureSegmentMover : MonoBehaviour
     }
 
     public virtual void StartMove(
-        FS_Movement move,
+        FM_Segment move,
         Action OnMoveToDestinationCompleted)
     {
         _moveCompleteAction = OnMoveToDestinationCompleted;
@@ -81,7 +81,7 @@ public class FigureSegmentMover : MonoBehaviour
 
         switch (move)
         { 
-            case FSMC_Transition fsmct:
+            case FMSC_Transition fsmct:
                 _shouldDispose = fsmct.ShouldDisposeTransition;
                 if (_shouldDispose)
                 {
@@ -89,7 +89,7 @@ public class FigureSegmentMover : MonoBehaviour
                 }
                 StartCoroutine(MoveSequence(fsmct.Transition));
                 break;
-            case FSM_Transition fsmt:
+            case FMS_Transition fsmt:
                 _shouldDispose = fsmt.ShouldDisposeTransition;
                 if (_shouldDispose)
                 {

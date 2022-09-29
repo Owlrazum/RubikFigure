@@ -11,7 +11,7 @@ public abstract class FigureMoveState : FigureState
     protected bool _areSegmentsMoving;
     protected Vector3 _figureCenter;
 
-    protected List<FS_Movement> _movesToMake;
+    protected List<FM_Segment> _movesToMake;
 
     public FigureMoveState(FigureStatesController statesController, Figure figure, float moveLerpSpeed) 
         : base(statesController, figure)
@@ -20,7 +20,7 @@ public abstract class FigureMoveState : FigureState
         _figureCenter = figure.transform.position;
     }
 
-    protected abstract List<FS_Movement> DetermineMovesFromInput(Vector3 worldPos, Vector3 worldDir);
+    protected abstract List<FM_Segment> DetermineMovesFromInput(Vector3 worldPos, Vector3 worldDir);
 
     protected SwipeCommand _currentSwipeCommand;
     protected FigureSegmentPoint _currentSelectedPoint;
@@ -82,7 +82,7 @@ public abstract class FigureMoveState : FigureState
         string log = "";
         for (int i = 0; i < _movesToMake.Count; i++)
         {
-            if (_movesToMake[i] is FSM_IndexChange indexChange)
+            if (_movesToMake[i] is FMS_IndexChange indexChange)
             log += $"From: {indexChange.From} To {indexChange.To}\n";
         }
         Debug.Log(log);

@@ -17,13 +17,13 @@ public class Valknut : Figure
         _transitions = transitions;
     }
 
-    protected override void MakeSegmentMove(FigureSegment segment, FSMC_Transition move, Action moveCompleteAction)
+    protected override void MakeSegmentMove(FigureSegment segment, FMSC_Transition move, Action moveCompleteAction)
     {
         AssignTransitionData(move);
         segment.StartMove(move, moveCompleteAction);
     }
 
-    private void AssignTransitionData(FSMC_Transition verticesMove)
+    private void AssignTransitionData(FMSC_Transition verticesMove)
     {
         int2 from = verticesMove.From;
         int2 to = verticesMove.To;

@@ -1,11 +1,11 @@
 using Unity.Mathematics;
 
-public class FSM_IndexChange : FS_Movement
+public class FMS_IndexChange : FM_Segment
 {
     public int2 From
     {
-        get { return SegmentIndex; }
-        protected set { SegmentIndex = value; }
+        get { return Index; }
+        protected set { Index = value; }
     }
     public void AssignFromIndex(int2 fromIndex)
     {
@@ -18,7 +18,7 @@ public class FSM_IndexChange : FS_Movement
         To = toIndex;
     }
 
-    public FSM_IndexChange()
+    public FMS_IndexChange()
     {
         From = -1;
         To = -1;
