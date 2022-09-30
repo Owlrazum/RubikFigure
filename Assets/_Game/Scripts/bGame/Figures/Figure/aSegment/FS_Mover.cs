@@ -22,7 +22,7 @@ public class FigureSegmentMover : MonoBehaviour
     private MeshFilter _meshFilter;
     public MeshFilter MeshContainer { get { return _meshFilter; } }
 
-    protected JobHandle _segmentMoveJobHandle;
+    protected JobHandle _moveJobHandle;
 
     protected float _currentLerpSpeed;
 
@@ -38,14 +38,17 @@ public class FigureSegmentMover : MonoBehaviour
     private bool _wasMoveCompleted;
 
     private bool _shouldDispose;
-    private QS_Transition _toDispose; 
+    private QS_Transition _toDispose;
+
+    private float2 _uv;
 
     public void Initialize(float2 uv, int2 meshBuffersMaxCount)
     {
         _vertices = new NativeArray<VertexData>(meshBuffersMaxCount.x, Allocator.Persistent);
         _indices = new NativeArray<short>(meshBuffersMaxCount.y, Allocator.Persistent);
         _indexersForJob = new MeshBuffersIndexersForJob(new MeshBuffersIndexers());
-        
+
+        _uv = uv;
         float3x2 normalUV = new float3x2(math.up(), new float3(uv, 0));
         _animator_QST = new QST_Animator( _vertices, _indices, normalUV);
     }
@@ -57,9 +60,9 @@ public class FigureSegmentMover : MonoBehaviour
 
     protected virtual void OnDestroy()
     {
-        if (!_segmentMoveJobHandle.IsCompleted)
+        if (!_moveJobHandle.IsCompleted)
         {
-            _segmentMoveJobHandle.Complete();
+            _moveJobHandle.Complete();
         }
 
         if (_shouldDispose)
@@ -73,36 +76,40 @@ public class FigureSegmentMover : MonoBehaviour
     }
 
     public virtual void StartMove(
-        FM_Segment move,
-        Action OnMoveToDestinationCompleted)
+        FigureMoveOnSegment move,
+        Action onMoveCompleted)
     {
-        _moveCompleteAction = OnMoveToDestinationCompleted;
+        _moveCompleteAction = onMoveCompleted;
         _currentLerpSpeed = move.LerpSpeed;
 
         switch (move)
         { 
-            case FMSC_Transition fsmct:
-                _shouldDispose = fsmct.ShouldDisposeTransition;
+            case FMSC_Transition fmsct:
+                _shouldDispose = fmsct.ShouldDisposeTransition;
                 if (_shouldDispose)
                 {
-                    _toDispose = fsmct.Transition;
+                    _toDispose = fmsct.Transition;
                 }
-                StartCoroutine(MoveSequence(fsmct.Transition));
+                StartCoroutine(MoveWithTransitionSequence(fmsct.Transition));
                 break;
-            case FMS_Transition fsmt:
-                _shouldDispose = fsmt.ShouldDisposeTransition;
+            case FMS_Transition fmst:
+                _shouldDispose = fmst.ShouldDisposeTransition;
                 if (_shouldDispose)
                 {
-                    _toDispose = fsmt.Transition;
+                    _toDispose = fmst.Transition;
                 }
-                StartCoroutine(MoveSequence(fsmt.Transition));
+                StartCoroutine(MoveWithTransitionSequence(fmst.Transition));
+                break;
+            case FMS_Scaling fmScaling:
+                _shouldDispose = false;
+                StartCoroutine(MoveWithScaleSequence(fmScaling.Scaler));
                 break;
             default:
                 throw new ArgumentException("Unknown type of move");
         }
     }
 
-     private IEnumerator MoveSequence(QS_Transition transition)
+     private IEnumerator MoveWithTransitionSequence(QS_Transition transition)
     {
         float lerpParam = 0;
         Assert.IsTrue(transition.IsCreated);
@@ -122,7 +129,7 @@ public class FigureSegmentMover : MonoBehaviour
             }
 
             moveJob.P_LerpParam = EaseInOut(lerpParam);
-            _segmentMoveJobHandle = moveJob.Schedule(_segmentMoveJobHandle);
+            _moveJobHandle = moveJob.Schedule(_moveJobHandle);
             _wasJobScheduled = true;
             yield return null;
         }
@@ -135,38 +142,61 @@ public class FigureSegmentMover : MonoBehaviour
         }
     }
 
+    private IEnumerator MoveWithScaleSequence(FS_Scaler scaler)
+    {
+        scaler.AssignMeshBuffers(_vertices, _uv, _indices, _indexersForJob);
+        scaler.PrepareJob();
+
+        yield return null;
+        transform.position = new Vector3(transform.position.x, 0.1f, transform.position.z);
+        float lerpParam = 0;
+        while (lerpParam < 1)
+        {
+            lerpParam += _currentLerpSpeed * Time.deltaTime;
+            if (lerpParam > 1)
+            {
+                lerpParam = 1;
+            }
+
+            float easedLerpParam = EaseInOut(lerpParam);
+            _moveJobHandle = scaler.ScheduleScalingJob(easedLerpParam);
+            _wasJobScheduled = true;
+            yield return null;
+        }
+
+        transform.position = new Vector3(transform.position.x, 0, transform.position.z);
+        _wasMoveCompleted = true;
+    }
+
     private void LateUpdate()
     {
-        if (_wasMoveCompleted)
-        {
-            _indexersForJob.Reset();
-            _moveCompleteAction?.Invoke();
-            _wasMoveCompleted = false;
-        }
-        else if (_wasJobScheduled)
-        {
-            _segmentMoveJobHandle.Complete();
-            AssignMeshBuffers(_vertices, _indices, _indexersForJob.GetIndexersOutsideJob());
+        if (_wasJobScheduled)
+        { 
+            _moveJobHandle.Complete();
+            AssignMeshBuffers();
             _indexersForJob.Reset();
             
             _wasJobScheduled = false;
         }
+
+        if (_wasMoveCompleted)
+        { 
+            _wasMoveCompleted = false;
+            _moveCompleteAction?.Invoke();
+        }
     }
 
-    protected void AssignMeshBuffers(
-        NativeArray<VertexData> vertices, 
-        NativeArray<short> indices,
-        in MeshBuffersIndexers buffersIndexers
-    )
+    protected void AssignMeshBuffers()
     { 
         Mesh mesh = MeshContainer.mesh;
         mesh.MarkDynamic();
 
+        MeshBuffersIndexers buffersIndexers = _indexersForJob.GetIndexersOutsideJob();
         mesh.SetVertexBufferParams(buffersIndexers.Count.x, VertexData.VertexBufferMemoryLayout);
         mesh.SetIndexBufferParams(buffersIndexers.Count.y, IndexFormat.UInt16);
 
-        mesh.SetVertexBufferData(vertices, buffersIndexers.Start.x, 0, buffersIndexers.Count.x, 0, MoveMeshUpdateFlags);
-        mesh.SetIndexBufferData(indices, buffersIndexers.Start.y, 0, buffersIndexers.Count.y, MoveMeshUpdateFlags);
+        mesh.SetVertexBufferData(_vertices, buffersIndexers.Start.x, 0, buffersIndexers.Count.x, 0, MoveMeshUpdateFlags);
+        mesh.SetIndexBufferData(_indices, buffersIndexers.Start.y, 0, buffersIndexers.Count.y, MoveMeshUpdateFlags);
 
         mesh.subMeshCount = 1;
         SubMeshDescriptor subMesh = new SubMeshDescriptor(

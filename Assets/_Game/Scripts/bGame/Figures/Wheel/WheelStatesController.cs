@@ -11,8 +11,9 @@ public class WheelStatesController : FigureStatesController
         if (figureParams.SelectMethod == SelectMethodType.Raycast)
         {
             RaycastSelectable raycastSelectable = new RaycastSelectable(SegmentPointsLayerMask);
-            IdleState = new FigureIdleState(raycastSelectable, this, wheel);
-            IdleState.SetSelectionScaling(figureParams.SelectionScaling);
+            WheelIdleState wheelIdleState = new WheelIdleState(raycastSelectable, this, wheel);
+            wheelIdleState.AssignScalingParams(figureParams.ScaleLerpSpeed, figureParams.SelectionScaleDelta, genParams as WheelGenParamsSO);
+            IdleState = wheelIdleState;
         }
 
         MoveState = new WheelMoveState(this, wheel, figureParams.MoveLerpSpeed);

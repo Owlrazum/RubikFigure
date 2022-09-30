@@ -3,7 +3,6 @@ using UnityEngine.Assertions;
 
 public class FigureIdleState : FigureState
 {
-    private float _scaling;
     protected SwipeCommand _currentSwipeCommand;
     protected FigureSegmentPoint _currentSelectedPoint;
     protected Selectable _selectable;
@@ -12,11 +11,6 @@ public class FigureIdleState : FigureState
     {
         _selectable = selectable;
         _selectable.SetSelectionActions(SelectAction, DeselectCheckOnPointerUp, DeselectAction);
-    }
-
-    public void SetSelectionScaling(float scaling)
-    {
-        _scaling = scaling;
     }
 
     public override void OnEnter()
@@ -35,7 +29,7 @@ public class FigureIdleState : FigureState
         InputDelegatesContainer.SwipeCommand -= OnSwipeCommand;
     }
 
-    private void SelectAction(Collider collider)
+    protected virtual void SelectAction(Collider collider)
     {
         bool isFound = collider.TryGetComponent(out FigureSegmentPointCollider segmentPointCollider);
         Assert.IsTrue(isFound);
@@ -49,41 +43,26 @@ public class FigureIdleState : FigureState
         Debug.Log($"Select action {segmentPointCollider.ParentPoint.Index}");
         _currentSelectedPoint = segmentPointCollider.ParentPoint;
         _currentSelectedPoint.Segment.HighlightRender();
-        _currentSelectedPoint.Segment.transform.localScale = new Vector3(_scaling, _scaling, _scaling);
     }
 
-    private bool DeselectCheckOnPointerUp(Collider collider)
+    protected virtual bool DeselectCheckOnPointerUp(Collider collider)
     {
         return _currentSwipeCommand == null;
-        // if (collider == null)
-        // {
-        //     return true;
-        // }
-
-        // bool isFound = collider.TryGetComponent(out FigureSegmentPointCollider segmentPointCollider);
-        // Assert.IsTrue(isFound);
-        // if (segmentPointCollider.ParentPoint == _currentSelectedPoint)
-        // {
-        //     return false;
-        // }
-        // else
-        // { 
-        //     return true;
-        // }
     }
 
-    private void DeselectAction()
+    protected virtual void DeselectAction()
     {
-        if (_currentSelectedPoint != null)
+        if (_currentSelectedPoint == null)
         {
-            Debug.Log("DeselectAction");
-            _currentSelectedPoint.Segment.DefaultRender();
-            _currentSelectedPoint.Segment.transform.localScale = Vector3.one;
-            _currentSelectedPoint = null;
+            return;
         }
+
+        Debug.Log("DeselectAction");
+        _currentSelectedPoint.Segment.DefaultRender();
+        _currentSelectedPoint = null;
     }
 
-    private void OnSwipeCommand(SwipeCommand swipeCommand)
+    protected virtual void OnSwipeCommand(SwipeCommand swipeCommand)
     {
         if (_currentSelectedPoint != null)
         {

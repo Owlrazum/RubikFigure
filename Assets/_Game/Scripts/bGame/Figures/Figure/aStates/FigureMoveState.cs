@@ -11,7 +11,7 @@ public abstract class FigureMoveState : FigureState
     protected bool _areSegmentsMoving;
     protected Vector3 _figureCenter;
 
-    protected List<FM_Segment> _movesToMake;
+    protected List<FigureMoveOnSegment> _movesToMake;
 
     public FigureMoveState(FigureStatesController statesController, Figure figure, float moveLerpSpeed) 
         : base(statesController, figure)
@@ -20,7 +20,7 @@ public abstract class FigureMoveState : FigureState
         _figureCenter = figure.transform.position;
     }
 
-    protected abstract List<FM_Segment> DetermineMovesFromInput(Vector3 worldPos, Vector3 worldDir);
+    protected abstract List<FigureMoveOnSegment> DetermineMovesFromInput(Vector3 worldPos, Vector3 worldDir);
 
     protected SwipeCommand _currentSwipeCommand;
     protected FigureSegmentPoint _currentSelectedPoint;

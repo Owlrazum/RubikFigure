@@ -12,17 +12,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dbce5a62c0d3f441fb1902bbabf0ddd4, type: 3}
   m_Name: Params_O
   m_EditorClassIdentifier: 
-  GenParams: {fileID: 11400000, guid: 02014c9e25ae346ae9db33ed117eb655, type: 2}
   SelectMethod: 0
   EmptyLerpSpeed: 2
   BeforeEmptyTime: 0.5
   ShouldUsePredefinedEmptyPlaces: 0
   _emptyPlacesCount: 2
   PredefinedEmptyPlaces: []
-  ShuffleStepsAmount: 2
+  ShuffleStepsAmount: 1
   ShufflePauseTime: 0.3
   ShuffleLerpSpeed: 2
+  ScaleLerpSpeed: 5
+  SelectionScaleDelta: 0.1
   MoveLerpSpeed: 2.5
-  SelectionScaling: 1.1
   CompleteLerpSpeed: 1
   RotationAmplitude: 7

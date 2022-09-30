@@ -8,7 +8,7 @@ using UnityEngine;
 using Orazum.Meshing;
 using static Orazum.Constants.Math;
 
-// [BurstCompile]
+[BurstCompile]
 public struct WheelGenJob : IJob
 {
     public int P_SideCount;
@@ -99,7 +99,6 @@ public struct WheelGenJob : IJob
         _quadStripsCollectionIndexer.x += P_SegmentResolution + 1;
         lineSegments[0] = quadStripSegment;
 
-        int gridIndexer = side * offsets.x + ring * offsets.y;
         for (int i = 0; i < P_SegmentResolution; i++)
         {
             currentRay = math.rotate(_segQuadRotDelta, currentRay);

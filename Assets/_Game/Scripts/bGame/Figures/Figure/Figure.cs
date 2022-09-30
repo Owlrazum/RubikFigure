@@ -75,11 +75,11 @@ public abstract class Figure : MonoBehaviour
         return emptiedSegments;
     }
 
-    private bool IsUniversalMove(FM_Segment move)
+    private bool IsUniversalMove(FigureMoveOnSegment move)
     {
         return move is FMST_Empty || move is FMST_Completion || move is FMSCT_Shuffle;
     }
-    private void MakeUniversalMove(FigureSegment segment, FM_Segment move, Action moveCompleteAction)
+    private void MakeUniversalMove(FigureSegment segment, FigureMoveOnSegment move, Action moveCompleteAction)
     {
         AssignUniversalTransition(move);
 
@@ -87,7 +87,7 @@ public abstract class Figure : MonoBehaviour
     }
 
 
-    private void AssignUniversalTransition(FM_Segment move)
+    private void AssignUniversalTransition(FigureMoveOnSegment move)
     {
         switch (move)
         { 
@@ -112,14 +112,19 @@ public abstract class Figure : MonoBehaviour
         }
     }
 
-    public void MakeMoves(IList<FM_Segment> moves, Action movesCompleteAction)
+    private bool IsMoveWithoutTransitions(FigureMoveOnSegment move)
+    {
+        return move is FMS_Scaling;
+    }
+
+    public void MakeMoves(IList<FigureMoveOnSegment> moves, Action movesCompleteAction)
     {
         _movesCompleteAction = movesCompleteAction;
         _movesCount = new int2(0, moves.Count);
 
         for (int i = 0; i < moves.Count; i++)
         {
-            FM_Segment move = moves[i];
+            FigureMoveOnSegment move = moves[i];
             FigureSegment movedSegment = GetSegmentToMove(move);
             if (movedSegment == null)
             {
@@ -128,14 +133,18 @@ public abstract class Figure : MonoBehaviour
                 continue;
             }
 
-            if (IsUniversalMove(move))
+            if (IsMoveWithoutTransitions(move))
+            {
+                movedSegment.StartMove(move, MoveCompleteAction);
+            }
+            else if (IsUniversalMove(move))
             {
                 MakeUniversalMove(movedSegment, move, MoveCompleteAction);
             }
             else
             {
                 FMSC_Transition segmentMove = move as FMSC_Transition;
-                Assert.IsNotNull(segmentMove);
+                Assert.IsNotNull(segmentMove, $"move is not indexChange with transition move: {move}");
                 MakeSegmentMove(movedSegment, segmentMove, MoveCompleteAction);
             }
 
@@ -161,7 +170,7 @@ public abstract class Figure : MonoBehaviour
             _segmentPoints[indexChange.To].Segment = _movedSegmentsBuffer[i];
         }
     }
-    private FigureSegment GetSegmentToMove(FM_Segment move)
+    private FigureSegment GetSegmentToMove(FigureMoveOnSegment move)
     {
         switch (move)
         { 

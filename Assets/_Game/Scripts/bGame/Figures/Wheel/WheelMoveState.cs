@@ -13,10 +13,10 @@ public class WheelMoveState : FigureMoveState
     public WheelMoveState(WheelStatesController statesController, Wheel wheel, float moveLerpSpeed)
         : base(statesController, wheel, moveLerpSpeed)
     {
-        _movesToMake = new List<FM_Segment>(wheel.SideCount);
+        _movesToMake = new List<FigureMoveOnSegment>(wheel.SideCount);
     }
 
-    protected override List<FM_Segment> DetermineMovesFromInput(Vector3 worldPos, Vector3 worldDir)
+    protected override List<FigureMoveOnSegment> DetermineMovesFromInput(Vector3 worldPos, Vector3 worldDir)
     {
         _movesToMake.Clear();
 
@@ -43,7 +43,7 @@ public class WheelMoveState : FigureMoveState
         }
     }
 
-    private List<FM_Segment> ConstructVerticesMove(int2 index, VertOrderType vertOrder)
+    private List<FigureMoveOnSegment> ConstructVerticesMove(int2 index, VertOrderType vertOrder)
     {
         int2 originIndex = index;
         int2 targetIndex = _figure.MoveIndexVertOrder(originIndex, vertOrder);
@@ -63,7 +63,7 @@ public class WheelMoveState : FigureMoveState
         return _movesToMake;
     }
 
-    private List<FM_Segment> ConstructVerticesMove(int2 index, ClockOrderType clockOrder)
+    private List<FigureMoveOnSegment> ConstructVerticesMove(int2 index, ClockOrderType clockOrder)
     {
         int2 originIndex = index;
         int2 targetIndex = _figure.MoveIndexInClockOrder(originIndex, clockOrder);

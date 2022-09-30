@@ -36,10 +36,10 @@ public class FigureSegment : MonoBehaviour
     }
 
     public void StartMove(
-        FM_Segment move,
-        Action OnMoveToDestinationCompleted)
+        FigureMoveOnSegment move,
+        Action onMoveCompleted)
     {
-        _mover.StartMove(move, OnMoveToDestinationCompleted);
+        _mover.StartMove(move, onMoveCompleted);
     }
 
     public void HighlightRender()

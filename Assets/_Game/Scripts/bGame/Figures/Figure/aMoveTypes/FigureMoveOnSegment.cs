@@ -1,6 +1,6 @@
 using Unity.Mathematics;
 
-public class FM_Segment : FigureMove
+public abstract class FigureMoveOnSegment
 { 
     public int2 Index { get; protected set; }
     public void AssignIndex(int2 segmentIndex)

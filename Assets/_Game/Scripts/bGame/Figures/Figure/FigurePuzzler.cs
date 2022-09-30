@@ -214,7 +214,7 @@ public class FigurePuzzler : MonoBehaviour
     private void Complete()
     {
         Debug.Log("=== COMPLETED===");
-        List<FM_Segment> completionMoves = new List<FM_Segment>(_emptyPlacesCount);
+        List<FigureMoveOnSegment> completionMoves = new List<FigureMoveOnSegment>(_emptyPlacesCount);
         foreach (var entry in _assembleIndicesByPuzzleIndex)
         {
             int puzzleIndex = entry.Key;

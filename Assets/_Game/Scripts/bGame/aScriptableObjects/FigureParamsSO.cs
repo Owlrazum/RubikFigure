@@ -28,10 +28,13 @@ public class FigureParamsSO : ScriptableObject
     public int ShuffleStepsAmount = 1;
     public float ShufflePauseTime = 0.5f;
     public float ShuffleLerpSpeed = 1;
-    
+
+    [Header("Scaling")]
+    public float ScaleLerpSpeed = 3;
+    public float SelectionScaleDelta = 0.2f;
+
     [Header("Moving")]
     public float MoveLerpSpeed = 2;
-    public float SelectionScaling = 1.2f;
 
     [Header("Completion")]
     public float CompleteLerpSpeed;
