@@ -1,6 +1,6 @@
 using Unity.Mathematics;
 
-public class ValknutSegmentPoint : FigureSegmentPoint
+public class ValknutSegmentPoint : FS_Point
 { 
     public float3 Start { get; private set; }
     public float3 End { get; private set; }

@@ -1,12 +1,12 @@
 using UnityEngine;
 
 [RequireComponent(typeof(MeshCollider))]
-public class FigureSegmentPointCollider : MonoBehaviour
+public class FSP_Collider : MonoBehaviour
 {
     private MeshCollider _meshCollider;
-    private FigureSegmentPoint _pointReference;
-    public FigureSegmentPoint ParentPoint { get { return _pointReference; } }
-    public void Initialize(Mesh mesh, FigureSegmentPoint pointReference)
+    private FS_Point _pointReference;
+    public FS_Point ParentPoint { get { return _pointReference; } }
+    public void Initialize(Mesh mesh, FS_Point pointReference)
     {
         TryGetComponent(out _meshCollider);
         _meshCollider.cookingOptions = MeshColliderCookingOptions.CookForFasterSimulation | MeshColliderCookingOptions.UseFastMidphase;

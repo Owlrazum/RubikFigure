@@ -106,9 +106,9 @@ public class WheelGenerator : FigureGenerator
     {
         return segmentGb.AddComponent<FigureSegment>();
     }
-    protected override FigureSegmentPoint AddSegmentPointComponent(GameObject segmentPointGb)
+    protected override FS_Point AddSegmentPointComponent(GameObject segmentPointGb)
     {
-        return segmentPointGb.AddComponent<FigureSegmentPoint>();
+        return segmentPointGb.AddComponent<FS_Point>();
     }
 
     protected override void CompleteGeneration(FigureParamsSO figureParams, FigureGenParamsSO genParams)
@@ -126,7 +126,7 @@ public class WheelGenerator : FigureGenerator
             {
                 UpdateSegment(_segments[side, ring], _segmentBuffersData, puzzleIndex: side, MeshBuffersMaxCount);
 
-                FigureSegmentPoint currentPoint = _segmentPoints[side, ring];
+                FS_Point currentPoint = _segmentPoints[side, ring];
                 currentPoint.InitializeWithSingleMesh(segmentPointMeshes[ring]);
 
                 _segmentBuffersData.Start += _segmentBuffersData.Count;

@@ -20,7 +20,7 @@ public abstract class FigureGenerator : MonoBehaviour
     protected int2 _dims;
     protected Figure _figure;
     protected Array2D<FigureSegment> _segments;
-    protected Array2D<FigureSegmentPoint> _segmentPoints;
+    protected Array2D<FS_Point> _segmentPoints;
 
     private FigureParamsSO _figureParams;
     private FigureGenParamsSO _genParams;
@@ -97,7 +97,7 @@ public abstract class FigureGenerator : MonoBehaviour
         segmentsParent.SetSiblingIndex(1);
 
         _segments = new Array2D<FigureSegment>(_dims);
-        _segmentPoints = new Array2D<FigureSegmentPoint>(_dims);
+        _segmentPoints = new Array2D<FS_Point>(_dims);
 
         for (int col = 0; col < _dims.x; col++)
         {
@@ -115,7 +115,7 @@ public abstract class FigureGenerator : MonoBehaviour
                 GameObject segmentPointGb = new GameObject(FigureName + "SegmentPoint", typeof(MeshFilter), typeof(MeshRenderer));
                 segmentPointGb.layer = Layers.SegmentPointsLayer;
                 segmentPointGb.transform.parent = segmentPointsParent;
-                FigureSegmentPoint segmentPoint = AddSegmentPointComponent(segmentPointGb);
+                FS_Point segmentPoint = AddSegmentPointComponent(segmentPointGb);
                 Assert.IsNotNull(segmentPoint);
                 segmentPoint.Segment = segment;
                 segmentPoint.AssignIndex(index);
@@ -126,7 +126,7 @@ public abstract class FigureGenerator : MonoBehaviour
     protected abstract string FigureName { get; }
     protected abstract GameObject GenerateFigureGb();
     protected abstract FigureSegment AddSegmentComponent(GameObject segmentGb);
-    protected abstract FigureSegmentPoint AddSegmentPointComponent(GameObject segmentPointGb);
+    protected abstract FS_Point AddSegmentPointComponent(GameObject segmentPointGb);
 
     protected abstract void CompleteGeneration(FigureParamsSO figureParams, FigureGenParamsSO genParams);
 

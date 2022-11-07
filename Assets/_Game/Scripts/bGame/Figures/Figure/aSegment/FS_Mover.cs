@@ -14,7 +14,7 @@ using Orazum.Collections;
 using static Orazum.Math.EasingUtilities;
 
 [RequireComponent(typeof(MeshFilter))]
-public class FigureSegmentMover : MonoBehaviour
+public class FS_Mover : MonoBehaviour
 {
     private const float ClockMoveBufferLerpValue = 0.4f;
     private const MeshUpdateFlags MoveMeshUpdateFlags = MeshUpdateFlags.Default;
@@ -110,7 +110,7 @@ public class FigureSegmentMover : MonoBehaviour
         float lerpParam = 0;
         Assert.IsTrue(transition.IsCreated);
         _animator_QST.AssignTransition(transition);
-        FigureSegmentMoveJob moveJob = new FigureSegmentMoveJob()
+        FS_MoveJob moveJob = new FS_MoveJob()
         {
             InputQuadStripTransition = _animator_QST,
             OutputIndexers = _indexersForJob

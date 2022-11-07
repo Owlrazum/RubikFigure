@@ -8,18 +8,18 @@ using UnityEngine.Assertions;
 // FS is reserved
 public class FigureSegment : MonoBehaviour
 {
-    protected FigureSegmentMover _mover;
-    protected FigureSegmentRenderer _renderer;
+    protected FS_Mover _mover;
+    protected FS_Renderer _renderer;
     protected int _puzzleIndex;
 
     public MeshFilter MeshContainer { get { return _mover.MeshContainer; } }
-    public FigureSegmentMover Mover { get { return _mover; } }
+    public FS_Mover Mover { get { return _mover; } }
     public int PuzzleIndex { get { return _puzzleIndex; } }
 
     private void Awake()
     {
-        _mover = gameObject.AddComponent<FigureSegmentMover>();
-        _renderer = gameObject.AddComponent<FigureSegmentRenderer>();
+        _mover = gameObject.AddComponent<FS_Mover>();
+        _renderer = gameObject.AddComponent<FS_Renderer>();
     }
 
     public void AssignPuzzleIndex(int puzzleIndex)

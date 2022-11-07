@@ -5,7 +5,7 @@ using Unity.Collections;
 using Orazum.Meshing;
 
 [BurstCompile]
-public struct FigureSegmentMoveJob : IJob
+public struct FS_MoveJob : IJob
 {
     public float P_LerpParam;
 

@@ -11,5 +11,8 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/_Game/Scenes/Wheel.unity
     guid: b7e89b594dce04488bbf8a6ff36f52e6
+  - enabled: 1
+    path: Assets/_Game/Scenes/Valknut.unity
+    guid: e87536710f74c438ca567298c79b5063
   m_configObjects:
     com.unity.addressableassets: {fileID: 11400000, guid: e012e3a91c711450e95ec0af803954d2, type: 2}

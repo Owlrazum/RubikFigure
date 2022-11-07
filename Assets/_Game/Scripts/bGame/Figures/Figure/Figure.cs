@@ -16,7 +16,7 @@ public abstract class Figure : MonoBehaviour
     private FigureStatesController _statesController;
     public FigureStatesController StatesController { get { return _statesController; } }
 
-    protected Array2D<FigureSegmentPoint> _segmentPoints;
+    protected Array2D<FS_Point> _segmentPoints;
     private Array2D<OutInTransitions> _universalTransitions;
 
     protected int2 _dims;
@@ -33,7 +33,7 @@ public abstract class Figure : MonoBehaviour
     protected abstract void MakeSegmentMove(FigureSegment segment, FMSC_Transition move, Action moveCompleteAction);
 
     public virtual void Initialize(
-        Array2D<FigureSegmentPoint> segmentPoints,
+        Array2D<FS_Point> segmentPoints,
         FigureParamsSO figureParams,
         FigureGenParamsSO genParams
     )
@@ -83,6 +83,11 @@ public abstract class Figure : MonoBehaviour
     {
         AssignUniversalTransition(move);
 
+        if (segment.gameObject.activeSelf != true)
+        {
+            segment.gameObject.SetActive(true);
+            Debug.Log("Enabling segment gb");
+        }
         segment.StartMove(move, moveCompleteAction);
     }
 
@@ -181,7 +186,7 @@ public abstract class Figure : MonoBehaviour
         }
     }
 
-    public Array2D<FigureSegmentPoint> GetSegmentPointsForCompletionCheck()
+    public Array2D<FS_Point> GetSegmentPointsForCompletionCheck()
     {
         return _segmentPoints;
     }

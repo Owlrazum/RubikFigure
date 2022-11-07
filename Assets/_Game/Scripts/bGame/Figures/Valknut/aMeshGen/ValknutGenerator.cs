@@ -69,6 +69,7 @@ public class ValknutGenerator : FigureGenerator
     }
     protected override void StartMeshGeneration()
     {
+        Debug.Log("StartMeshGen");
         _figureVertices = new NativeArray<VertexData>(SegmentsTotalVertexCount, Allocator.TempJob);
         _figureIndices = new NativeArray<short>(SegmentsTotalIndexCount, Allocator.TempJob);
 
@@ -121,13 +122,14 @@ public class ValknutGenerator : FigureGenerator
     {
         return segmentGb.AddComponent<FigureSegment>();
     }
-    protected override FigureSegmentPoint AddSegmentPointComponent(GameObject segmentPointGb)
+    protected override FS_Point AddSegmentPointComponent(GameObject segmentPointGb)
     {
         return segmentPointGb.AddComponent<ValknutSegmentPoint>();
     }
 
     protected override void CompleteGeneration(FigureParamsSO figureParams, FigureGenParamsSO genParams)
     {
+        Debug.Log("CompleteMeshGen");
         _figureMeshGenJobHandle.Complete();
         _segmentPointsMeshGenJobHandle.Complete();
 

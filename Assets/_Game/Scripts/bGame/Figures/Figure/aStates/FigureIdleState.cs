@@ -4,7 +4,7 @@ using UnityEngine.Assertions;
 public class FigureIdleState : FigureState
 {
     protected SwipeCommand _currentSwipeCommand;
-    protected FigureSegmentPoint _currentSelectedPoint;
+    protected FS_Point _currentSelectedPoint;
     protected Selectable _selectable;
     public FigureIdleState(Selectable selectable, FigureStatesController statesController, Figure figure)
         : base(statesController, figure)
@@ -31,7 +31,7 @@ public class FigureIdleState : FigureState
 
     protected virtual void SelectAction(Collider collider)
     {
-        bool isFound = collider.TryGetComponent(out FigureSegmentPointCollider segmentPointCollider);
+        bool isFound = collider.TryGetComponent(out FSP_Collider segmentPointCollider);
         Assert.IsTrue(isFound);
         if (segmentPointCollider.ParentPoint.Segment == null)
         {

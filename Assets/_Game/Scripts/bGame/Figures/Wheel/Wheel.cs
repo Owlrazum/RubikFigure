@@ -21,7 +21,7 @@ public class Wheel : Figure
     }
 
     public override void Initialize(
-        Array2D<FigureSegmentPoint> segmentPoints,
+        Array2D<FS_Point> segmentPoints,
         FigureParamsSO figureParams,
         FigureGenParamsSO genParams)
     {

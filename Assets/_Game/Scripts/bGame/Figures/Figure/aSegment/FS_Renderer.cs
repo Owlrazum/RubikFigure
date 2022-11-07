@@ -1,7 +1,7 @@
 using UnityEngine;
 
 [RequireComponent(typeof(MeshRenderer))]
-public class FigureSegmentRenderer : MonoBehaviour
+public class FS_Renderer : MonoBehaviour
 {
     private Material _defaultMaterial;
     private Material _highlightMaterial;

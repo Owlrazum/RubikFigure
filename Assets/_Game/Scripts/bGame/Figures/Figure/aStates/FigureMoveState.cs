@@ -23,8 +23,8 @@ public abstract class FigureMoveState : FigureState
     protected abstract List<FigureMoveOnSegment> DetermineMovesFromInput(Vector3 worldPos, Vector3 worldDir);
 
     protected SwipeCommand _currentSwipeCommand;
-    protected FigureSegmentPoint _currentSelectedPoint;
-    public void PrepareForMove(SwipeCommand swipeCommand, FigureSegmentPoint selectedSegmentPoint)
+    protected FS_Point _currentSelectedPoint;
+    public void PrepareForMove(SwipeCommand swipeCommand, FS_Point selectedSegmentPoint)
     {
         _currentSwipeCommand = swipeCommand;
         _currentSelectedPoint = selectedSegmentPoint;

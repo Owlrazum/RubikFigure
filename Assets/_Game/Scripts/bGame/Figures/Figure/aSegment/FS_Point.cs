@@ -4,7 +4,7 @@ using UnityEngine.Assertions;
 
 [RequireComponent(typeof(MeshFilter))]
 [RequireComponent(typeof(MeshRenderer))]
-public class FigureSegmentPoint : MonoBehaviour
+public class FS_Point : MonoBehaviour
 {
     private MeshFilter _meshFilter;
     private MeshRenderer _meshRenderer;
@@ -27,7 +27,7 @@ public class FigureSegmentPoint : MonoBehaviour
     {
         Assert.IsNotNull(Segment.MeshContainer.mesh);
         _meshFilter.mesh = mesh;
-        var collider = gameObject.AddComponent<FigureSegmentPointCollider>();
+        var collider = gameObject.AddComponent<FSP_Collider>();
         collider.Initialize(mesh, this);
     }
 
@@ -40,7 +40,7 @@ public class FigureSegmentPoint : MonoBehaviour
         {
             GameObject meshSegment = new GameObject($"pointSegment_{i}");
             meshSegment.layer = gameObject.layer;
-            var collider = meshSegment.AddComponent<FigureSegmentPointCollider>();
+            var collider = meshSegment.AddComponent<FSP_Collider>();
             collider.Initialize(colliderMultiMesh[i], this);
             meshSegment.transform.parent = transform;
         }

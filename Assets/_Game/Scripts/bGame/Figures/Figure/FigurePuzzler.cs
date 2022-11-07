@@ -164,7 +164,7 @@ public class FigurePuzzler : MonoBehaviour
     {
         _assembleIndicesByPuzzleIndex.Clear();
         _targetIndicesBuffer.Clear();
-        Array2D<FigureSegmentPoint> segmentPoints = _figure.GetSegmentPointsForCompletionCheck();
+        Array2D<FS_Point> segmentPoints = _figure.GetSegmentPointsForCompletionCheck();
 
         int emptyPuzzleIndexer = 0;
         for (int col = 0; col < segmentPoints.ColCount; col++)
