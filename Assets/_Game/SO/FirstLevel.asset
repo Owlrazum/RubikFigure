@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   sceneIndex: 1
   FigureParams: {fileID: 11400000, guid: 92feb075f86ac46618b359a0c37f8dd4, type: 2}
-  GenParams: {fileID: 11400000, guid: 742513ac5ef65499fb371d4f72c536a9, type: 2}
+  GenParams: {fileID: 11400000, guid: 02014c9e25ae346ae9db33ed117eb655, type: 2}
