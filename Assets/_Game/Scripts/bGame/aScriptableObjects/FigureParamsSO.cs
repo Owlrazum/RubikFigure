@@ -29,10 +29,6 @@ public class FigureParamsSO : ScriptableObject
     public float ShufflePauseTime = 0.5f;
     public float ShuffleLerpSpeed = 1;
 
-    [Header("Scaling")]
-    public float ScaleLerpSpeed = 3;
-    public float SelectionScaleDelta = 0.2f;
-
     [Header("Moving")]
     public float MoveLerpSpeed = 2;
 

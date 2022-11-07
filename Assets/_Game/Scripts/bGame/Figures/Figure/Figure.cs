@@ -112,11 +112,6 @@ public abstract class Figure : MonoBehaviour
         }
     }
 
-    private bool IsMoveWithoutTransitions(FigureMoveOnSegment move)
-    {
-        return move is FMS_Scaling;
-    }
-
     public void MakeMoves(IList<FigureMoveOnSegment> moves, Action movesCompleteAction)
     {
         _movesCompleteAction = movesCompleteAction;
@@ -133,11 +128,7 @@ public abstract class Figure : MonoBehaviour
                 continue;
             }
 
-            if (IsMoveWithoutTransitions(move))
-            {
-                movedSegment.StartMove(move, MoveCompleteAction);
-            }
-            else if (IsUniversalMove(move))
+            if (IsUniversalMove(move))
             {
                 MakeUniversalMove(movedSegment, move, MoveCompleteAction);
             }

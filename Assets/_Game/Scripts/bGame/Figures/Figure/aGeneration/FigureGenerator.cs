@@ -70,8 +70,6 @@ public abstract class FigureGenerator : MonoBehaviour
     protected NativeArray<VertexData> _figureVertices;
     protected NativeArray<short> _figureIndices;
 
-    protected NativeArray<VertexData> _scaledFigureVertices;
-
     protected JobHandle _segmentPointsMeshGenJobHandle;
     protected NativeArray<float3> _pointsRenderVertices;
     protected NativeArray<short> _pointsRenderIndices;

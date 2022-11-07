@@ -100,10 +100,6 @@ public class FigureSegmentMover : MonoBehaviour
                 }
                 StartCoroutine(MoveWithTransitionSequence(fmst.Transition));
                 break;
-            case FMS_Scaling fmScaling:
-                _shouldDispose = false;
-                StartCoroutine(MoveWithScaleSequence(fmScaling.Scaler));
-                break;
             default:
                 throw new ArgumentException("Unknown type of move");
         }
@@ -140,32 +136,6 @@ public class FigureSegmentMover : MonoBehaviour
         {
             _toDispose.DisposeConcatenation();
         }
-    }
-
-    private IEnumerator MoveWithScaleSequence(FS_Scaler scaler)
-    {
-        scaler.AssignMeshBuffers(_vertices, _uv, _indices, _indexersForJob);
-        scaler.PrepareJob();
-
-        yield return null;
-        transform.position = new Vector3(transform.position.x, 0.1f, transform.position.z);
-        float lerpParam = 0;
-        while (lerpParam < 1)
-        {
-            lerpParam += _currentLerpSpeed * Time.deltaTime;
-            if (lerpParam > 1)
-            {
-                lerpParam = 1;
-            }
-
-            float easedLerpParam = EaseInOut(lerpParam);
-            _moveJobHandle = scaler.ScheduleScalingJob(easedLerpParam);
-            _wasJobScheduled = true;
-            yield return null;
-        }
-
-        transform.position = new Vector3(transform.position.x, 0, transform.position.z);
-        _wasMoveCompleted = true;
     }
 
     private void LateUpdate()

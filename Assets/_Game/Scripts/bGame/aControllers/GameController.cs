@@ -42,7 +42,11 @@ public class GameController : MonoBehaviour
             return;
         }
 
+
 #if UNITY_EDITOR
+        Cursor.visible = true;
+        Cursor.SetCursor(UnityEditor.PlayerSettings.defaultCursor, new Vector2(0.4f, 0), CursorMode.ForceSoftware);
+
         if (_sceneIndexToTest >= 0)
         {
             _currentLevel = _sceneIndexToTest;
