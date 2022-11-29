@@ -44,14 +44,14 @@ public class GameController : MonoBehaviour
 
 
 #if UNITY_EDITOR
-        Cursor.visible = true;
-        Cursor.SetCursor(UnityEditor.PlayerSettings.defaultCursor, new Vector2(0.4f, 0), CursorMode.ForceSoftware);
+        // Cursor.visible = true;
+        // Cursor.SetCursor(UnityEditor.PlayerSettings.defaultCursor, new Vector2(0.4f, 0), CursorMode.ForceSoftware);
 
-        if (_sceneIndexToTest >= 0)
-        {
-            _currentLevel = _sceneIndexToTest;
-            ApplicationDelegatesContainer.StartLoadingScene(_sceneIndexToTest);
-        }
+        // if (_sceneIndexToTest >= 0)
+        // {
+        //     _currentLevel = _sceneIndexToTest;
+        //     ApplicationDelegatesContainer.StartLoadingScene(_sceneIndexToTest);
+        // }
 #endif
         ApplicationDelegatesContainer.StartLoadingScene(_gameDesc.Levels[_currentLevel].sceneIndex);
     }

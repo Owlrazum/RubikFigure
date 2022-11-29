@@ -3,7 +3,6 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Assertions;
 
-
 public abstract class Selectable : UnityEngine.Object
 {
     public abstract void CheckSelectionOnPointerDown(float3x2 cameraRay);
